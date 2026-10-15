@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git/
+.gitignore
+.venv/
+venv/
+storage/uploads/*
+!storage/uploads/.gitkeep
+storage/hosted/*
+!storage/hosted/.gitkeep
+.DS_Store
+Thumbs.db
