@@ -3,7 +3,7 @@ import urllib.request
 import urllib.error
 from datetime import datetime
 
-TARGET_URL = "https://file-converter-cfui.onrender.com/api/files"
+TARGET_URL = "https://universal-file-converter-xmxl.onrender.com/api/files"
 INTERVAL_SECONDS = 600  # 10 minutes (Render sleeps after 15 minutes of inactivity)
 USER_AGENT = "UniversalConverterKeepAwake/1.0"
 
