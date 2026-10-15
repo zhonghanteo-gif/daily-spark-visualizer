@@ -2,6 +2,9 @@
 
 A high-performance, single-file FastAPI web application for converting images, spreadsheets, and structured documents, with automatic file hosting and permanent shareable URLs.
 
+[![Render](https://img.shields.io/badge/Render-Deployed-brightgreen)](https://render.com)
+[![Python](https://img.shields.io/badge/Python-3.11-blue)](https://www.python.org/)
+
 ## Features
 
 - **Automatic Folder Setup**: Creates `storage/uploads` and `storage/hosted` automatically on startup.
@@ -19,7 +22,7 @@ A high-performance, single-file FastAPI web application for converting images, s
   - Multi-file concurrent conversion.
   - Live hosted file manager with one-click **Copy Link** and direct **Download** buttons.
 
-## Quick Start
+## Quick Start (Local)
 
 ### 1. Install Dependencies
 ```bash
@@ -33,14 +36,10 @@ python app.py
 Or on Windows, double-click `run.bat`.
 
 ### 3. Open in Browser
-Navigate to:
-```
-http://localhost:8000
-```
+Navigate to `http://localhost:8000`.
 
-## API Endpoints
+## Cloud Deployment (Render / Docker)
 
-- `GET /`: Modern dark-mode web dashboard.
-- `GET /api/files`: Returns JSON list of all hosted files with metadata (sizes, timestamps, direct links).
-- `POST /api/convert`: Accepts multipart form upload with `files` list and `target_format` string.
-- `GET /files/{filename}`: Static file server providing permanent access to converted files.
+- **Dockerfile** is included for container-based hosting.
+- **render.yaml** is configured for instant deployment on [Render.com](https://render.com).
+- **keep_awake.py** daemon keeps free-tier cloud containers awake 24/7.
