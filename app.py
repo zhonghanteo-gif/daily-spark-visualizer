@@ -3,6 +3,7 @@ import io
 import shutil
 from pathlib import Path
 from datetime import datetime
+import urllib.parse
 from contextlib import asynccontextmanager
 
 import pandas as pd
@@ -187,12 +188,63 @@ def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
     output_filename = f"{base_name}.{target_ext}"
     output_path = str(HOSTED_DIR / output_filename)
 
-    # 1. Image Conversions
+    # 1. PDF Direct pass-through (preserves all pages)
+    if source_ext == "pdf" and target_ext == "pdf":
+        shutil.copyfile(input_path, output_path)
+        return output_filename
+
+    # 2. PDF to Notes/Text (Markdown, HTML, CSV, JSON extraction)
+    if source_ext == "pdf" and target_ext in ("md", "html", "csv", "json"):
+        if not HAS_PDFIUM:
+            raise ValueError("PDF text extraction requires pypdfium2.")
+        pdf = pdfium.PdfDocument(input_path)
+        all_text = []
+        for page_idx, page in enumerate(pdf):
+            try:
+                textpage = page.get_textpage()
+                page_text = textpage.get_text_range().strip()
+                if page_text:
+                    all_text.append((page_idx + 1, page_text))
+            except Exception:
+                continue
+
+        if not all_text:
+            raise ValueError("No extractable text found in this PDF (it may contain scanned image pages).")
+
+        if target_ext == "md":
+            lines = [f"# {base_name}\n"]
+            for p_num, text in all_text:
+                lines.append(f"\n## Page {p_num}\n\n{text}\n")
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines))
+            return output_filename
+
+        elif target_ext == "html":
+            html_parts = [
+                "<!DOCTYPE html><html><head><meta charset='utf-8'>",
+                f"<title>{base_name}</title>",
+                "<style>body{font-family:system-ui,-apple-system,sans-serif;max-width:840px;margin:30px auto;padding:0 20px;line-height:1.6;color:#1e293b;background:#f8fafc;} h1{color:#0f172a;} .page{background:#ffffff;padding:24px;margin-bottom:24px;border-radius:10px;border:1px solid #e2e8f0;white-space:pre-wrap;box-shadow:0 1px 3px rgba(0,0,0,0.05);} .page-hdr{font-size:0.85rem;color:#64748b;font-weight:600;margin-bottom:8px;}</style></head><body>",
+                f"<h1>{base_name}</h1>",
+            ]
+            for p_num, text in all_text:
+                html_parts.append(f"<div class='page'><div class='page-hdr'>Page {p_num}</div>{text}</div>")
+            html_parts.append("</body></html>")
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(html_parts))
+            return output_filename
+
+        elif target_ext in ("csv", "json"):
+            records = [{"page": p_num, "content": text} for p_num, text in all_text]
+            df = pd.DataFrame(records)
+            write_data_file(df, target_ext, output_path)
+            return output_filename
+
+    # 3. Image Conversions
     if source_ext in IMAGE_FORMATS and target_ext in IMAGE_FORMATS:
         convert_image(input_path, source_ext, target_ext, output_path)
         return output_filename
 
-    # 2. Data / Spreadsheet Conversions
+    # 4. Data / Spreadsheet Conversions
     if source_ext in DATA_FORMATS and target_ext in DATA_FORMATS:
         df = read_data_file(input_path, source_ext)
         write_data_file(df, target_ext, output_path)
@@ -229,10 +281,11 @@ async def convert_files(
             out_name = process_conversion(raw_path, file.filename, target_format)
             out_file = HOSTED_DIR / out_name
             size_bytes = out_file.stat().st_size if out_file.exists() else 0
+            safe_url = f"/files/{urllib.parse.quote(out_name)}"
             results.append({
                 "original": file.filename,
                 "hosted_name": out_name,
-                "url": f"/files/{out_name}",
+                "url": safe_url,
                 "size_formatted": format_file_size(size_bytes),
                 "status": "ok",
             })
@@ -246,6 +299,71 @@ async def convert_files(
     return {"results": results}
 
 
+@app.post("/api/upload-chunk")
+async def upload_chunk(
+    file_id: str = Form(...),
+    chunk_index: int = Form(...),
+    total_chunks: int = Form(...),
+    filename: str = Form(...),
+    target_format: str = Form(...),
+    chunk: UploadFile = File(...),
+):
+    """Handles chunked file uploads (2MB chunks) to prevent mobile network timeouts."""
+    safe_file_id = "".join(c for c in file_id if c.isalnum() or c in ("-", "_"))
+    safe_filename = Path(filename).name
+    temp_dir = UPLOAD_DIR / f"temp_{safe_file_id}"
+    temp_dir.mkdir(parents=True, exist_ok=True)
+
+    chunk_path = temp_dir / f"chunk_{chunk_index:05d}.part"
+    with open(chunk_path, "wb") as buffer:
+        shutil.copyfileobj(chunk.file, buffer)
+
+    if chunk_index + 1 == total_chunks:
+        # All chunks received -> assemble final file
+        final_path = UPLOAD_DIR / safe_filename
+        with open(final_path, "wb") as outfile:
+            for i in range(total_chunks):
+                c_file = temp_dir / f"chunk_{i:05d}.part"
+                if not c_file.exists():
+                    raise HTTPException(status_code=400, detail=f"Missing chunk {i}")
+                with open(c_file, "rb") as infile:
+                    shutil.copyfileobj(infile, outfile)
+
+        # Clean up temporary chunk files
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+        try:
+            out_name = process_conversion(str(final_path), safe_filename, target_format)
+            out_file = HOSTED_DIR / out_name
+            size_bytes = out_file.stat().st_size if out_file.exists() else 0
+            safe_url = f"/files/{urllib.parse.quote(out_name)}"
+            return {
+                "status": "complete",
+                "results": [{
+                    "original": safe_filename,
+                    "hosted_name": out_name,
+                    "url": safe_url,
+                    "size_formatted": format_file_size(size_bytes),
+                    "status": "ok",
+                }]
+            }
+        except Exception as e:
+            return {
+                "status": "complete",
+                "results": [{
+                    "original": safe_filename,
+                    "error": str(e),
+                    "status": "error",
+                }]
+            }
+
+    return {
+        "status": "chunk_received",
+        "chunk_index": chunk_index,
+        "total_chunks": total_chunks,
+    }
+
+
 @app.get("/api/files")
 async def list_hosted_files():
     file_list = []
@@ -255,7 +373,7 @@ async def list_hosted_files():
                 stat = f.stat()
                 file_list.append({
                     "name": f.name,
-                    "url": f"/files/{f.name}",
+                    "url": f"/files/{urllib.parse.quote(f.name)}",
                     "size_bytes": stat.st_size,
                     "size_formatted": format_file_size(stat.st_size),
                     "modified": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
@@ -1013,7 +1131,7 @@ async def dashboard():
             });
         }
 
-        // Single file upload via XMLHttpRequest with real-time progress
+        // Single file upload via XMLHttpRequest with real-time progress (< 3MB)
         function uploadSingleFile(file, targetExt, onProgress) {
             return new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
@@ -1038,7 +1156,7 @@ async def dashboard():
                     } else if (xhr.status === 502 || xhr.status === 503) {
                         reject(new Error("SERVER_WAKING_UP"));
                     } else if (xhr.status === 413) {
-                        reject(new Error("File exceeds cloud payload limit. Please enable Fast Mobile Upload."));
+                        reject(new Error("File exceeds cloud payload limit."));
                     } else {
                         let errMsg = "Server error " + xhr.status;
                         try {
@@ -1051,9 +1169,106 @@ async def dashboard():
 
                 xhr.onerror = () => reject(new Error("NETWORK_ERROR"));
                 xhr.ontimeout = () => reject(new Error("TIMEOUT"));
-                xhr.timeout = 180000; // 3 minutes timeout for mobile uploads
+                xhr.timeout = 120000;
 
                 xhr.open('POST', '/api/convert');
+                xhr.send(formData);
+            });
+        }
+
+        // Chunked file upload (2MB chunks) with auto-retry per chunk for large files/PDFs
+        async function uploadFileChunked(file, targetExt, onProgress) {
+            const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MB per chunk
+            const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+            const fileId = Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+
+            for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
+                const start = chunkIdx * CHUNK_SIZE;
+                const end = Math.min(file.size, start + CHUNK_SIZE);
+                const chunkBlob = file.slice(start, end);
+
+                let attempt = 0;
+                let chunkSuccess = false;
+                let lastError = null;
+
+                while (attempt < 3 && !chunkSuccess) {
+                    attempt++;
+                    try {
+                        const res = await uploadSingleChunk(
+                            fileId,
+                            chunkIdx,
+                            totalChunks,
+                            file.name,
+                            targetExt,
+                            chunkBlob,
+                            (loaded, _) => {
+                                const bytesSentBefore = chunkIdx * CHUNK_SIZE;
+                                const currentTotalSent = bytesSentBefore + loaded;
+                                if (onProgress) {
+                                    onProgress(currentTotalSent, file.size, chunkIdx + 1, totalChunks);
+                                }
+                            }
+                        );
+                        chunkSuccess = true;
+                        if (chunkIdx + 1 === totalChunks) {
+                            return res;
+                        }
+                    } catch (err) {
+                        lastError = err;
+                        if (attempt < 3) {
+                            await new Promise(r => setTimeout(r, 2000));
+                        }
+                    }
+                }
+
+                if (!chunkSuccess) {
+                    throw lastError || new Error(`Failed to upload chunk ${chunkIdx + 1}`);
+                }
+            }
+        }
+
+        function uploadSingleChunk(fileId, chunkIdx, totalChunks, filename, targetExt, chunkBlob, onProgress) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                const formData = new FormData();
+                formData.append('file_id', fileId);
+                formData.append('chunk_index', chunkIdx);
+                formData.append('total_chunks', totalChunks);
+                formData.append('filename', filename);
+                formData.append('target_format', targetExt);
+                formData.append('chunk', chunkBlob, 'blob');
+
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable && onProgress) {
+                        onProgress(e.loaded, e.total);
+                    }
+                };
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            resolve(data);
+                        } catch (_) {
+                            reject(new Error("Invalid server JSON response"));
+                        }
+                    } else if (xhr.status === 502 || xhr.status === 503) {
+                        reject(new Error("SERVER_WAKING_UP"));
+                    } else {
+                        let errMsg = "Server error " + xhr.status;
+                        try {
+                            const p = JSON.parse(xhr.responseText);
+                            if (p.detail) errMsg = p.detail;
+                        } catch (_) {}
+                        reject(new Error(errMsg));
+                    }
+                };
+
+                xhr.onerror = () => reject(new Error("NETWORK_ERROR"));
+                xhr.ontimeout = () => reject(new Error("TIMEOUT"));
+                xhr.timeout = 75000; // 75s per 2MB chunk
+
+                xhr.open('POST', '/api/upload-chunk');
                 xhr.send(formData);
             });
         }
@@ -1078,6 +1293,13 @@ async def dashboard():
             progressFill.style.width = '0%';
             progressStatus.textContent = 'Preparing files...';
 
+            let wakeLock = null;
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (_) {}
+
             const aggregatedResults = [];
 
             try {
@@ -1085,13 +1307,14 @@ async def dashboard():
                     const originalFile = filesToProcess[i];
                     let fileToUpload = originalFile;
 
-                    // Step 1: Client optimization if enabled
+                    // Step 1: Client optimization if enabled for images
                     if (optImages.checked) {
                         progressStatus.textContent = `[${i + 1}/${total}] Checking optimization: ${originalFile.name}...`;
                         fileToUpload = await optimizeImageForUpload(originalFile);
                     }
 
-                    // Step 2: Upload with retry logic (e.g. if Render container is waking up)
+                    // Step 2: Use Chunked upload if file is larger than 3 MB
+                    const isChunked = fileToUpload.size > 3 * 1024 * 1024;
                     let attempt = 0;
                     let success = false;
                     let lastError = null;
@@ -1100,18 +1323,34 @@ async def dashboard():
                         attempt++;
                         try {
                             progressStatus.textContent = `[${i + 1}/${total}] Uploading ${fileToUpload.name}...`;
-                            const responseData = await uploadSingleFile(
-                                fileToUpload,
-                                targetExt,
-                                (loaded, totalBytes) => {
-                                    const filePct = totalBytes > 0 ? loaded / totalBytes : 0;
-                                    const overallPct = Math.round(((i + filePct) / total) * 100);
-                                    progressFill.style.width = overallPct + '%';
-                                    const loadedKb = (loaded / 1024).toFixed(0);
-                                    const totalKb = (totalBytes / 1024).toFixed(0);
-                                    progressStatus.textContent = `[${i + 1}/${total}] Uploading ${fileToUpload.name} (${loadedKb} KB / ${totalKb} KB)...`;
-                                }
-                            );
+                            let responseData;
+                            if (isChunked) {
+                                responseData = await uploadFileChunked(
+                                    fileToUpload,
+                                    targetExt,
+                                    (loaded, totalBytes, chunkNum, totalChunks) => {
+                                        const filePct = totalBytes > 0 ? loaded / totalBytes : 0;
+                                        const overallPct = Math.round(((i + filePct) / total) * 100);
+                                        progressFill.style.width = overallPct + '%';
+                                        const loadedMb = (loaded / (1024 * 1024)).toFixed(1);
+                                        const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
+                                        progressStatus.textContent = `[${i + 1}/${total}] Uploading ${fileToUpload.name} — Chunk ${chunkNum}/${totalChunks} (${loadedMb}MB / ${totalMb}MB)...`;
+                                    }
+                                );
+                            } else {
+                                responseData = await uploadSingleFile(
+                                    fileToUpload,
+                                    targetExt,
+                                    (loaded, totalBytes) => {
+                                        const filePct = totalBytes > 0 ? loaded / totalBytes : 0;
+                                        const overallPct = Math.round(((i + filePct) / total) * 100);
+                                        progressFill.style.width = overallPct + '%';
+                                        const loadedKb = (loaded / 1024).toFixed(0);
+                                        const totalKb = (totalBytes / 1024).toFixed(0);
+                                        progressStatus.textContent = `[${i + 1}/${total}] Uploading ${fileToUpload.name} (${loadedKb} KB / ${totalKb} KB)...`;
+                                    }
+                                );
+                            }
 
                             progressStatus.textContent = `[${i + 1}/${total}] Finished converting ${fileToUpload.name}!`;
                             if (responseData.results && responseData.results.length > 0) {
@@ -1135,7 +1374,7 @@ async def dashboard():
                     if (!success) {
                         let msg = lastError ? lastError.message : "Unknown error";
                         if (msg === "NETWORK_ERROR" || msg === "TIMEOUT") {
-                            msg = "Connection timeout or interrupted over mobile data.";
+                            msg = "Connection timeout or interrupted over mobile data. Try connecting to Wi-Fi.";
                         } else if (msg === "SERVER_WAKING_UP") {
                             msg = "Cloud server was spinning up. Please try again now.";
                         }
@@ -1180,6 +1419,10 @@ async def dashboard():
                 renderStagedFiles();
                 loadHostedFiles();
             } finally {
+                if (wakeLock) {
+                    try { await wakeLock.release(); } catch (_) {}
+                    wakeLock = null;
+                }
                 submitBtn.disabled = false;
                 spinner.style.display = 'none';
                 btnText.textContent = 'Convert & Host Files';
