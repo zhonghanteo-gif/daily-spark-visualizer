@@ -23,16 +23,27 @@ def test_endpoint(url):
 
 def main():
     print("=== LIVE CLOUD ENDPOINT VERIFICATION ===", flush=True)
+    base_url = "https://universal-file-converter-xmxl.onrender.com"
     
     # 1. Test Dashboard Root
-    status_root, content_root = test_endpoint("https://file-converter-cfui.onrender.com/")
+    status_root, content_root = test_endpoint(f"{base_url}/")
     if status_root != 200 or b"Universal File Converter" not in content_root:
         print("FAIL: Root endpoint check failed!", flush=True)
         sys.exit(1)
-    print("PASS: Root dashboard is live and valid!", flush=True)
+    if b"v1.3.0" not in content_root:
+        print("FAIL: Root dashboard missing v1.3.0 badge!", flush=True)
+        sys.exit(1)
+    print("PASS: Root dashboard is live and valid with v1.3.0 badge!", flush=True)
 
-    # 2. Test API Files
-    status_api, content_api = test_endpoint("https://file-converter-cfui.onrender.com/api/files")
+    # 2. Test Diagnostics
+    status_diag, content_diag = test_endpoint(f"{base_url}/api/diagnostics")
+    if status_diag != 200 or b'"status":"healthy"' not in content_diag.replace(b" ", b""):
+        print("FAIL: /api/diagnostics endpoint check failed!", flush=True)
+        sys.exit(1)
+    print("PASS: /api/diagnostics responded healthy!", flush=True)
+
+    # 3. Test API Files
+    status_api, content_api = test_endpoint(f"{base_url}/api/files")
     if status_api != 200:
         print("FAIL: /api/files endpoint check failed!", flush=True)
         sys.exit(1)

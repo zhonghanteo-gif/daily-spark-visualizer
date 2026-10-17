@@ -1,5 +1,6 @@
 import os
 import io
+import time
 import shutil
 import gc
 from pathlib import Path
@@ -409,7 +410,17 @@ async def upload_chunk(
 ):
     """Handles chunked file uploads (768KB chunks) to prevent mobile network timeouts."""
     safe_file_id = "".join(c for c in file_id if c.isalnum() or c in ("-", "_"))
-    safe_filename = Path(filename).name
+    safe_filename = Path(filename).name if filename and Path(filename).name else f"upload_{safe_file_id}.bin"
+
+    # Clean up any abandoned temp directories older than 30 minutes
+    now = time.time()
+    for p in UPLOAD_DIR.glob("temp_*"):
+        try:
+            if p.is_dir() and (now - p.stat().st_mtime > 1800):
+                shutil.rmtree(p, ignore_errors=True)
+        except Exception:
+            pass
+
     temp_dir = UPLOAD_DIR / f"temp_{safe_file_id}"
     temp_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1176,13 +1187,18 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             }
         });
 
-        function addFiles(newFiles) {
+        async function addFiles(newFiles) {
             for (const f of newFiles) {
                 if (!stagedFilesList.some(item => item.name === f.name && item.size === f.size)) {
                     let standaloneFile = f;
                     try {
-                        const blobSlice = f.slice(0, f.size, f.type);
-                        standaloneFile = new File([blobSlice], f.name, { type: f.type, lastModified: f.lastModified });
+                        if (f.size <= 25 * 1024 * 1024 && typeof f.arrayBuffer === 'function') {
+                            const buf = await f.arrayBuffer();
+                            standaloneFile = new File([buf], f.name, { type: f.type, lastModified: f.lastModified });
+                        } else {
+                            const blobSlice = f.slice(0, f.size, f.type);
+                            standaloneFile = new File([blobSlice], f.name, { type: f.type, lastModified: f.lastModified });
+                        }
                     } catch (_) {
                         try {
                             const blobSlice = f.slice(0, f.size);
@@ -1347,7 +1363,13 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
                 const start = chunkIdx * CHUNK_SIZE;
                 const end = Math.min(file.size, start + CHUNK_SIZE);
-                const chunkBlob = file.slice(start, end);
+                let chunkBlob = file.slice(start, end);
+                try {
+                    if (typeof chunkBlob.arrayBuffer === 'function') {
+                        const chunkBuf = await chunkBlob.arrayBuffer();
+                        chunkBlob = new Blob([chunkBuf], { type: 'application/octet-stream' });
+                    }
+                } catch (_) {}
                 const isFinal = (chunkIdx + 1 === totalChunks);
 
                 let attempt = 0;
@@ -1379,6 +1401,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                         }
                     } catch (err) {
                         lastError = err;
+                        const isWakeUp = (err.message || '').includes('SERVER_WAKING_UP');
                         // Fire background beacon
                         try {
                             fetch('/api/client-log', {
@@ -1395,13 +1418,17 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                         } catch (_) {}
 
                         if (attempt < 4) {
-                            await new Promise(r => setTimeout(r, 1500 * attempt));
+                            const delayMs = isWakeUp ? 5000 * attempt : 1500 * attempt;
+                            await new Promise(r => setTimeout(r, delayMs));
                         }
                     }
                 }
 
                 if (!chunkSuccess) {
-                    throw new Error(`Upload paused at chunk ${chunkIdx + 1}/${totalChunks}: ${lastError ? lastError.message : 'Connection dropped'}`);
+                    const finalErr = new Error(lastError ? lastError.message : 'Connection dropped');
+                    finalErr.chunkIdx = chunkIdx + 1;
+                    finalErr.totalChunks = totalChunks;
+                    throw finalErr;
                 }
             }
         }
@@ -1551,21 +1578,28 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
 
                             progressStatus.textContent = `[${i + 1}/${total}] Finished converting ${fileToUpload.name}!`;
                             if (responseData.results && responseData.results.length > 0) {
+                                let fileBatchFailed = false;
                                 for (const r of responseData.results) {
                                     r.file = fileToUpload;
                                     if (r.status !== 'ok') {
                                         lastFailedBatch.push(r);
+                                        fileBatchFailed = true;
                                     }
                                 }
                                 aggregatedResults.push(...responseData.results);
+                                if (!fileBatchFailed) {
+                                    stagedFilesList = stagedFilesList.filter(f => f.name !== originalFile.name || f.size !== originalFile.size);
+                                    renderStagedFiles();
+                                }
                             }
                             success = true;
                         } catch (err) {
                             lastError = err;
-                            if (err.message === "SERVER_WAKING_UP" && attempt < 3) {
+                            const errStr = err.message || String(err);
+                            if (errStr.includes("SERVER_WAKING_UP") && attempt < 3) {
                                 progressStatus.textContent = `Cloud server is spinning up from sleep. Retrying in 6s (Attempt ${attempt}/3)...`;
                                 await new Promise(r => setTimeout(r, 6000));
-                            } else if ((err.message.includes("Cellular") || err.message === "NETWORK_DISCONNECTED") && attempt < 3) {
+                            } else if ((errStr.includes("Cellular") || errStr.includes("NETWORK_DISCONNECTED") || errStr.includes("connection")) && attempt < 3) {
                                 progressStatus.textContent = `Connection blip. Retrying in 2s (Attempt ${attempt}/3)...`;
                                 await new Promise(r => setTimeout(r, 2000));
                             } else {
@@ -1575,12 +1609,13 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                     }
 
                     if (!success) {
-                        let msg = lastError ? lastError.message : "Upload interrupted";
-                        if (msg === "NETWORK_DISCONNECTED" || msg === "Cellular connection interrupted") {
+                        let rawMsg = lastError ? (lastError.message || String(lastError)) : "Upload interrupted";
+                        let msg = rawMsg;
+                        if (rawMsg.includes("NETWORK_DISCONNECTED") || rawMsg.includes("Cellular connection interrupted") || rawMsg.includes("connection dropped")) {
                             msg = "Connection interrupted over mobile data.";
-                        } else if (msg === "REQUEST_TIMEOUT") {
+                        } else if (rawMsg.includes("REQUEST_TIMEOUT") || rawMsg.includes("timed out")) {
                             msg = "Request timed out over mobile data.";
-                        } else if (msg === "SERVER_WAKING_UP") {
+                        } else if (rawMsg.includes("SERVER_WAKING_UP")) {
                             msg = "Cloud server was spinning up. Tap Retry to process now.";
                         }
                         
