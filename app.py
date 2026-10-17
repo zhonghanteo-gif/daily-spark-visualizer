@@ -6,7 +6,7 @@ from datetime import datetime
 from contextlib import asynccontextmanager
 
 import pandas as pd
-from PIL import Image
+from PIL import Image, ImageOps
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -132,28 +132,35 @@ def convert_image(input_path: str, source_ext: str, target_ext: str, output_path
         img = page.render(scale=2).to_pil()
     else:
         img = Image.open(input_path)
+        try:
+            # Correct phone camera orientation from EXIF metadata
+            transposed = ImageOps.exif_transpose(img)
+            if transposed is not None:
+                img = transposed
+        except Exception:
+            pass
 
     try:
-        # Prevent 512MB RAM OOM crash: downscale ultra-high-res camera photos (>3840px)
-        max_dim = 3840
+        # Prevent 512MB RAM OOM crash on cloud containers: downscale ultra-high-res camera photos (>2560px)
+        max_dim = 2560
         if img.width > max_dim or img.height > max_dim:
-            img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+            img.thumbnail((max_dim, max_dim), Image.Resampling.BILINEAR)
 
         if target_ext in ("jpg", "jpeg"):
             if img.mode in ("RGBA", "LA", "P", "CMYK"):
                 img = img.convert("RGB")
-            img.save(output_path, "JPEG", quality=95)
+            img.save(output_path, "JPEG", quality=92, optimize=True)
         elif target_ext == "png":
-            img.save(output_path, "PNG")
+            img.save(output_path, "PNG", optimize=True)
         elif target_ext == "webp":
-            img.save(output_path, "WEBP", quality=95)
+            img.save(output_path, "WEBP", quality=90)
         elif target_ext == "bmp":
             if img.mode not in ("RGB", "L"):
                 img = img.convert("RGB")
             img.save(output_path, "BMP")
         elif target_ext == "ico":
             if img.size[0] > 256 or img.size[1] > 256:
-                img = img.resize((256, 256), Image.Resampling.LANCZOS)
+                img = img.resize((256, 256), Image.Resampling.BILINEAR)
             if img.mode not in ("RGBA", "RGB"):
                 img = img.convert("RGBA")
             img.save(
@@ -261,7 +268,7 @@ async def list_hosted_files():
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard():
-    return """<!DOCTYPE html>
+    return r"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -444,6 +451,66 @@ async def dashboard():
 
         .file-chip-remove:hover {
             color: var(--danger);
+        }
+
+        .file-chip-badge {
+            background: rgba(245, 158, 11, 0.18);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            font-size: 0.7rem;
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+
+        .mobile-opt-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 14px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            border: 1px solid #1e293b;
+        }
+
+        .mobile-opt-row input[type="checkbox"] {
+            accent-color: var(--accent-primary);
+            width: 17px;
+            height: 17px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .progress-wrapper {
+            display: none;
+            margin-top: 16px;
+        }
+
+        .progress-bar-container {
+            background: #1e293b;
+            border-radius: 9999px;
+            height: 8px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            border-radius: 9999px;
+            transition: width 0.15s ease-out;
+        }
+
+        .progress-status {
+            font-size: 0.82rem;
+            color: #93c5fd;
+            margin-top: 6px;
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
         }
 
         /* Form elements */
@@ -766,10 +833,22 @@ async def dashboard():
                         </select>
                     </div>
 
+                    <div class="mobile-opt-row">
+                        <input type="checkbox" id="optImages" checked>
+                        <label for="optImages" style="margin-bottom:0; cursor:pointer;">⚡ Fast Mobile Upload: Auto-optimize large photos for speed</label>
+                    </div>
+
                     <button type="submit" class="btn-submit" id="submitBtn">
                         <div class="spinner" id="spinner"></div>
                         <span id="btnText">Convert & Host Files</span>
                     </button>
+
+                    <div class="progress-wrapper" id="progressWrapper">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-status" id="progressStatus">Uploading...</div>
+                    </div>
                 </div>
             </form>
 
@@ -804,9 +883,13 @@ async def dashboard():
         const stagedContainer = document.getElementById('stagedFiles');
         const uploadForm = document.getElementById('uploadForm');
         const targetFormat = document.getElementById('targetFormat');
+        const optImages = document.getElementById('optImages');
         const submitBtn = document.getElementById('submitBtn');
         const spinner = document.getElementById('spinner');
         const btnText = document.getElementById('btnText');
+        const progressWrapper = document.getElementById('progressWrapper');
+        const progressFill = document.getElementById('progressFill');
+        const progressStatus = document.getElementById('progressStatus');
         const statusBox = document.getElementById('statusBox');
         const filesList = document.getElementById('filesList');
         const filesCount = document.getElementById('filesCount');
@@ -864,16 +947,118 @@ async def dashboard():
             stagedFilesList.forEach((file, idx) => {
                 const chip = document.createElement('div');
                 chip.className = 'file-chip';
-                const sizeStr = (file.size / 1024).toFixed(1) + ' KB';
+                const isLarge = file.size > 10 * 1024 * 1024;
+                const sizeStr = file.size >= 1024 * 1024 
+                    ? (file.size / (1024 * 1024)).toFixed(1) + ' MB'
+                    : (file.size / 1024).toFixed(1) + ' KB';
                 chip.innerHTML = `
                     <span>${file.name} (${sizeStr})</span>
+                    ${isLarge ? '<span class="file-chip-badge" title="Large file">Large</span>' : ''}
                     <span class="file-chip-remove" onclick="removeFile(${idx})">&times;</span>
                 `;
                 stagedContainer.appendChild(chip);
             });
         }
 
-        // Form Submit
+        // Client-side photo downscaling for ultra-fast mobile upload
+        async function optimizeImageForUpload(file) {
+            const isImage = file.type.startsWith('image/') || /\.(jpe?g|png|webp|bmp)$/i.test(file.name);
+            if (!isImage || file.size < 1.2 * 1024 * 1024) {
+                return file;
+            }
+
+            return new Promise((resolve) => {
+                const img = new Image();
+                const url = URL.createObjectURL(file);
+                img.onload = () => {
+                    URL.revokeObjectURL(url);
+                    const maxDim = 2560;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob(
+                        (blob) => {
+                            if (blob && blob.size < file.size) {
+                                const newName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+                                resolve(new File([blob], newName, { type: 'image/jpeg' }));
+                            } else {
+                                resolve(file);
+                            }
+                        },
+                        'image/jpeg',
+                        0.88
+                    );
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    resolve(file);
+                };
+                img.src = url;
+            });
+        }
+
+        // Single file upload via XMLHttpRequest with real-time progress
+        function uploadSingleFile(file, targetExt, onProgress) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                const formData = new FormData();
+                formData.append('target_format', targetExt);
+                formData.append('files', file, file.name);
+
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable && onProgress) {
+                        onProgress(e.loaded, e.total);
+                    }
+                };
+
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            resolve(data);
+                        } catch (err) {
+                            reject(new Error("Invalid server JSON response"));
+                        }
+                    } else if (xhr.status === 502 || xhr.status === 503) {
+                        reject(new Error("SERVER_WAKING_UP"));
+                    } else if (xhr.status === 413) {
+                        reject(new Error("File exceeds cloud payload limit. Please enable Fast Mobile Upload."));
+                    } else {
+                        let errMsg = "Server error " + xhr.status;
+                        try {
+                            const parsed = JSON.parse(xhr.responseText);
+                            if (parsed.detail) errMsg = parsed.detail;
+                        } catch (_) {}
+                        reject(new Error(errMsg));
+                    }
+                };
+
+                xhr.onerror = () => reject(new Error("NETWORK_ERROR"));
+                xhr.ontimeout = () => reject(new Error("TIMEOUT"));
+                xhr.timeout = 180000; // 3 minutes timeout for mobile uploads
+
+                xhr.open('POST', '/api/convert');
+                xhr.send(formData);
+            });
+        }
+
+        // Form Submit Handler
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (stagedFilesList.length === 0) {
@@ -881,40 +1066,94 @@ async def dashboard():
                 return;
             }
 
-            const formData = new FormData();
-            formData.append('target_format', targetFormat.value);
-            stagedFilesList.forEach(file => {
-                formData.append('files', file);
-            });
+            const targetExt = targetFormat.value;
+            const filesToProcess = [...stagedFilesList];
+            const total = filesToProcess.length;
 
-            // UI loading state
             submitBtn.disabled = true;
             spinner.style.display = 'inline-block';
-            btnText.textContent = 'Converting...';
+            btnText.textContent = 'Processing...';
             statusBox.style.display = 'none';
+            progressWrapper.style.display = 'block';
+            progressFill.style.width = '0%';
+            progressStatus.textContent = 'Preparing files...';
+
+            const aggregatedResults = [];
 
             try {
-                const response = await fetch('/api/convert', {
-                    method: 'POST',
-                    body: formData
-                });
+                for (let i = 0; i < total; i++) {
+                    const originalFile = filesToProcess[i];
+                    let fileToUpload = originalFile;
 
-                if (!response.ok) {
-                    const errText = await response.text();
-                    let errMsg = 'Server error ' + response.status;
-                    try {
-                        const parsed = JSON.parse(errText);
-                        if (parsed.detail) errMsg = parsed.detail;
-                    } catch (_) {}
-                    throw new Error(errMsg);
+                    // Step 1: Client optimization if enabled
+                    if (optImages.checked) {
+                        progressStatus.textContent = `[${i + 1}/${total}] Checking optimization: ${originalFile.name}...`;
+                        fileToUpload = await optimizeImageForUpload(originalFile);
+                    }
+
+                    // Step 2: Upload with retry logic (e.g. if Render container is waking up)
+                    let attempt = 0;
+                    let success = false;
+                    let lastError = null;
+
+                    while (attempt < 3 && !success) {
+                        attempt++;
+                        try {
+                            progressStatus.textContent = `[${i + 1}/${total}] Uploading ${fileToUpload.name}...`;
+                            const responseData = await uploadSingleFile(
+                                fileToUpload,
+                                targetExt,
+                                (loaded, totalBytes) => {
+                                    const filePct = totalBytes > 0 ? loaded / totalBytes : 0;
+                                    const overallPct = Math.round(((i + filePct) / total) * 100);
+                                    progressFill.style.width = overallPct + '%';
+                                    const loadedKb = (loaded / 1024).toFixed(0);
+                                    const totalKb = (totalBytes / 1024).toFixed(0);
+                                    progressStatus.textContent = `[${i + 1}/${total}] Uploading ${fileToUpload.name} (${loadedKb} KB / ${totalKb} KB)...`;
+                                }
+                            );
+
+                            progressStatus.textContent = `[${i + 1}/${total}] Finished converting ${fileToUpload.name}!`;
+                            if (responseData.results && responseData.results.length > 0) {
+                                aggregatedResults.push(...responseData.results);
+                            }
+                            success = true;
+                        } catch (err) {
+                            lastError = err;
+                            if (err.message === "SERVER_WAKING_UP" && attempt < 3) {
+                                progressStatus.textContent = `Cloud server is spinning up from sleep. Retrying in 6s (Attempt ${attempt}/2)...`;
+                                await new Promise(r => setTimeout(r, 6000));
+                            } else if (err.message === "NETWORK_ERROR" && attempt < 2) {
+                                progressStatus.textContent = `Connection blip. Retrying in 3s...`;
+                                await new Promise(r => setTimeout(r, 3000));
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!success) {
+                        let msg = lastError ? lastError.message : "Unknown error";
+                        if (msg === "NETWORK_ERROR" || msg === "TIMEOUT") {
+                            msg = "Connection timeout or interrupted over mobile data.";
+                        } else if (msg === "SERVER_WAKING_UP") {
+                            msg = "Cloud server was spinning up. Please try again now.";
+                        }
+                        aggregatedResults.push({
+                            original: originalFile.name,
+                            error: msg,
+                            status: "error"
+                        });
+                    }
                 }
 
-                const data = await response.json();
+                progressFill.style.width = '100%';
+                progressStatus.textContent = 'Done!';
 
-                // Render result summary
+                // Render Results
                 let hasErrors = false;
                 let html = '<div style="font-weight:600; margin-bottom:8px;">Conversion Results:</div>';
-                data.results.forEach(res => {
+                aggregatedResults.forEach(res => {
                     if (res.status === 'ok') {
                         html += `
                             <div class="result-item">
@@ -935,21 +1174,19 @@ async def dashboard():
                 statusBox.className = hasErrors ? 'status-box error' : 'status-box success';
                 statusBox.style.display = 'block';
 
-                // Clear staged files and reset
+                // Clear staged files and update hosted list
                 stagedFilesList = [];
                 fileInput.value = '';
                 renderStagedFiles();
                 loadHostedFiles();
-            } catch (err) {
-                let msg = err.message || 'Unknown network error';
-                if (msg.includes('Failed to fetch')) {
-                    msg = 'Network connection issue or file exceeds cloud upload limits. If uploading camera photos from phone, try converting 1 image at a time.';
-                }
-                showStatus('Error: ' + msg, 'error');
             } finally {
                 submitBtn.disabled = false;
                 spinner.style.display = 'none';
                 btnText.textContent = 'Convert & Host Files';
+                setTimeout(() => {
+                    progressWrapper.style.display = 'none';
+                    progressFill.style.width = '0%';
+                }, 3000);
             }
         });
 
