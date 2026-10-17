@@ -10,6 +10,7 @@ from PIL import Image
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
 # Setup directory paths relative to this script
 BASE_DIR = Path(__file__).resolve().parent
@@ -21,8 +22,16 @@ HOSTED_DIR = STORAGE_DIR / "hosted"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 HOSTED_DIR.mkdir(parents=True, exist_ok=True)
 
-IMAGE_FORMATS = {"png", "jpg", "jpeg", "webp", "bmp", "ico", "pdf"}
+IMAGE_FORMATS = {"png", "jpg", "jpeg", "webp", "bmp", "ico", "pdf", "heic", "heif"}
 DATA_FORMATS = {"csv", "json", "xlsx", "html", "md"}
+
+# Try importing pillow_heif for iPhone photo support
+try:
+    import pillow_heif
+    pillow_heif.register_heif_opener()
+    HAS_HEIF = True
+except ImportError:
+    HAS_HEIF = False
 
 # Try importing pypdfium2 for high-fidelity PDF-to-image reading
 try:
@@ -45,6 +54,15 @@ app = FastAPI(
     description="Convert images, spreadsheets, and structured data, and host them with permanent shareable URLs.",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+# Enable CORS for mobile browsers and PWA web apps
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Mount /files to serve static hosted content
@@ -116,6 +134,11 @@ def convert_image(input_path: str, source_ext: str, target_ext: str, output_path
         img = Image.open(input_path)
 
     try:
+        # Prevent 512MB RAM OOM crash: downscale ultra-high-res camera photos (>3840px)
+        max_dim = 3840
+        if img.width > max_dim or img.height > max_dim:
+            img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+
         if target_ext in ("jpg", "jpeg"):
             if img.mode in ("RGBA", "LA", "P", "CMYK"):
                 img = img.convert("RGB")
@@ -712,9 +735,9 @@ async def dashboard():
                     </svg>
                     <div class="dropzone-text">Drag & drop files here, or click to browse</div>
                     <div class="dropzone-sub">
-                        Images: PNG, JPG, JPEG, WEBP, BMP, ICO, PDF &bull; Data: CSV, JSON, XLSX, HTML, MD
+                        Images: PNG, JPG, JPEG, WEBP, HEIC, BMP, ICO, PDF &bull; Data: CSV, JSON, XLSX, HTML, MD
                     </div>
-                    <input type="file" id="fileInput" multiple required>
+                    <input type="file" id="fileInput" multiple accept="image/*,.heic,.heif,.csv,.json,.xlsx,.html,.md,.pdf">
                 </div>
 
                 <!-- Staged files display -->
@@ -875,11 +898,18 @@ async def dashboard():
                     method: 'POST',
                     body: formData
                 });
-                const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.detail || 'Conversion failed on server.');
+                    const errText = await response.text();
+                    let errMsg = 'Server error ' + response.status;
+                    try {
+                        const parsed = JSON.parse(errText);
+                        if (parsed.detail) errMsg = parsed.detail;
+                    } catch (_) {}
+                    throw new Error(errMsg);
                 }
+
+                const data = await response.json();
 
                 // Render result summary
                 let hasErrors = false;
@@ -911,7 +941,11 @@ async def dashboard():
                 renderStagedFiles();
                 loadHostedFiles();
             } catch (err) {
-                showStatus('Error: ' + err.message, 'error');
+                let msg = err.message || 'Unknown network error';
+                if (msg.includes('Failed to fetch')) {
+                    msg = 'Network connection issue or file exceeds cloud upload limits. If uploading camera photos from phone, try converting 1 image at a time.';
+                }
+                showStatus('Error: ' + msg, 'error');
             } finally {
                 submitBtn.disabled = false;
                 spinner.style.display = 'none';
