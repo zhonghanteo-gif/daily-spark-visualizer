@@ -1,17 +1,38 @@
 import os
 import io
 import shutil
+import gc
 from pathlib import Path
 from datetime import datetime
 import urllib.parse
+import traceback
 from contextlib import asynccontextmanager
 
+from pydantic import BaseModel
 import pandas as pd
 from PIL import Image, ImageOps
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+
+CONVERSION_LOGS = []
+
+def log_event(status: str, msg: str, details: dict = None):
+    CONVERSION_LOGS.append({
+        "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "status": status,
+        "message": msg,
+        "details": details or {}
+    })
+    if len(CONVERSION_LOGS) > 60:
+        CONVERSION_LOGS.pop(0)
+
+class ClientLogPayload(BaseModel):
+    event: str = ""
+    filename: str = ""
+    status: str = ""
+    detail: str = ""
 
 # Setup directory paths relative to this script
 BASE_DIR = Path(__file__).resolve().parent
@@ -24,7 +45,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 HOSTED_DIR.mkdir(parents=True, exist_ok=True)
 
 IMAGE_FORMATS = {"png", "jpg", "jpeg", "webp", "bmp", "ico", "pdf", "heic", "heif"}
-DATA_FORMATS = {"csv", "json", "xlsx", "html", "md"}
+DATA_FORMATS = {"csv", "json", "xlsx", "html", "md", "txt"}
 
 # Try importing pillow_heif for iPhone photo support
 try:
@@ -95,6 +116,10 @@ def read_data_file(input_path: str, ext: str) -> pd.DataFrame:
                 engine="python",
             )
         raise ValueError("Could not parse table rows from the Markdown file.")
+    elif ext == "txt":
+        with open(input_path, "r", encoding="utf-8", errors="ignore") as f:
+            lines = [line.strip() for line in f if line.strip()]
+        return pd.DataFrame({"line": range(1, len(lines) + 1), "text": lines})
     else:
         raise ValueError(f"Reading from .{ext} is not supported.")
 
@@ -113,35 +138,45 @@ def write_data_file(df: pd.DataFrame, target_ext: str, output_path: str):
     elif target_ext == "md":
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(df.to_markdown(index=False))
+    elif target_ext == "txt":
+        with open(output_path, "w", encoding="utf-8") as f:
+            for _, row in df.iterrows():
+                f.write(str(row.values[0]) + "\n")
     else:
         raise ValueError(f"Writing to .{target_ext} is not supported.")
 
 
 def convert_image(input_path: str, source_ext: str, target_ext: str, output_path: str):
-    """Converts images between PNG, JPG, JPEG, WEBP, BMP, ICO, and PDF."""
+    """Converts images between PNG, JPG, JPEG, WEBP, BMP, ICO, and PDF with strict memory bounds."""
     source_ext = source_ext.lower().lstrip(".")
     target_ext = target_ext.lower().lstrip(".")
 
-    # If source is PDF, extract page as PIL Image
-    if source_ext == "pdf":
-        if not HAS_PDFIUM:
-            raise ValueError("PDF rendering requires pypdfium2.")
-        pdf = pdfium.PdfDocument(input_path)
-        if len(pdf) == 0:
-            raise ValueError("PDF file is empty.")
-        page = pdf[0]
-        img = page.render(scale=2).to_pil()
-    else:
-        img = Image.open(input_path)
-        try:
-            # Correct phone camera orientation from EXIF metadata
-            transposed = ImageOps.exif_transpose(img)
-            if transposed is not None:
-                img = transposed
-        except Exception:
-            pass
-
+    pdf_doc = None
+    page = None
+    bitmap = None
+    img = None
     try:
+        # If source is PDF, extract page 1 as PIL Image
+        if source_ext == "pdf":
+            if not HAS_PDFIUM:
+                raise ValueError("PDF rendering requires pypdfium2.")
+            pdf_doc = pdfium.PdfDocument(input_path)
+            if len(pdf_doc) == 0:
+                raise ValueError("PDF file is empty.")
+            page = pdf_doc[0]
+            # Use scale=1.0 (72-150 DPI) to prevent Linux OOM killer on 512MB RAM cloud container
+            bitmap = page.render(scale=1.0)
+            img = bitmap.to_pil()
+        else:
+            img = Image.open(input_path)
+            try:
+                # Correct phone camera orientation from EXIF metadata
+                transposed = ImageOps.exif_transpose(img)
+                if transposed is not None:
+                    img = transposed
+            except Exception:
+                pass
+
         # Prevent 512MB RAM OOM crash on cloud containers: downscale ultra-high-res camera photos (>2560px)
         max_dim = 2560
         if img.width > max_dim or img.height > max_dim:
@@ -176,11 +211,31 @@ def convert_image(input_path: str, source_ext: str, target_ext: str, output_path
         else:
             raise ValueError(f"Target format .{target_ext} is not a supported image format.")
     finally:
-        img.close()
+        if img is not None:
+            try:
+                img.close()
+            except Exception:
+                pass
+        if bitmap is not None:
+            try:
+                bitmap.close()
+            except Exception:
+                pass
+        if page is not None:
+            try:
+                page.close()
+            except Exception:
+                pass
+        if pdf_doc is not None:
+            try:
+                pdf_doc.close()
+            except Exception:
+                pass
+        gc.collect()
 
 
 def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
-    """Dispatches file conversion based on format categories."""
+    """Dispatches file conversion based on format categories with memory safety."""
     base_name = Path(orig_name).stem
     source_ext = Path(orig_name).suffix.lower().lstrip(".")
     target_ext = target_ext.lower().lstrip(".")
@@ -191,25 +246,54 @@ def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
     # 1. PDF Direct pass-through (preserves all pages)
     if source_ext == "pdf" and target_ext == "pdf":
         shutil.copyfile(input_path, output_path)
+        log_event("info", f"PDF direct pass-through hosted: {output_filename}")
         return output_filename
 
-    # 2. PDF to Notes/Text (Markdown, HTML, CSV, JSON extraction)
-    if source_ext == "pdf" and target_ext in ("md", "html", "csv", "json"):
+    # 2. PDF to Notes/Text (Markdown, Plain Text, HTML, CSV, JSON extraction)
+    if source_ext == "pdf" and target_ext in ("md", "txt", "html", "csv", "json"):
         if not HAS_PDFIUM:
             raise ValueError("PDF text extraction requires pypdfium2.")
-        pdf = pdfium.PdfDocument(input_path)
+        
+        pdf = None
         all_text = []
-        for page_idx, page in enumerate(pdf):
-            try:
-                textpage = page.get_textpage()
-                page_text = textpage.get_text_range().strip()
-                if page_text:
-                    all_text.append((page_idx + 1, page_text))
-            except Exception:
-                continue
+        try:
+            pdf = pdfium.PdfDocument(input_path)
+            num_pages = len(pdf)
+            for page_idx in range(num_pages):
+                page = None
+                textpage = None
+                try:
+                    page = pdf[page_idx]
+                    textpage = page.get_textpage()
+                    page_text = textpage.get_text_range().strip()
+                    if page_text:
+                        all_text.append((page_idx + 1, page_text))
+                except Exception:
+                    continue
+                finally:
+                    if textpage is not None:
+                        try:
+                            textpage.close()
+                        except Exception:
+                            pass
+                    if page is not None:
+                        try:
+                            page.close()
+                        except Exception:
+                            pass
+        finally:
+            if pdf is not None:
+                try:
+                    pdf.close()
+                except Exception:
+                    pass
+            gc.collect()
 
         if not all_text:
-            raise ValueError("No extractable text found in this PDF (it may contain scanned image pages).")
+            raise ValueError(
+                "No extractable text found in this PDF (it may contain scanned image pages). "
+                "Select 'PDF Document (.pdf)' to host it directly, or 'WebP/PNG' to convert as an image."
+            )
 
         if target_ext == "md":
             lines = [f"# {base_name}\n"]
@@ -217,6 +301,16 @@ def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
                 lines.append(f"\n## Page {p_num}\n\n{text}\n")
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(lines))
+            log_event("info", f"PDF converted to Markdown notes: {output_filename} ({len(all_text)} pages)")
+            return output_filename
+
+        elif target_ext == "txt":
+            lines = [f"{base_name}\n" + "=" * len(base_name)]
+            for p_num, text in all_text:
+                lines.append(f"\n--- Page {p_num} ---\n\n{text}\n")
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines))
+            log_event("info", f"PDF converted to Plain Text: {output_filename} ({len(all_text)} pages)")
             return output_filename
 
         elif target_ext == "html":
@@ -231,23 +325,27 @@ def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
             html_parts.append("</body></html>")
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(html_parts))
+            log_event("info", f"PDF converted to HTML notes: {output_filename} ({len(all_text)} pages)")
             return output_filename
 
         elif target_ext in ("csv", "json"):
             records = [{"page": p_num, "content": text} for p_num, text in all_text]
             df = pd.DataFrame(records)
             write_data_file(df, target_ext, output_path)
+            log_event("info", f"PDF converted to {target_ext.upper()}: {output_filename}")
             return output_filename
 
     # 3. Image Conversions
     if source_ext in IMAGE_FORMATS and target_ext in IMAGE_FORMATS:
         convert_image(input_path, source_ext, target_ext, output_path)
+        log_event("info", f"Image converted: {orig_name} -> {output_filename}")
         return output_filename
 
     # 4. Data / Spreadsheet Conversions
     if source_ext in DATA_FORMATS and target_ext in DATA_FORMATS:
         df = read_data_file(input_path, source_ext)
         write_data_file(df, target_ext, output_path)
+        log_event("info", f"Data file converted: {orig_name} -> {output_filename}")
         return output_filename
 
     raise ValueError(
@@ -308,7 +406,7 @@ async def upload_chunk(
     target_format: str = Form(...),
     chunk: UploadFile = File(...),
 ):
-    """Handles chunked file uploads (2MB chunks) to prevent mobile network timeouts."""
+    """Handles chunked file uploads (768KB chunks) to prevent mobile network timeouts."""
     safe_file_id = "".join(c for c in file_id if c.isalnum() or c in ("-", "_"))
     safe_filename = Path(filename).name
     temp_dir = UPLOAD_DIR / f"temp_{safe_file_id}"
@@ -325,6 +423,7 @@ async def upload_chunk(
             for i in range(total_chunks):
                 c_file = temp_dir / f"chunk_{i:05d}.part"
                 if not c_file.exists():
+                    log_event("error", f"Missing chunk {i} for {safe_filename}")
                     raise HTTPException(status_code=400, detail=f"Missing chunk {i}")
                 with open(c_file, "rb") as infile:
                     shutil.copyfileobj(infile, outfile)
@@ -333,10 +432,12 @@ async def upload_chunk(
         shutil.rmtree(temp_dir, ignore_errors=True)
 
         try:
+            log_event("info", f"Assembled file ready for conversion: {safe_filename} -> {target_format}")
             out_name = process_conversion(str(final_path), safe_filename, target_format)
             out_file = HOSTED_DIR / out_name
             size_bytes = out_file.stat().st_size if out_file.exists() else 0
             safe_url = f"/files/{urllib.parse.quote(out_name)}"
+            log_event("info", f"Successfully converted and hosted: {out_name} ({size_bytes} bytes)")
             return {
                 "status": "complete",
                 "results": [{
@@ -348,6 +449,8 @@ async def upload_chunk(
                 }]
             }
         except Exception as e:
+            tb = traceback.format_exc()
+            log_event("error", f"Conversion exception for {safe_filename}: {str(e)}", {"trace": tb})
             return {
                 "status": "complete",
                 "results": [{
@@ -361,6 +464,22 @@ async def upload_chunk(
         "status": "chunk_received",
         "chunk_index": chunk_index,
         "total_chunks": total_chunks,
+    }
+
+
+@app.post("/api/client-log")
+async def client_log(payload: ClientLogPayload):
+    log_event("client", f"[{payload.event}] {payload.filename}: {payload.detail}", {"status": payload.status})
+    return {"status": "ok"}
+
+
+@app.get("/api/diagnostics")
+async def get_diagnostics():
+    return {
+        "status": "healthy",
+        "has_pdfium": HAS_PDFIUM,
+        "has_heif": HAS_HEIF,
+        "logs": CONVERSION_LOGS[-30:],
     }
 
 
@@ -920,9 +1039,9 @@ async def dashboard():
                     </svg>
                     <div class="dropzone-text">Drag & drop files here, or click to browse</div>
                     <div class="dropzone-sub">
-                        Images: PNG, JPG, JPEG, WEBP, HEIC, BMP, ICO, PDF &bull; Data: CSV, JSON, XLSX, HTML, MD
+                        Images: PNG, JPG, JPEG, WEBP, HEIC, BMP, ICO &bull; Docs & Notes: PDF, MD, TXT, HTML &bull; Data: CSV, JSON, XLSX
                     </div>
-                    <input type="file" id="fileInput" multiple accept="image/*,.heic,.heif,.csv,.json,.xlsx,.html,.md,.pdf">
+                    <input type="file" id="fileInput" multiple accept="image/*,.heic,.heif,.csv,.json,.xlsx,.html,.md,.txt,.pdf">
                 </div>
 
                 <!-- Staged files display -->
@@ -933,11 +1052,16 @@ async def dashboard():
                     <div>
                         <label for="targetFormat">Select Target Format</label>
                         <select id="targetFormat" name="target_format" required>
-                            <optgroup label="Images & Documents">
+                            <optgroup label="Documents & Notes">
+                                <option value="pdf">Keep / Host as PDF (.pdf)</option>
+                                <option value="md">Extract to Markdown Notes (.md)</option>
+                                <option value="txt">Extract to Plain Text (.txt)</option>
+                                <option value="html">Extract to HTML Notes (.html)</option>
+                            </optgroup>
+                            <optgroup label="Images">
                                 <option value="webp">WebP Image (.webp)</option>
                                 <option value="png">PNG Image (.png)</option>
                                 <option value="jpg">JPEG Image (.jpg)</option>
-                                <option value="pdf">PDF Document (.pdf)</option>
                                 <option value="ico">Windows Icon (.ico)</option>
                                 <option value="bmp">Bitmap Image (.bmp)</option>
                             </optgroup>
@@ -945,8 +1069,6 @@ async def dashboard():
                                 <option value="csv">CSV (.csv)</option>
                                 <option value="json">JSON (.json)</option>
                                 <option value="xlsx">Excel Spreadsheet (.xlsx)</option>
-                                <option value="html">HTML Table (.html)</option>
-                                <option value="md">Markdown Table (.md)</option>
                             </optgroup>
                         </select>
                     </div>
@@ -1052,6 +1174,13 @@ async def dashboard():
                     stagedFilesList.push(f);
                 }
             }
+            const hasPdf = stagedFilesList.some(f => f.name.toLowerCase().endsWith('.pdf'));
+            const isImg = stagedFilesList.some(f => /\.(jpe?g|png|webp|heic|heif|bmp)$/i.test(f.name));
+            if (hasPdf && !isImg) {
+                targetFormat.value = 'pdf';
+            } else if (isImg && !hasPdf) {
+                targetFormat.value = 'webp';
+            }
             renderStagedFiles();
         }
 
@@ -1131,7 +1260,18 @@ async def dashboard():
             });
         }
 
-        // Single file upload via XMLHttpRequest with real-time progress (< 3MB)
+        // Global store for failed files so users can tap "Retry" on mobile
+        let lastFailedBatch = [];
+
+        window.retrySingleFailed = async function(idx) {
+            const item = lastFailedBatch[idx];
+            if (!item || !item.file) return;
+            stagedFilesList = [item.file];
+            renderStagedFiles();
+            uploadForm.requestSubmit();
+        };
+
+        // Single file upload via XMLHttpRequest with real-time progress (< 512KB)
         function uploadSingleFile(file, targetExt, onProgress) {
             return new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
@@ -1167,18 +1307,18 @@ async def dashboard():
                     }
                 };
 
-                xhr.onerror = () => reject(new Error("NETWORK_ERROR"));
-                xhr.ontimeout = () => reject(new Error("TIMEOUT"));
-                xhr.timeout = 120000;
+                xhr.onerror = () => reject(new Error("NETWORK_DISCONNECTED"));
+                xhr.ontimeout = () => reject(new Error("REQUEST_TIMEOUT"));
+                xhr.timeout = 180000;
 
                 xhr.open('POST', '/api/convert');
                 xhr.send(formData);
             });
         }
 
-        // Chunked file upload (2MB chunks) with auto-retry per chunk for large files/PDFs
+        // Chunked file upload (768KB chunks) with auto-retry per chunk for resilient mobile uploads
         async function uploadFileChunked(file, targetExt, onProgress) {
-            const CHUNK_SIZE = 2 * 1024 * 1024; // 2 MB per chunk
+            const CHUNK_SIZE = 768 * 1024; // 768 KB per chunk (optimal for mobile packet windows)
             const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
             const fileId = Date.now() + '_' + Math.random().toString(36).substring(2, 8);
 
@@ -1186,12 +1326,13 @@ async def dashboard():
                 const start = chunkIdx * CHUNK_SIZE;
                 const end = Math.min(file.size, start + CHUNK_SIZE);
                 const chunkBlob = file.slice(start, end);
+                const isFinal = (chunkIdx + 1 === totalChunks);
 
                 let attempt = 0;
                 let chunkSuccess = false;
                 let lastError = null;
 
-                while (attempt < 3 && !chunkSuccess) {
+                while (attempt < 4 && !chunkSuccess) {
                     attempt++;
                     try {
                         const res = await uploadSingleChunk(
@@ -1201,6 +1342,7 @@ async def dashboard():
                             file.name,
                             targetExt,
                             chunkBlob,
+                            isFinal,
                             (loaded, _) => {
                                 const bytesSentBefore = chunkIdx * CHUNK_SIZE;
                                 const currentTotalSent = bytesSentBefore + loaded;
@@ -1210,24 +1352,38 @@ async def dashboard():
                             }
                         );
                         chunkSuccess = true;
-                        if (chunkIdx + 1 === totalChunks) {
+                        if (isFinal) {
                             return res;
                         }
                     } catch (err) {
                         lastError = err;
-                        if (attempt < 3) {
-                            await new Promise(r => setTimeout(r, 2000));
+                        // Fire background beacon
+                        try {
+                            fetch('/api/client-log', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    event: 'chunk_fail',
+                                    filename: file.name,
+                                    status: `Chunk ${chunkIdx + 1}/${totalChunks} attempt ${attempt}/4`,
+                                    detail: err.message || String(err)
+                                })
+                            }).catch(() => {});
+                        } catch (_) {}
+
+                        if (attempt < 4) {
+                            await new Promise(r => setTimeout(r, 1500 * attempt));
                         }
                     }
                 }
 
                 if (!chunkSuccess) {
-                    throw lastError || new Error(`Failed to upload chunk ${chunkIdx + 1}`);
+                    throw new Error(`Upload paused at chunk ${chunkIdx + 1}/${totalChunks}: ${lastError ? lastError.message : 'Connection dropped'}`);
                 }
             }
         }
 
-        function uploadSingleChunk(fileId, chunkIdx, totalChunks, filename, targetExt, chunkBlob, onProgress) {
+        function uploadSingleChunk(fileId, chunkIdx, totalChunks, filename, targetExt, chunkBlob, isFinal, onProgress) {
             return new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
                 const formData = new FormData();
@@ -1254,6 +1410,8 @@ async def dashboard():
                         }
                     } else if (xhr.status === 502 || xhr.status === 503) {
                         reject(new Error("SERVER_WAKING_UP"));
+                    } else if (xhr.status === 413) {
+                        reject(new Error("File payload exceeds server limits"));
                     } else {
                         let errMsg = "Server error " + xhr.status;
                         try {
@@ -1264,9 +1422,10 @@ async def dashboard():
                     }
                 };
 
-                xhr.onerror = () => reject(new Error("NETWORK_ERROR"));
-                xhr.ontimeout = () => reject(new Error("TIMEOUT"));
-                xhr.timeout = 75000; // 75s per 2MB chunk
+                xhr.onerror = () => reject(new Error("Cellular connection interrupted"));
+                xhr.ontimeout = () => reject(new Error("Upload request timed out"));
+                // Allow up to 180s on the final chunk since conversion executes then
+                xhr.timeout = isFinal ? 180000 : 50000;
 
                 xhr.open('POST', '/api/upload-chunk');
                 xhr.send(formData);
@@ -1301,20 +1460,21 @@ async def dashboard():
             } catch (_) {}
 
             const aggregatedResults = [];
+            lastFailedBatch = [];
 
             try {
                 for (let i = 0; i < total; i++) {
                     const originalFile = filesToProcess[i];
                     let fileToUpload = originalFile;
 
-                    // Step 1: Client optimization if enabled for images
+                    // Step 1: Client optimization if enabled for photos
                     if (optImages.checked) {
                         progressStatus.textContent = `[${i + 1}/${total}] Checking optimization: ${originalFile.name}...`;
                         fileToUpload = await optimizeImageForUpload(originalFile);
                     }
 
-                    // Step 2: Use Chunked upload if file is larger than 3 MB
-                    const isChunked = fileToUpload.size > 3 * 1024 * 1024;
+                    // Step 2: Chunk any file larger than 512 KB to avoid mobile connection drops
+                    const isChunked = fileToUpload.size > 512 * 1024;
                     let attempt = 0;
                     let success = false;
                     let lastError = null;
@@ -1360,11 +1520,11 @@ async def dashboard():
                         } catch (err) {
                             lastError = err;
                             if (err.message === "SERVER_WAKING_UP" && attempt < 3) {
-                                progressStatus.textContent = `Cloud server is spinning up from sleep. Retrying in 6s (Attempt ${attempt}/2)...`;
+                                progressStatus.textContent = `Cloud server is spinning up from sleep. Retrying in 6s (Attempt ${attempt}/3)...`;
                                 await new Promise(r => setTimeout(r, 6000));
-                            } else if (err.message === "NETWORK_ERROR" && attempt < 2) {
-                                progressStatus.textContent = `Connection blip. Retrying in 3s...`;
-                                await new Promise(r => setTimeout(r, 3000));
+                            } else if ((err.message.includes("Cellular") || err.message === "NETWORK_DISCONNECTED") && attempt < 3) {
+                                progressStatus.textContent = `Connection blip. Retrying in 2s (Attempt ${attempt}/3)...`;
+                                await new Promise(r => setTimeout(r, 2000));
                             } else {
                                 break;
                             }
@@ -1372,17 +1532,36 @@ async def dashboard():
                     }
 
                     if (!success) {
-                        let msg = lastError ? lastError.message : "Unknown error";
-                        if (msg === "NETWORK_ERROR" || msg === "TIMEOUT") {
-                            msg = "Connection timeout or interrupted over mobile data. Try connecting to Wi-Fi.";
+                        let msg = lastError ? lastError.message : "Upload interrupted";
+                        if (msg === "NETWORK_DISCONNECTED" || msg === "Cellular connection interrupted") {
+                            msg = "Connection interrupted over mobile data.";
+                        } else if (msg === "REQUEST_TIMEOUT") {
+                            msg = "Request timed out over mobile data.";
                         } else if (msg === "SERVER_WAKING_UP") {
-                            msg = "Cloud server was spinning up. Please try again now.";
+                            msg = "Cloud server was spinning up. Tap Retry to process now.";
                         }
-                        aggregatedResults.push({
+                        
+                        const failEntry = {
                             original: originalFile.name,
                             error: msg,
-                            status: "error"
-                        });
+                            status: "error",
+                            file: originalFile
+                        };
+                        aggregatedResults.push(failEntry);
+                        lastFailedBatch.push(failEntry);
+
+                        try {
+                            fetch('/api/client-log', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    event: 'upload_failed',
+                                    filename: originalFile.name,
+                                    status: 'final_failure',
+                                    detail: msg
+                                })
+                            }).catch(() => {});
+                        } catch (_) {}
                     }
                 }
 
@@ -1392,6 +1571,7 @@ async def dashboard():
                 // Render Results
                 let hasErrors = false;
                 let html = '<div style="font-weight:600; margin-bottom:8px;">Conversion Results:</div>';
+                let failIdx = 0;
                 aggregatedResults.forEach(res => {
                     if (res.status === 'ok') {
                         html += `
@@ -1401,9 +1581,11 @@ async def dashboard():
                         `;
                     } else {
                         hasErrors = true;
+                        const thisIdx = failIdx++;
                         html += `
-                            <div class="result-item" style="color:#f87171;">
+                            <div class="result-item" style="color:#f87171; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                                 <span>&#10007; <strong>${res.original}</strong>: ${res.error}</span>
+                                <button type="button" onclick="retrySingleFailed(${thisIdx})" style="background:#2563eb; color:#fff; border:none; padding:4px 12px; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:600; white-space:nowrap;">🔄 Retry</button>
                             </div>
                         `;
                     }
