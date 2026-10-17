@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager
 from pydantic import BaseModel
 import pandas as pd
 from PIL import Image, ImageOps
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,6 +33,7 @@ class ClientLogPayload(BaseModel):
     filename: str = ""
     status: str = ""
     detail: str = ""
+    user_agent: str = ""
 
 # Setup directory paths relative to this script
 BASE_DIR = Path(__file__).resolve().parent
@@ -74,7 +75,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Universal File Format Converter & File Host",
     description="Convert images, spreadsheets, and structured data, and host them with permanent shareable URLs.",
-    version="1.0.0",
+    version="1.3.0",
     lifespan=lifespan,
 )
 
@@ -468,8 +469,12 @@ async def upload_chunk(
 
 
 @app.post("/api/client-log")
-async def client_log(payload: ClientLogPayload):
-    log_event("client", f"[{payload.event}] {payload.filename}: {payload.detail}", {"status": payload.status})
+async def client_log(payload: ClientLogPayload, request: Request):
+    ua = payload.user_agent or request.headers.get("user-agent", "")
+    details = {"status": payload.status}
+    if ua:
+        details["user_agent"] = ua
+    log_event("client", f"[{payload.event}] {payload.filename}: {payload.detail}", details)
     return {"status": "ok"}
 
 
@@ -477,6 +482,8 @@ async def client_log(payload: ClientLogPayload):
 async def get_diagnostics():
     return {
         "status": "healthy",
+        "version": "1.3.0",
+        "mobile_shield": True,
         "has_pdfium": HAS_PDFIUM,
         "has_heif": HAS_HEIF,
         "logs": CONVERSION_LOGS[-30:],
@@ -503,9 +510,7 @@ async def list_hosted_files():
     return file_list
 
 
-@app.get("/", response_class=HTMLResponse)
-async def dashboard():
-    return r"""<!DOCTYPE html>
+HTML_DASHBOARD = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1018,7 +1023,10 @@ async def dashboard():
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <div class="header-badge">⚡ Instant Conversion & Permanent Hosting</div>
+            <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+                <div class="header-badge" style="margin-bottom:0;">⚡ Instant Conversion & Permanent Hosting</div>
+                <div class="header-badge" style="margin-bottom:0; background:rgba(16, 185, 129, 0.15); color:#34d399; border-color:rgba(16, 185, 129, 0.35);">v1.3.0 • Mobile Shield Active</div>
+            </div>
             <h1>Universal File Converter</h1>
             <p>Convert images, spreadsheets, and markdown tables. Hosted instantly at <code>/files</code>.</p>
         </div>
@@ -1171,7 +1179,21 @@ async def dashboard():
         function addFiles(newFiles) {
             for (const f of newFiles) {
                 if (!stagedFilesList.some(item => item.name === f.name && item.size === f.size)) {
-                    stagedFilesList.push(f);
+                    let standaloneFile = f;
+                    try {
+                        const blobSlice = f.slice(0, f.size, f.type);
+                        standaloneFile = new File([blobSlice], f.name, { type: f.type, lastModified: f.lastModified });
+                    } catch (_) {
+                        try {
+                            const blobSlice = f.slice(0, f.size);
+                            blobSlice.name = f.name;
+                            blobSlice.lastModified = f.lastModified;
+                            standaloneFile = blobSlice;
+                        } catch (e) {
+                            standaloneFile = f;
+                        }
+                    }
+                    stagedFilesList.push(standaloneFile);
                 }
             }
             const hasPdf = stagedFilesList.some(f => f.name.toLowerCase().endsWith('.pdf'));
@@ -1319,7 +1341,7 @@ async def dashboard():
         // Chunked file upload (768KB chunks) with auto-retry per chunk for resilient mobile uploads
         async function uploadFileChunked(file, targetExt, onProgress) {
             const CHUNK_SIZE = 768 * 1024; // 768 KB per chunk (optimal for mobile packet windows)
-            const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+            const totalChunks = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
             const fileId = Date.now() + '_' + Math.random().toString(36).substring(2, 8);
 
             for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
@@ -1366,7 +1388,8 @@ async def dashboard():
                                     event: 'chunk_fail',
                                     filename: file.name,
                                     status: `Chunk ${chunkIdx + 1}/${totalChunks} attempt ${attempt}/4`,
-                                    detail: err.message || String(err)
+                                    detail: err.message || String(err),
+                                    user_agent: (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : ''
                                 })
                             }).catch(() => {});
                         } catch (_) {}
@@ -1466,15 +1489,28 @@ async def dashboard():
                 for (let i = 0; i < total; i++) {
                     const originalFile = filesToProcess[i];
                     let fileToUpload = originalFile;
+                    try {
+                        const blobSlice = originalFile.slice(0, originalFile.size, originalFile.type);
+                        fileToUpload = new File([blobSlice], originalFile.name, { type: originalFile.type, lastModified: originalFile.lastModified });
+                    } catch (_) {
+                        try {
+                            const blobSlice = originalFile.slice(0, originalFile.size);
+                            blobSlice.name = originalFile.name;
+                            blobSlice.lastModified = originalFile.lastModified;
+                            fileToUpload = blobSlice;
+                        } catch (e) {
+                            fileToUpload = originalFile;
+                        }
+                    }
 
                     // Step 1: Client optimization if enabled for photos
                     if (optImages.checked) {
                         progressStatus.textContent = `[${i + 1}/${total}] Checking optimization: ${originalFile.name}...`;
-                        fileToUpload = await optimizeImageForUpload(originalFile);
+                        fileToUpload = await optimizeImageForUpload(fileToUpload);
                     }
 
-                    // Step 2: Chunk any file larger than 512 KB to avoid mobile connection drops
-                    const isChunked = fileToUpload.size > 512 * 1024;
+                    // Step 2: Always use chunked pipeline with retry loops & assembly verification
+                    const isChunked = true;
                     let attempt = 0;
                     let success = false;
                     let lastError = null;
@@ -1492,9 +1528,10 @@ async def dashboard():
                                         const filePct = totalBytes > 0 ? loaded / totalBytes : 0;
                                         const overallPct = Math.round(((i + filePct) / total) * 100);
                                         progressFill.style.width = overallPct + '%';
-                                        const loadedMb = (loaded / (1024 * 1024)).toFixed(1);
-                                        const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
-                                        progressStatus.textContent = `[${i + 1}/${total}] Uploading ${fileToUpload.name} — Chunk ${chunkNum}/${totalChunks} (${loadedMb}MB / ${totalMb}MB)...`;
+                                        const sizeText = totalBytes >= 1024 * 1024
+                                            ? `${(loaded / (1024 * 1024)).toFixed(1)}MB / ${(totalBytes / (1024 * 1024)).toFixed(1)}MB`
+                                            : `${Math.round(loaded / 1024)}KB / ${Math.round(totalBytes / 1024)}KB`;
+                                        progressStatus.textContent = `[${i + 1}/${total}] Uploading ${fileToUpload.name} — Chunk ${chunkNum}/${totalChunks} (${sizeText})...`;
                                     }
                                 );
                             } else {
@@ -1514,6 +1551,12 @@ async def dashboard():
 
                             progressStatus.textContent = `[${i + 1}/${total}] Finished converting ${fileToUpload.name}!`;
                             if (responseData.results && responseData.results.length > 0) {
+                                for (const r of responseData.results) {
+                                    r.file = fileToUpload;
+                                    if (r.status !== 'ok') {
+                                        lastFailedBatch.push(r);
+                                    }
+                                }
                                 aggregatedResults.push(...responseData.results);
                             }
                             success = true;
@@ -1545,7 +1588,7 @@ async def dashboard():
                             original: originalFile.name,
                             error: msg,
                             status: "error",
-                            file: originalFile
+                            file: fileToUpload
                         };
                         aggregatedResults.push(failEntry);
                         lastFailedBatch.push(failEntry);
@@ -1558,7 +1601,8 @@ async def dashboard():
                                     event: 'upload_failed',
                                     filename: originalFile.name,
                                     status: 'final_failure',
-                                    detail: msg
+                                    detail: msg,
+                                    user_agent: (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : ''
                                 })
                             }).catch(() => {});
                         } catch (_) {}
@@ -1595,10 +1639,12 @@ async def dashboard():
                 statusBox.className = hasErrors ? 'status-box error' : 'status-box success';
                 statusBox.style.display = 'block';
 
-                // Clear staged files and update hosted list
-                stagedFilesList = [];
-                fileInput.value = '';
-                renderStagedFiles();
+                // Clear staged files only if all files succeeded without errors
+                if (!hasErrors) {
+                    stagedFilesList = [];
+                    fileInput.value = '';
+                    renderStagedFiles();
+                }
                 loadHostedFiles();
             } finally {
                 if (wakeLock) {
@@ -1694,6 +1740,18 @@ async def dashboard():
 </body>
 </html>
 """
+
+
+@app.get("/", response_class=HTMLResponse)
+async def dashboard():
+    return HTMLResponse(
+        content=HTML_DASHBOARD,
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
 
 
 if __name__ == "__main__":
