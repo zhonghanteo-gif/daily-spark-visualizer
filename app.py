@@ -493,8 +493,9 @@ async def client_log(payload: ClientLogPayload, request: Request):
 async def get_diagnostics():
     return {
         "status": "healthy",
-        "version": "1.3.0",
+        "version": "1.4.0",
         "mobile_shield": True,
+        "photo_gallery": True,
         "has_pdfium": HAS_PDFIUM,
         "has_heif": HAS_HEIF,
         "logs": CONVERSION_LOGS[-30:],
