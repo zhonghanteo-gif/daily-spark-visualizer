@@ -1022,11 +1022,420 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             border-top-color: white;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            display: none;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        .file-chip-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 4px;
+            object-fit: cover;
+            border: 1px solid #334155;
+            flex-shrink: 0;
+        }
+
+        /* Direct Mobile Gallery & Action Pickers */
+        .picker-buttons-row {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        @media (max-width: 580px) {
+            .picker-buttons-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+        }
+
+        .btn-picker {
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+
+        .btn-picker.btn-gallery {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            color: white;
+            border: 1px solid #3b82f6;
+        }
+
+        .btn-picker.btn-gallery:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-picker.btn-camera {
+            background: #111827;
+            color: #f3f4f6;
+            border: 1px solid #374151;
+        }
+
+        .btn-picker.btn-camera:hover {
+            background: #1f2937;
+            border-color: #4b5563;
+            transform: translateY(-1px);
+        }
+
+        .btn-picker.btn-docs {
+            background: #111827;
+            color: #f3f4f6;
+            border: 1px solid #374151;
+        }
+
+        .btn-picker.btn-docs:hover {
+            background: #1f2937;
+            border-color: #4b5563;
+            transform: translateY(-1px);
+        }
+
+        /* Filter bar & view toggle */
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .view-toggle {
+            display: inline-flex;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 2px;
+        }
+
+        .view-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s;
+        }
+
+        .view-btn.active {
+            background: #1e293b;
+            color: #38bdf8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .filter-pill {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            color: var(--text-dim);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+
+        .filter-pill:hover {
+            color: var(--text-main);
+            border-color: #334155;
+        }
+
+        .filter-pill.active {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: #3b82f6;
+            color: #60a5fa;
+            font-weight: 600;
+        }
+
+        /* Visual Gallery Grid */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        @media (max-width: 540px) {
+            .gallery-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+        }
+
+        .gallery-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s ease;
+        }
+
+        .gallery-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+        }
+
+        .gallery-preview-wrapper {
+            position: relative;
+            width: 100%;
+            height: 140px;
+            background: #090d16;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.25s ease;
+        }
+
+        .gallery-card:hover .gallery-img {
+            transform: scale(1.05);
+        }
+
+        .gallery-doc-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #111827 0%, #0b0f19 100%);
+        }
+
+        .gallery-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(4px);
+            color: #38bdf8;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .gallery-zoom-icon {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(15, 23, 42, 0.75);
+            color: white;
+            padding: 4px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .gallery-preview-wrapper:hover .gallery-zoom-icon {
+            opacity: 1;
+        }
+
+        .gallery-body {
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .gallery-title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-main);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .gallery-meta {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+        }
+
+        .gallery-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: auto;
+        }
+
+        .gallery-btn {
+            flex: 1;
+            padding: 5px 8px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: var(--text-muted);
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+
+        .gallery-btn:hover {
+            color: white;
+            background: #334155;
+        }
+
+        .gallery-btn.download {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.35);
+            color: #60a5fa;
+        }
+
+        .gallery-btn.download:hover {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        /* Lightbox Modal */
+        .lightbox-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .lightbox-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+        }
+
+        .lightbox-dialog {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            background: #111827;
+            border: 1px solid #1f293d;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            z-index: 10;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            border: none;
+            color: white;
+            font-size: 24px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            transition: background 0.2s;
+        }
+
+        .lightbox-close:hover {
+            background: rgba(239, 68, 68, 0.8);
+        }
+
+        .lightbox-img-wrapper {
+            max-width: 85vw;
+            max-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            overflow: hidden;
+        }
+
+        .lightbox-img-wrapper img {
+            max-width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+        }
+
+        .lightbox-info {
+            padding: 14px 18px;
+            background: #111827;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            border-top: 1px solid #1f293d;
+        }
+
+        .lightbox-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        .lightbox-meta {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .lightbox-actions {
+            display: flex;
+            gap: 8px;
         }
     </style>
 </head>
@@ -1036,7 +1445,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         <div class="header">
             <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
                 <div class="header-badge" style="margin-bottom:0;">⚡ Instant Conversion & Permanent Hosting</div>
-                <div class="header-badge" style="margin-bottom:0; background:rgba(16, 185, 129, 0.15); color:#34d399; border-color:rgba(16, 185, 129, 0.35);">v1.3.0 • Mobile Shield Active</div>
+                <div class="header-badge" style="margin-bottom:0; background:rgba(16, 185, 129, 0.15); color:#34d399; border-color:rgba(16, 185, 129, 0.35);">v1.4.0 • Mobile Shield & Photo Gallery</div>
             </div>
             <h1>Universal File Converter</h1>
             <p>Convert images, spreadsheets, and markdown tables. Hosted instantly at <code>/files</code>.</p>
@@ -1049,6 +1458,37 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             </div>
 
             <form id="uploadForm">
+                <!-- Direct Mobile Gallery & Action Pickers -->
+                <div class="picker-buttons-row">
+                    <button type="button" class="btn-picker btn-gallery" id="btnGallery">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <span>🖼️ Photo Gallery</span>
+                    </button>
+                    <button type="button" class="btn-picker btn-camera" id="btnCamera">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                        <span>📸 Take Photo</span>
+                    </button>
+                    <button type="button" class="btn-picker btn-docs" id="btnDocs">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        <span>📁 Browse Files</span>
+                    </button>
+                </div>
+                <input type="file" id="galleryInput" multiple accept="image/*,.heic,.heif" style="display:none;">
+                <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;">
+                <input type="file" id="docInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.json,.html" style="display:none;">
+
                 <!-- Drag and Drop Box -->
                 <div class="dropzone" id="dropZone">
                     <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1121,13 +1561,33 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                     <span>Hosted Files</span>
                     <span class="badge-count" id="filesCount">0 files</span>
                 </div>
-                <button class="btn-refresh" id="refreshBtn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="23 4 23 10 17 10"></polyline>
-                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                    </svg>
-                    Refresh
-                </button>
+                <div class="header-controls">
+                    <div class="view-toggle">
+                        <button type="button" class="view-btn active" id="btnViewGallery" title="Visual Photo Gallery Grid">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                            <span>Gallery</span>
+                        </button>
+                        <button type="button" class="view-btn" id="btnViewList" title="Detailed List View">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                            <span>List</span>
+                        </button>
+                    </div>
+                    <button class="btn-refresh" id="refreshBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Category Filter Tabs -->
+            <div class="filter-bar">
+                <button type="button" class="filter-pill active" data-filter="all">All (<span id="countAll">0</span>)</button>
+                <button type="button" class="filter-pill" data-filter="images">🖼️ Photos (<span id="countImages">0</span>)</button>
+                <button type="button" class="filter-pill" data-filter="docs">📄 Docs & Notes (<span id="countDocs">0</span>)</button>
+                <button type="button" class="filter-pill" data-filter="data">📊 Spreadsheets (<span id="countData">0</span>)</button>
             </div>
 
             <div class="files-list" id="filesList">
@@ -1136,9 +1596,59 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         </div>
     </div>
 
+    <!-- Lightbox Modal for Fullscreen Photo & File Viewing -->
+    <div class="lightbox-modal" id="lightboxModal">
+        <div class="lightbox-backdrop" id="lightboxBackdrop"></div>
+        <div class="lightbox-dialog">
+            <button type="button" class="lightbox-close" id="lightboxClose" title="Close preview">&times;</button>
+            <div class="lightbox-img-wrapper">
+                <img id="lightboxImg" src="" alt="Preview">
+            </div>
+            <div class="lightbox-info">
+                <div>
+                    <div class="lightbox-title" id="lightboxTitle">photo.jpg</div>
+                    <div class="lightbox-meta" id="lightboxMeta">1.2 MB &bull; 2026-10-18</div>
+                </div>
+                <div class="lightbox-actions">
+                    <button type="button" class="btn-action" id="lightboxCopyBtn">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        <span>Copy Link</span>
+                    </button>
+                    <a href="#" id="lightboxDownloadBtn" download class="btn-action download">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span>Download</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
+        const btnGallery = document.getElementById('btnGallery');
+        const galleryInput = document.getElementById('galleryInput');
+        const btnCamera = document.getElementById('btnCamera');
+        const cameraInput = document.getElementById('cameraInput');
+        const btnDocs = document.getElementById('btnDocs');
+        const docInput = document.getElementById('docInput');
+        const btnViewGallery = document.getElementById('btnViewGallery');
+        const btnViewList = document.getElementById('btnViewList');
+        const countAll = document.getElementById('countAll');
+        const countImages = document.getElementById('countImages');
+        const countDocs = document.getElementById('countDocs');
+        const countData = document.getElementById('countData');
+        const filterPills = document.querySelectorAll('.filter-pill');
+
+        const lightboxModal = document.getElementById('lightboxModal');
+        const lightboxBackdrop = document.getElementById('lightboxBackdrop');
+        const lightboxClose = document.getElementById('lightboxClose');
+        const lightboxImg = document.getElementById('lightboxImg');
+        const lightboxTitle = document.getElementById('lightboxTitle');
+        const lightboxMeta = document.getElementById('lightboxMeta');
+        const lightboxCopyBtn = document.getElementById('lightboxCopyBtn');
+        const lightboxDownloadBtn = document.getElementById('lightboxDownloadBtn');
+
         const stagedContainer = document.getElementById('stagedFiles');
         const uploadForm = document.getElementById('uploadForm');
         const targetFormat = document.getElementById('targetFormat');
@@ -1155,6 +1665,30 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         const refreshBtn = document.getElementById('refreshBtn');
 
         let stagedFilesList = [];
+
+        // Direct Mobile Picker buttons
+        btnGallery.addEventListener('click', () => galleryInput.click());
+        btnCamera.addEventListener('click', () => cameraInput.click());
+        btnDocs.addEventListener('click', () => docInput.click());
+
+        galleryInput.addEventListener('change', () => {
+            if (galleryInput.files && galleryInput.files.length) {
+                addFiles(Array.from(galleryInput.files));
+            }
+            galleryInput.value = '';
+        });
+        cameraInput.addEventListener('change', () => {
+            if (cameraInput.files && cameraInput.files.length) {
+                addFiles(Array.from(cameraInput.files));
+            }
+            cameraInput.value = '';
+        });
+        docInput.addEventListener('change', () => {
+            if (docInput.files && docInput.files.length) {
+                addFiles(Array.from(docInput.files));
+            }
+            docInput.value = '';
+        });
 
         // Drag & Drop handlers
         dropZone.addEventListener('click', () => fileInput.click());
@@ -1236,7 +1770,16 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                 const sizeStr = file.size >= 1024 * 1024 
                     ? (file.size / (1024 * 1024)).toFixed(1) + ' MB'
                     : (file.size / 1024).toFixed(1) + ' KB';
+                const isImg = file.type.startsWith('image/') || /\.(jpe?g|png|webp|heic|heif|bmp|gif)$/i.test(file.name);
+                let thumbHtml = '';
+                if (isImg) {
+                    try {
+                        const blobUrl = URL.createObjectURL(file);
+                        thumbHtml = `<img class="file-chip-thumb" src="${blobUrl}" alt="thumb">`;
+                    } catch (_) {}
+                }
                 chip.innerHTML = `
+                    ${thumbHtml}
                     <span>${file.name} (${sizeStr})</span>
                     ${isLarge ? '<span class="file-chip-badge" title="Large file">Large</span>' : ''}
                     <span class="file-chip-remove" onclick="removeFile(${idx})">&times;</span>
@@ -1702,20 +2245,184 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             statusBox.style.display = 'block';
         }
 
-        // Fetch & render hosted files list
-        async function loadHostedFiles() {
-            try {
-                const response = await fetch('/api/files');
-                const files = await response.json();
+        // State for hosted files
+        let allHostedFiles = [];
+        let currentFilter = 'all';
+        let currentViewMode = localStorage.getItem('file_converter_view') || 'gallery';
 
-                filesCount.textContent = `${files.length} file${files.length === 1 ? '' : 's'}`;
+        function isImageExt(ext) {
+            return ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'ico', 'gif', 'svg', 'heic', 'heif'].includes((ext || '').toLowerCase());
+        }
 
-                if (files.length === 0) {
-                    filesList.innerHTML = '<div class="empty-state">No files hosted yet. Upload and convert your first file above!</div>';
-                    return;
-                }
+        function isDocExt(ext) {
+            return ['pdf', 'md', 'txt', 'html', 'doc', 'docx'].includes((ext || '').toLowerCase());
+        }
 
-                filesList.innerHTML = files.map(file => {
+        function isDataExt(ext) {
+            return ['csv', 'json', 'xlsx', 'xls'].includes((ext || '').toLowerCase());
+        }
+
+        // View toggle events
+        btnViewGallery.addEventListener('click', () => {
+            currentViewMode = 'gallery';
+            localStorage.setItem('file_converter_view', 'gallery');
+            btnViewGallery.classList.add('active');
+            btnViewList.classList.remove('active');
+            renderHostedFiles();
+        });
+
+        btnViewList.addEventListener('click', () => {
+            currentViewMode = 'list';
+            localStorage.setItem('file_converter_view', 'list');
+            btnViewList.classList.add('active');
+            btnViewGallery.classList.remove('active');
+            renderHostedFiles();
+        });
+
+        // Initialize view mode button state
+        if (currentViewMode === 'list') {
+            btnViewList.classList.add('active');
+            btnViewGallery.classList.remove('active');
+        } else {
+            btnViewGallery.classList.add('active');
+            btnViewList.classList.remove('active');
+        }
+
+        // Filter pills event listeners
+        filterPills.forEach(pill => {
+            pill.addEventListener('click', () => {
+                filterPills.forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                currentFilter = pill.getAttribute('data-filter') || 'all';
+                renderHostedFiles();
+            });
+        });
+
+        // Lightbox controller
+        let currentLightboxUrl = '';
+
+        function openLightbox(url, name, sizeFormatted, dateModified) {
+            currentLightboxUrl = url;
+            lightboxImg.src = url;
+            lightboxTitle.textContent = name;
+            lightboxMeta.textContent = `${sizeFormatted} • ${dateModified}`;
+            lightboxDownloadBtn.href = url;
+            lightboxDownloadBtn.setAttribute('download', name);
+            lightboxModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            lightboxModal.style.display = 'none';
+            lightboxImg.src = '';
+            document.body.style.overflow = '';
+        }
+
+        lightboxClose.addEventListener('click', closeLightbox);
+        lightboxBackdrop.addEventListener('click', closeLightbox);
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && lightboxModal.style.display === 'flex') {
+                closeLightbox();
+            }
+        });
+
+        lightboxCopyBtn.addEventListener('click', () => {
+            if (currentLightboxUrl) {
+                copyFileLink(currentLightboxUrl, lightboxCopyBtn);
+            }
+        });
+
+        // Render hosted files (gallery grid or list view)
+        function renderHostedFiles() {
+            // Calculate category counts
+            const totalCount = allHostedFiles.length;
+            const imgCount = allHostedFiles.filter(f => isImageExt(f.ext)).length;
+            const docCount = allHostedFiles.filter(f => isDocExt(f.ext)).length;
+            const dataCount = allHostedFiles.filter(f => isDataExt(f.ext)).length;
+
+            countAll.textContent = totalCount;
+            countImages.textContent = imgCount;
+            countDocs.textContent = docCount;
+            countData.textContent = dataCount;
+
+            filesCount.textContent = `${totalCount} file${totalCount === 1 ? '' : 's'}`;
+
+            if (totalCount === 0) {
+                filesList.className = 'files-list';
+                filesList.innerHTML = '<div class="empty-state">No files hosted yet. Upload and convert your first file above!</div>';
+                return;
+            }
+
+            // Filter files
+            let filtered = allHostedFiles;
+            if (currentFilter === 'images') {
+                filtered = allHostedFiles.filter(f => isImageExt(f.ext));
+            } else if (currentFilter === 'docs') {
+                filtered = allHostedFiles.filter(f => isDocExt(f.ext));
+            } else if (currentFilter === 'data') {
+                filtered = allHostedFiles.filter(f => isDataExt(f.ext));
+            }
+
+            if (filtered.length === 0) {
+                filesList.className = 'files-list';
+                filesList.innerHTML = '<div class="empty-state">No files found matching the selected category.</div>';
+                return;
+            }
+
+            if (currentViewMode === 'gallery') {
+                filesList.className = 'gallery-grid';
+                filesList.innerHTML = filtered.map(file => {
+                    const fullUrl = window.location.origin + file.url;
+                    const isImg = isImageExt(file.ext);
+                    const safeName = file.name.replace(/'/g, "\\'");
+
+                    let previewHtml = '';
+                    if (isImg) {
+                        previewHtml = `
+                            <div class="gallery-preview-wrapper" onclick="openLightbox('${file.url}', '${safeName}', '${file.size_formatted}', '${file.modified}')">
+                                <img class="gallery-img" src="${file.url}" alt="${safeName}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'gallery-doc-placeholder\\'>🖼️ Image</div>'">
+                                <span class="gallery-badge">.${file.ext}</span>
+                                <div class="gallery-zoom-icon">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        const icon = isDocExt(file.ext) ? '📄' : (isDataExt(file.ext) ? '📊' : '📁');
+                        previewHtml = `
+                            <a href="${file.url}" target="_blank" class="gallery-preview-wrapper" style="text-decoration:none;">
+                                <div class="gallery-doc-placeholder">
+                                    <span style="font-size:2rem;">${icon}</span>
+                                    <span>${file.ext.toUpperCase()} Document</span>
+                                </div>
+                                <span class="gallery-badge">.${file.ext}</span>
+                            </a>
+                        `;
+                    }
+
+                    return `
+                        <div class="gallery-card">
+                            ${previewHtml}
+                            <div class="gallery-body">
+                                <div class="gallery-title" title="${file.name}">${file.name}</div>
+                                <div class="gallery-meta">${file.size_formatted} &bull; ${file.modified.split(' ')[0]}</div>
+                                <div class="gallery-actions">
+                                    <button class="gallery-btn" onclick="copyFileLink('${fullUrl}', this)">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        <span>Link</span>
+                                    </button>
+                                    <a href="${file.url}" download="${file.name}" class="gallery-btn download">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                        <span>Save</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                filesList.className = 'files-list';
+                filesList.innerHTML = filtered.map(file => {
                     const fullUrl = window.location.origin + file.url;
                     return `
                         <div class="file-card">
@@ -1746,7 +2453,17 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                         </div>
                     `;
                 }).join('');
+            }
+        }
+
+        // Fetch & render hosted files list
+        async function loadHostedFiles() {
+            try {
+                const response = await fetch('/api/files');
+                allHostedFiles = await response.json();
+                renderHostedFiles();
             } catch (err) {
+                filesList.className = 'files-list';
                 filesList.innerHTML = '<div class="empty-state" style="color:#ef4444;">Failed to load hosted files.</div>';
             }
         }
