@@ -1,0 +1,93 @@
+name: Render Keep-Awake Ping
+
+on:
+  schedule:
+    # Runs every 10 minutes to prevent Render free instance from sleeping (15 min inactivity timeout)
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: keep-awake
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    name: Ping Render Diagnostics
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping Diagnostics Endpoint with Retry
+        run: |
+          python3 - << 'EOF'
+          import urllib.request
+          import urllib.error
+          import json
+          import time
+          import sys
+
+          TARGET_URL = "https://universal-file-converter-xmxl.onrender.com/api/diagnostics"
+          MAX_RETRIES = 5
+          INITIAL_WAIT = 5
+
+          print(f"Target: {TARGET_URL}")
+          print(f"Starting keep-awake ping cycle (max retries: {MAX_RETRIES})...")
+
+          for attempt in range(1, MAX_RETRIES + 1):
+              start_time = time.time()
+              print(f"\n--- Attempt {attempt}/{MAX_RETRIES} ---")
+              try:
+                  req = urllib.request.Request(
+                      TARGET_URL,
+                      headers={
+                          "User-Agent": "GitHub-Actions-Keep-Awake/1.0",
+                          "Accept": "application/json"
+                      },
+                      method="GET"
+                  )
+                  # 60s timeout to accommodate Render free tier cold-start spin-up
+                  with urllib.request.urlopen(req, timeout=60) as resp:
+                      latency = time.time() - start_time
+                      status = resp.status
+                      body = resp.read().decode("utf-8")
+                      print(f"Status Code : {status}")
+                      print(f"Latency     : {latency:.2f}s")
+                      print(f"Response    : {body}")
+
+                      if status == 200:
+                          try:
+                              data = json.loads(body)
+                              if data.get("status") == "healthy":
+                                  print("SUCCESS: Render app is healthy and awake!")
+                                  sys.exit(0)
+                              else:
+                                  print(f"Warning: Unexpected body status '{data.get('status')}'.")
+                          except Exception as parse_err:
+                              print(f"Notice: Response is not JSON ({parse_err}), but returned HTTP 200.")
+                              sys.exit(0)
+                      else:
+                          print(f"Non-200 status code: {status}")
+
+              except urllib.error.HTTPError as e:
+                  latency = time.time() - start_time
+                  print(f"HTTP Error  : {e.code} ({e.reason}) after {latency:.2f}s")
+                  try:
+                      error_body = e.read().decode("utf-8")
+                      print(f"Error Body  : {error_body}")
+                  except Exception:
+                      pass
+              except urllib.error.URLError as e:
+                  latency = time.time() - start_time
+                  print(f"URL Error   : {e.reason} after {latency:.2f}s")
+              except Exception as e:
+                  latency = time.time() - start_time
+                  print(f"Exception   : {e} after {latency:.2f}s")
+
+              if attempt < MAX_RETRIES:
+                  wait_time = INITIAL_WAIT * attempt
+                  print(f"Render instance may be spinning up. Retrying in {wait_time}s...")
+                  time.sleep(wait_time)
+
+          print("\nError: Failed to wake up Render app after all retries.")
+          sys.exit(1)
+          EOF
