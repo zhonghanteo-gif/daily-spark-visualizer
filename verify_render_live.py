@@ -56,8 +56,8 @@ def main():
         print(f"   Expires: {headers.get('expires')}")
         assert "no-store" in headers.get("cache-control", ""), "Cache-Control missing no-store!"
         content = resp.read().decode("utf-8")
-        assert "v1.3.0 • Mobile Shield Active" in content, "Mobile Shield badge missing!"
-    print("   -> PASS: GET / returned correct headers and v1.3.0 badge!")
+        assert "v1.4.0 • Mobile Shield" in content, "Mobile Shield badge missing!"
+    print("   -> PASS: GET / returned correct headers and v1.4.0 badge!")
 
     # 2. Test Single Chunk PDF Upload
     print("\n2. Testing 89KB PDF single-chunk upload (target_format=pdf)...", flush=True)

@@ -30,10 +30,10 @@ def main():
     if status_root != 200 or b"Universal File Converter" not in content_root:
         print("FAIL: Root endpoint check failed!", flush=True)
         sys.exit(1)
-    if b"v1.3.0" not in content_root:
-        print("FAIL: Root dashboard missing v1.3.0 badge!", flush=True)
+    if b"v1.4.0" not in content_root:
+        print("FAIL: Root dashboard missing v1.4.0 badge!", flush=True)
         sys.exit(1)
-    print("PASS: Root dashboard is live and valid with v1.3.0 badge!", flush=True)
+    print("PASS: Root dashboard is live and valid with v1.4.0 badge!", flush=True)
 
     # 2. Test Diagnostics
     status_diag, content_diag = test_endpoint(f"{base_url}/api/diagnostics")

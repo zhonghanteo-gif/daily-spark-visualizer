@@ -20,7 +20,7 @@ def test_anti_cache_headers():
     assert "no-store" in headers["cache-control"], f"Expected no-store in Cache-Control, got: {headers['cache-control']}"
     assert headers.get("pragma") == "no-cache", f"Expected pragma no-cache, got {headers.get('pragma')}"
     assert headers.get("expires") == "0", f"Expected expires 0, got {headers.get('expires')}"
-    assert "v1.3.0 • Mobile Shield Active" in resp.text, "Badge 'v1.3.0 • Mobile Shield Active' missing from HTML"
+    assert "v1.4.0 • Mobile Shield" in resp.text, "Badge 'v1.4.0 • Mobile Shield' missing from HTML"
     print("-> PASS: Anti-cache headers and badge verified!")
 
 def test_telemetry():
@@ -44,7 +44,7 @@ def test_diagnostics():
     resp = client.get("/api/diagnostics")
     assert resp.status_code == 200
     data = resp.json()
-    assert data.get("version") == "1.3.0", f"Unexpected version: {data.get('version')}"
+    assert data.get("version") == "1.4.0", f"Unexpected version: {data.get('version')}"
     assert data.get("mobile_shield") is True, f"mobile_shield not True: {data.get('mobile_shield')}"
     print("-> PASS: Diagnostics version and mobile_shield verified!")
 
