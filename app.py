@@ -4,29 +4,37 @@ import time
 import shutil
 import gc
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 import urllib.parse
 import traceback
+import textwrap
+import html
+from html.parser import HTMLParser
+import json
+import xml.sax.saxutils as saxutils
 from contextlib import asynccontextmanager
 
 from pydantic import BaseModel
 import pandas as pd
-from PIL import Image, ImageOps
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
+from PIL import Image, ImageOps, ImageDraw
+import mimetypes
+import re
+import zipfile
+import xml.etree.ElementTree as ET
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request, Query
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 CONVERSION_LOGS = []
 
 def log_event(status: str, msg: str, details: dict = None):
     CONVERSION_LOGS.append({
-        "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
         "status": status,
         "message": msg,
         "details": details or {}
     })
-    if len(CONVERSION_LOGS) > 60:
+    if len(CONVERSION_LOGS) > 100:
         CONVERSION_LOGS.pop(0)
 
 class ClientLogPayload(BaseModel):
@@ -46,8 +54,64 @@ HOSTED_DIR = STORAGE_DIR / "hosted"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 HOSTED_DIR.mkdir(parents=True, exist_ok=True)
 
-IMAGE_FORMATS = {"png", "jpg", "jpeg", "webp", "bmp", "ico", "pdf", "heic", "heif"}
-DATA_FORMATS = {"csv", "json", "xlsx", "html", "md", "txt"}
+IMAGE_FORMATS = {"png", "jpg", "jpeg", "webp", "bmp", "ico", "pdf", "heic", "heif", "gif"}
+DATA_FORMATS = {"csv", "json", "xlsx", "xls", "html", "md", "txt"}
+DOCUMENT_FORMATS = {"pdf", "docx", "doc", "txt", "md", "rtf", "xlsx", "csv", "html"}
+
+MIME_TO_EXT = {
+    # Images
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/webp": "webp",
+    "image/bmp": "bmp",
+    "image/x-ms-bmp": "bmp",
+    "image/x-icon": "ico",
+    "image/vnd.microsoft.icon": "ico",
+    "image/heic": "heic",
+    "image/heif": "heif",
+    "image/gif": "gif",
+    "image/svg+xml": "svg",
+    # Documents
+    "application/pdf": "pdf",
+    "text/plain": "txt",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+    "application/msword": "doc",
+    "text/markdown": "md",
+    "text/x-markdown": "md",
+    "text/csv": "csv",
+    "application/csv": "csv",
+    "application/rtf": "rtf",
+    "text/rtf": "rtf",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+    "application/vnd.ms-excel": "xls",
+    "text/html": "html",
+    "application/json": "json",
+}
+
+CONTENT_TYPE_BY_EXT = {
+    "pdf": "application/pdf",
+    "txt": "text/plain; charset=utf-8",
+    "md": "text/markdown; charset=utf-8",
+    "csv": "text/csv; charset=utf-8",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "doc": "application/msword",
+    "rtf": "application/rtf",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "xls": "application/vnd.ms-excel",
+    "json": "application/json; charset=utf-8",
+    "html": "text/html; charset=utf-8",
+    "webp": "image/webp",
+    "png": "image/png",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "bmp": "image/bmp",
+    "ico": "image/x-icon",
+    "heic": "image/heic",
+    "heif": "image/heif",
+    "gif": "image/gif",
+    "svg": "image/svg+xml",
+}
 
 # Try importing pillow_heif for iPhone photo support
 try:
@@ -64,19 +128,41 @@ try:
 except ImportError:
     HAS_PDFIUM = False
 
+# Try importing python-docx
+try:
+    import docx as python_docx
+    HAS_DOCX = True
+except ImportError:
+    HAS_DOCX = False
+
+
+def cleanup_old_temp_dirs(max_age_seconds: int = 1800):
+    """Deletes abandoned temp directories and orphan chunks older than max_age_seconds."""
+    now = time.time()
+    if UPLOAD_DIR.exists():
+        for p in UPLOAD_DIR.iterdir():
+            try:
+                if p.is_dir() and p.name.startswith("temp_") and (now - p.stat().st_mtime > max_age_seconds):
+                    shutil.rmtree(p, ignore_errors=True)
+                elif p.is_file() and (now - p.stat().st_mtime > max_age_seconds):
+                    p.unlink(missing_ok=True)
+            except Exception:
+                pass
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Ensure storage folders exist on startup
+    # Ensure storage folders exist on startup and clean orphan uploads
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     HOSTED_DIR.mkdir(parents=True, exist_ok=True)
+    cleanup_old_temp_dirs()
     yield
 
 
 app = FastAPI(
     title="Universal File Format Converter & File Host",
     description="Convert images, spreadsheets, and structured data, and host them with permanent shareable URLs.",
-    version="1.3.0",
+    version="1.4.0",
     lifespan=lifespan,
 )
 
@@ -89,19 +175,70 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount /files to serve static hosted content
-app.mount("/files", StaticFiles(directory=str(HOSTED_DIR)), name="files")
+
+@app.get("/files/{filename:path}")
+async def serve_hosted_file(filename: str, download: bool = Query(False)):
+    """Serves hosted files with explicit Content-Type and Content-Disposition headers."""
+    unquoted = urllib.parse.unquote(filename)
+    safe_name = Path(unquoted).name
+    if not safe_name or safe_name.startswith("."):
+        raise HTTPException(status_code=404, detail="File not found")
+    file_path = (HOSTED_DIR / safe_name).resolve()
+    if HOSTED_DIR.resolve() not in file_path.parents or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    ext = file_path.suffix.lower().lstrip(".")
+    media_type = (
+        CONTENT_TYPE_BY_EXT.get(ext)
+        or mimetypes.guess_type(file_path.name)[0]
+        or "application/octet-stream"
+    )
+
+    # Inline for browser-viewable documents (PDF, plain text, markdown, CSV, HTML, images) unless ?download=1
+    force_attachment_exts = {"docx", "doc", "rtf", "xlsx", "xls"}
+    disposition_type = "attachment" if (download or ext in force_attachment_exts) else "inline"
+
+    raw_ascii = file_path.name.encode("ascii", "ignore").decode("ascii")
+    raw_ascii = re.sub(r'[\r\n";]', '_', raw_ascii).strip()
+    if not raw_ascii or raw_ascii.startswith(".") or not Path(raw_ascii).stem.lstrip("."):
+        ascii_fallback = f"document.{ext or 'bin'}"
+    else:
+        ascii_fallback = raw_ascii
+    utf8_quoted = urllib.parse.quote(file_path.name)
+    content_disposition = f'{disposition_type}; filename="{ascii_fallback}"; filename*=UTF-8\'\'{utf8_quoted}'
+
+    return FileResponse(
+        path=str(file_path),
+        media_type=media_type,
+        headers={
+            "Content-Disposition": content_disposition,
+            "Accept-Ranges": "bytes",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 def read_data_file(input_path: str, ext: str) -> pd.DataFrame:
     """Reads structured data from supported formats into a pandas DataFrame."""
     ext = ext.lower().lstrip(".")
     if ext == "csv":
-        return pd.read_csv(input_path)
-    elif ext == "xlsx":
+        try:
+            return pd.read_csv(input_path)
+        except UnicodeDecodeError:
+            return pd.read_csv(input_path, encoding="latin1")
+    elif ext in ("xlsx", "xls"):
         return pd.read_excel(input_path)
     elif ext == "json":
-        return pd.read_json(input_path)
+        try:
+            return pd.read_json(input_path)
+        except Exception:
+            with open(input_path, "r", encoding="utf-8", errors="ignore") as f:
+                raw_json = json.load(f)
+            if isinstance(raw_json, list):
+                return pd.DataFrame(raw_json)
+            elif isinstance(raw_json, dict):
+                return pd.json_normalize(raw_json)
+            raise ValueError("Invalid JSON format for table conversion.")
     elif ext == "html":
         tables = pd.read_html(input_path)
         if not tables:
@@ -120,7 +257,15 @@ def read_data_file(input_path: str, ext: str) -> pd.DataFrame:
         raise ValueError("Could not parse table rows from the Markdown file.")
     elif ext == "txt":
         with open(input_path, "r", encoding="utf-8", errors="ignore") as f:
-            lines = [line.strip() for line in f if line.strip()]
+            content = f.read()
+        lines = [line.strip() for line in content.splitlines() if line.strip()]
+        if not lines:
+            return pd.DataFrame({"line": [1], "text": [""]})
+        if "\t" in lines[0]:
+            try:
+                return pd.read_csv(io.StringIO(content), sep="\t")
+            except Exception:
+                pass
         return pd.DataFrame({"line": range(1, len(lines) + 1), "text": lines})
     else:
         raise ValueError(f"Reading from .{ext} is not supported.")
@@ -131,25 +276,38 @@ def write_data_file(df: pd.DataFrame, target_ext: str, output_path: str):
     target_ext = target_ext.lower().lstrip(".")
     if target_ext == "csv":
         df.to_csv(output_path, index=False)
-    elif target_ext == "xlsx":
-        df.to_excel(output_path, index=False)
+    elif target_ext in ("xlsx", "xls"):
+        df.to_excel(output_path, engine="openpyxl", index=False)
     elif target_ext == "json":
         df.to_json(output_path, orient="records", indent=2)
     elif target_ext == "html":
         df.to_html(output_path, index=False, classes="table", border=0)
     elif target_ext == "md":
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write(df.to_markdown(index=False))
+        try:
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write(df.to_markdown(index=False) or "")
+        except Exception:
+            cols = [str(c) for c in df.columns]
+            lines = ["| " + " | ".join(cols) + " |"]
+            lines.append("| " + " | ".join(["---"] * len(cols)) + " |")
+            for _, row in df.iterrows():
+                lines.append("| " + " | ".join(str(v) if pd.notna(v) else "" for v in row.values) + " |")
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines) + "\n")
     elif target_ext == "txt":
         with open(output_path, "w", encoding="utf-8") as f:
-            for _, row in df.iterrows():
-                f.write(str(row.values[0]) + "\n")
+            if not df.empty:
+                f.write("\t".join(str(c) for c in df.columns) + "\n")
+                for _, row in df.iterrows():
+                    f.write("\t".join(str(v) if pd.notna(v) else "" for v in row.values) + "\n")
+            else:
+                f.write("")
     else:
         raise ValueError(f"Writing to .{target_ext} is not supported.")
 
 
 def convert_image(input_path: str, source_ext: str, target_ext: str, output_path: str):
-    """Converts images between PNG, JPG, JPEG, WEBP, BMP, ICO, and PDF with strict memory bounds."""
+    """Converts images between PNG, JPG, JPEG, WEBP, BMP, ICO, GIF, and PDF with strict memory bounds."""
     source_ext = source_ext.lower().lstrip(".")
     target_ext = target_ext.lower().lstrip(".")
 
@@ -184,18 +342,37 @@ def convert_image(input_path: str, source_ext: str, target_ext: str, output_path
         if img.width > max_dim or img.height > max_dim:
             img.thumbnail((max_dim, max_dim), Image.Resampling.BILINEAR)
 
+        # Helper to composite transparent images over solid white
+        def composite_on_white(im: Image.Image) -> Image.Image:
+            if im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info):
+                conv = im.convert("RGBA")
+                bg = Image.new("RGB", conv.size, (255, 255, 255))
+                bg.paste(conv, mask=conv.split()[3])
+                return bg
+            elif im.mode != "RGB":
+                return im.convert("RGB")
+            return im
+
+        # Normalize CMYK for formats that do not support it
+        if img.mode == "CMYK":
+            img = img.convert("RGB")
+
         if target_ext in ("jpg", "jpeg"):
-            if img.mode in ("RGBA", "LA", "P", "CMYK"):
-                img = img.convert("RGB")
+            img = composite_on_white(img)
             img.save(output_path, "JPEG", quality=92, optimize=True)
         elif target_ext == "png":
+            if img.mode not in ("RGB", "RGBA", "L", "LA", "P"):
+                img = img.convert("RGBA" if "A" in img.mode else "RGB")
             img.save(output_path, "PNG", optimize=True)
         elif target_ext == "webp":
             img.save(output_path, "WEBP", quality=90)
         elif target_ext == "bmp":
-            if img.mode not in ("RGB", "L"):
-                img = img.convert("RGB")
+            img = composite_on_white(img)
             img.save(output_path, "BMP")
+        elif target_ext == "gif":
+            if img.mode not in ("RGB", "RGBA", "P", "L"):
+                img = img.convert("RGB")
+            img.save(output_path, "GIF")
         elif target_ext == "ico":
             if img.size[0] > 256 or img.size[1] > 256:
                 img = img.resize((256, 256), Image.Resampling.BILINEAR)
@@ -206,9 +383,13 @@ def convert_image(input_path: str, source_ext: str, target_ext: str, output_path
                 format="ICO",
                 sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)],
             )
+        elif target_ext in ("heic", "heif"):
+            if not HAS_HEIF:
+                raise ValueError("HEIC/HEIF encoding requires pillow-heif.")
+            img = composite_on_white(img)
+            img.save(output_path, format="HEIF")
         elif target_ext == "pdf":
-            if img.mode in ("RGBA", "LA", "P", "CMYK"):
-                img = img.convert("RGB")
+            img = composite_on_white(img)
             img.save(output_path, "PDF", resolution=100.0)
         else:
             raise ValueError(f"Target format .{target_ext} is not a supported image format.")
@@ -236,32 +417,101 @@ def convert_image(input_path: str, source_ext: str, target_ext: str, output_path
         gc.collect()
 
 
-def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
-    """Dispatches file conversion based on format categories with memory safety."""
-    base_name = Path(orig_name).stem
-    source_ext = Path(orig_name).suffix.lower().lstrip(".")
-    target_ext = target_ext.lower().lstrip(".")
+class HTMLTextExtractor(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.reset()
+        self.text_parts = []
+        self.skip = False
 
-    output_filename = f"{base_name}.{target_ext}"
-    output_path = str(HOSTED_DIR / output_filename)
+    def handle_starttag(self, tag, attrs):
+        if tag in ("script", "style", "head", "meta", "title"):
+            self.skip = True
+        elif tag in ("p", "div", "br", "h1", "h2", "h3", "h4", "h5", "h6", "li", "tr"):
+            self.text_parts.append("\n")
 
-    # 1. PDF Direct pass-through (preserves all pages)
-    if source_ext == "pdf" and target_ext == "pdf":
-        shutil.copyfile(input_path, output_path)
-        log_event("info", f"PDF direct pass-through hosted: {output_filename}")
-        return output_filename
+    def handle_endtag(self, tag):
+        if tag in ("script", "style", "head", "meta", "title"):
+            self.skip = False
+        elif tag in ("p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "tr"):
+            self.text_parts.append("\n")
 
-    # 2. PDF to Notes/Text (Markdown, Plain Text, HTML, CSV, JSON extraction)
-    if source_ext == "pdf" and target_ext in ("md", "txt", "html", "csv", "json"):
+    def handle_data(self, data):
+        if not self.skip:
+            self.text_parts.append(data)
+
+    def get_text(self):
+        return "".join(self.text_parts)
+
+
+def strip_html_tags(html_str: str) -> str:
+    parser = HTMLTextExtractor()
+    parser.feed(html_str)
+    raw = parser.get_text()
+    lines = [line.strip() for line in raw.splitlines()]
+    return "\n".join(l for l in lines if l)
+
+
+def strip_rtf(text: str) -> str:
+    """Extracts plain text from RTF content, ignoring font/color tables and unescaping chars."""
+    pattern = re.compile(r"\\([a-z]{1,32})(-?\d+)? ?|\\\'([0-9a-fA-F]{2})|\\([^a-z])|([{}])|[\r\n]+|(.)", re.IGNORECASE)
+    destinations = {"fonttbl", "colortbl", "stylesheet", "info", "generator", "*"}
+    out = []
+    stack = []
+    ignoring = 0
+    for match in pattern.finditer(text):
+        word, arg, hex_byte, char, brace, raw_char = match.groups()
+        if brace == "{":
+            stack.append(ignoring)
+        elif brace == "}":
+            if stack:
+                ignoring = stack.pop()
+        elif word:
+            w_lower = word.lower()
+            if w_lower in destinations:
+                ignoring = 1
+            elif w_lower in ("par", "line"):
+                if not ignoring:
+                    out.append("\n")
+            elif w_lower == "tab":
+                if not ignoring:
+                    out.append("\t")
+            elif w_lower == "u" and arg:
+                if not ignoring:
+                    try:
+                        val = int(arg)
+                        if val < 0:
+                            val += 65536
+                        out.append(chr(val))
+                    except Exception:
+                        pass
+        elif hex_byte:
+            if not ignoring:
+                try:
+                    out.append(bytes.fromhex(hex_byte).decode("cp1252"))
+                except Exception:
+                    pass
+        elif char:
+            if not ignoring:
+                out.append(char)
+        elif raw_char:
+            if not ignoring:
+                out.append(raw_char)
+    cleaned = "".join(out).strip()
+    return re.sub(r"\n{3,}", "\n\n", cleaned)
+
+
+def extract_text_from_document(input_path: str, source_ext: str) -> list[tuple[int, str]]:
+    """Extracts page/section text tuples from PDF, DOCX, DOC, RTF, TXT, MD, HTML, XLSX, XLS, or CSV."""
+    source_ext = source_ext.lower().lstrip(".")
+    if source_ext == "pdf":
         if not HAS_PDFIUM:
             raise ValueError("PDF text extraction requires pypdfium2.")
-        
         pdf = None
         all_text = []
         try:
             pdf = pdfium.PdfDocument(input_path)
-            num_pages = len(pdf)
-            for page_idx in range(num_pages):
+            for page_idx in range(len(pdf)):
                 page = None
                 textpage = None
                 try:
@@ -290,8 +540,200 @@ def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
                 except Exception:
                     pass
             gc.collect()
+        return all_text
 
-        if not all_text:
+    if source_ext == "docx":
+        if HAS_DOCX:
+            try:
+                doc = python_docx.Document(input_path)
+                paras = [p.text.strip() for p in doc.paragraphs if p.text and p.text.strip()]
+                for table in doc.tables:
+                    for row in table.rows:
+                        row_vals = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+                        if row_vals:
+                            paras.append(" | ".join(row_vals))
+                text = "\n\n".join(paras).strip()
+                return [(1, text)] if text else [(1, "(Empty DOCX document)")]
+            except Exception:
+                pass
+
+        try:
+            with zipfile.ZipFile(input_path, "r") as zf:
+                xml_bytes = zf.read("word/document.xml")
+            root = ET.fromstring(xml_bytes)
+            texts = [elem.text for elem in root.iter() if elem.tag.endswith("}t") and elem.text]
+            joined = " ".join(texts).strip()
+            return [(1, joined)] if joined else [(1, "(Empty DOCX document)")]
+        except Exception as e:
+            raise ValueError(f"Could not extract text from DOCX: {e}")
+
+    if source_ext in ("xlsx", "xls", "csv"):
+        try:
+            df = read_data_file(input_path, source_ext)
+            cols = [str(c) for c in df.columns]
+            lines = [" | ".join(cols), "-" * max(10, len(" | ".join(cols)))]
+            for _, row in df.iterrows():
+                lines.append(" | ".join(str(v) if pd.notna(v) else "" for v in row.values))
+            text = "\n".join(lines).strip()
+            return [(1, text)] if text else [(1, "(Empty spreadsheet)")]
+        except Exception as e:
+            if source_ext in ("xlsx", "xls"):
+                raise ValueError(f"Could not read spreadsheet data: {e}")
+
+    if source_ext == "rtf":
+        raw = Path(input_path).read_text(encoding="utf-8", errors="ignore")
+        cleaned = strip_rtf(raw)
+        return [(1, cleaned)] if cleaned else [(1, "(Empty RTF document)")]
+
+    if source_ext == "html":
+        raw_html = Path(input_path).read_text(encoding="utf-8", errors="ignore")
+        text = strip_html_tags(raw_html)
+        return [(1, text)] if text else [(1, "(Empty HTML document)")]
+
+    if source_ext == "doc":
+        raw_bytes = Path(input_path).read_bytes()
+        if raw_bytes.startswith(b"{\\rtf"):
+            try:
+                rtf_text = strip_rtf(raw_bytes.decode("utf-8", errors="ignore"))
+                return [(1, rtf_text)] if rtf_text else [(1, "(Empty DOC document)")]
+            except Exception:
+                pass
+        utf16_chunks = re.findall(rb"(?:[\x20-\x7E\t\r\n]\x00){4,}", raw_bytes)
+        ascii_chunks = re.findall(rb"[\x20-\x7E\t\r\n]{4,}", raw_bytes)
+        extracted = []
+        if utf16_chunks:
+            decoded_utf16 = " ".join(c.decode("utf-16le", errors="ignore") for c in utf16_chunks)
+            clean_16 = re.sub(r"\s+", " ", decoded_utf16).strip()
+            if clean_16:
+                extracted.append(clean_16)
+        if ascii_chunks:
+            decoded_ascii = " ".join(c.decode("latin1", errors="ignore") for c in ascii_chunks)
+            clean_ascii = re.sub(r"\s+", " ", decoded_ascii).strip()
+            if clean_ascii:
+                extracted.append(clean_ascii)
+        joined_doc = "\n\n".join(extracted).strip()
+        return [(1, joined_doc)] if joined_doc else [(1, "(Empty DOC document)")]
+
+    raw_text = Path(input_path).read_text(encoding="utf-8", errors="ignore").strip()
+    return [(1, raw_text)] if raw_text else [(1, "")]
+
+
+def write_docx_document(title: str, sections: list[tuple[int, str]], output_path: str):
+    """Writes extracted text sections to a valid .docx file."""
+    if HAS_DOCX:
+        try:
+            doc = python_docx.Document()
+            doc.add_heading(title, level=1)
+            for p_num, text in sections:
+                if len(sections) > 1:
+                    doc.add_heading(f"Page {p_num}", level=2)
+                for para in text.splitlines():
+                    if para.strip():
+                        doc.add_paragraph(para.strip())
+            doc.save(output_path)
+            return
+        except Exception:
+            pass
+
+    # Fallback to minimal valid OpenXML archive with properly XML-escaped text
+    body_xml = "".join(
+        f"<w:p><w:r><w:t>{ saxutils.escape(line) }</w:t></w:r></w:p>"
+        for _, text in sections for line in text.splitlines() if line.strip()
+    )
+    with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(
+            "[Content_Types].xml",
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            '<Default Extension="xml" ContentType="application/xml"/>'
+            '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+            "</Types>",
+        )
+        zf.writestr(
+            "_rels/.rels",
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+            "</Relationships>",
+        )
+        zf.writestr(
+            "word/document.xml",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            f"<w:body>{body_xml}</w:body></w:document>",
+        )
+
+
+def write_text_as_pdf(title: str, sections: list[tuple[int, str]], output_path: str):
+    """Renders text sections to a clean, multi-page PDF document."""
+    lines = []
+    lines.append(title.upper())
+    lines.append("=" * min(70, max(10, len(title))))
+    lines.append("")
+
+    for p_num, sec_text in sections:
+        if len(sections) > 1:
+            lines.append(f"--- Page / Section {p_num} ---")
+            lines.append("")
+        for raw_line in sec_text.splitlines():
+            if not raw_line.strip():
+                lines.append("")
+            else:
+                wrapped = textwrap.wrap(raw_line, width=80)
+                lines.extend(wrapped or [""])
+        lines.append("")
+
+    lines_per_page = 42
+    total_pages = max(1, (len(lines) + lines_per_page - 1) // lines_per_page)
+    pages = []
+
+    for page_idx in range(total_pages):
+        start = page_idx * lines_per_page
+        page_lines = lines[start:start + lines_per_page]
+        img = Image.new("RGB", (850, 1100), color=(255, 255, 255))
+        draw = ImageDraw.Draw(img)
+
+        # Header bar & page counter
+        draw.text((700, 30), f"Page {page_idx + 1} of {total_pages}", fill=(110, 120, 135))
+        draw.line([(50, 48), (800, 48)], fill=(226, 232, 240), width=1)
+
+        y = 60
+        for ln in page_lines:
+            draw.text((50, y), ln, fill=(20, 25, 35))
+            y += 22
+
+        pages.append(img)
+
+    if pages:
+        pages[0].save(output_path, "PDF", resolution=100.0, save_all=True, append_images=pages[1:])
+        for p in pages:
+            p.close()
+
+
+def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
+    """Dispatches file conversion based on format categories with memory safety."""
+    base_name = Path(orig_name).stem
+    source_ext = Path(orig_name).suffix.lower().lstrip(".")
+    target_ext = target_ext.lower().lstrip(".")
+
+    if target_ext in ("keep", "original", ""):
+        target_ext = source_ext or "bin"
+
+    output_filename = f"{base_name}.{target_ext}"
+    output_path = str(HOSTED_DIR / output_filename)
+
+    # 1. Direct pass-through when source and target formats match
+    if source_ext == target_ext:
+        if Path(input_path).resolve() != Path(output_path).resolve():
+            shutil.copyfile(input_path, output_path)
+        log_event("info", f"Direct pass-through hosted (.{source_ext}): {output_filename}")
+        return output_filename
+
+    # 2. PDF to Notes/Text (Markdown, Plain Text, HTML, CSV, JSON extraction)
+    if source_ext == "pdf" and target_ext in ("md", "txt", "html", "csv", "json"):
+        sections = extract_text_from_document(input_path, "pdf")
+        if not sections:
             raise ValueError(
                 "No extractable text found in this PDF (it may contain scanned image pages). "
                 "Select 'PDF Document (.pdf)' to host it directly, or 'WebP/PNG' to convert as an image."
@@ -299,39 +741,39 @@ def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
 
         if target_ext == "md":
             lines = [f"# {base_name}\n"]
-            for p_num, text in all_text:
+            for p_num, text in sections:
                 lines.append(f"\n## Page {p_num}\n\n{text}\n")
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(lines))
-            log_event("info", f"PDF converted to Markdown notes: {output_filename} ({len(all_text)} pages)")
+            log_event("info", f"PDF converted to Markdown notes: {output_filename} ({len(sections)} pages)")
             return output_filename
 
         elif target_ext == "txt":
             lines = [f"{base_name}\n" + "=" * len(base_name)]
-            for p_num, text in all_text:
+            for p_num, text in sections:
                 lines.append(f"\n--- Page {p_num} ---\n\n{text}\n")
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(lines))
-            log_event("info", f"PDF converted to Plain Text: {output_filename} ({len(all_text)} pages)")
+            log_event("info", f"PDF converted to Plain Text: {output_filename} ({len(sections)} pages)")
             return output_filename
 
         elif target_ext == "html":
             html_parts = [
                 "<!DOCTYPE html><html><head><meta charset='utf-8'>",
-                f"<title>{base_name}</title>",
+                f"<title>{html.escape(base_name)}</title>",
                 "<style>body{font-family:system-ui,-apple-system,sans-serif;max-width:840px;margin:30px auto;padding:0 20px;line-height:1.6;color:#1e293b;background:#f8fafc;} h1{color:#0f172a;} .page{background:#ffffff;padding:24px;margin-bottom:24px;border-radius:10px;border:1px solid #e2e8f0;white-space:pre-wrap;box-shadow:0 1px 3px rgba(0,0,0,0.05);} .page-hdr{font-size:0.85rem;color:#64748b;font-weight:600;margin-bottom:8px;}</style></head><body>",
-                f"<h1>{base_name}</h1>",
+                f"<h1>{html.escape(base_name)}</h1>",
             ]
-            for p_num, text in all_text:
-                html_parts.append(f"<div class='page'><div class='page-hdr'>Page {p_num}</div>{text}</div>")
+            for p_num, text in sections:
+                html_parts.append(f"<div class='page'><div class='page-hdr'>Page {p_num}</div>{html.escape(text)}</div>")
             html_parts.append("</body></html>")
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(html_parts))
-            log_event("info", f"PDF converted to HTML notes: {output_filename} ({len(all_text)} pages)")
+            log_event("info", f"PDF converted to HTML notes: {output_filename} ({len(sections)} pages)")
             return output_filename
 
         elif target_ext in ("csv", "json"):
-            records = [{"page": p_num, "content": text} for p_num, text in all_text]
+            records = [{"page": p_num, "content": text} for p_num, text in sections]
             df = pd.DataFrame(records)
             write_data_file(df, target_ext, output_path)
             log_event("info", f"PDF converted to {target_ext.upper()}: {output_filename}")
@@ -345,10 +787,61 @@ def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
 
     # 4. Data / Spreadsheet Conversions
     if source_ext in DATA_FORMATS and target_ext in DATA_FORMATS:
-        df = read_data_file(input_path, source_ext)
-        write_data_file(df, target_ext, output_path)
-        log_event("info", f"Data file converted: {orig_name} -> {output_filename}")
-        return output_filename
+        try:
+            df = read_data_file(input_path, source_ext)
+            write_data_file(df, target_ext, output_path)
+            log_event("info", f"Data file converted: {orig_name} -> {output_filename}")
+            return output_filename
+        except Exception:
+            if not (source_ext in DOCUMENT_FORMATS and target_ext in DOCUMENT_FORMATS):
+                raise
+
+    # 5. Document Cross-Format Conversions (.docx, .doc, .rtf, .txt, .md, .html, .pdf)
+    if source_ext in DOCUMENT_FORMATS and target_ext in (DOCUMENT_FORMATS | {"json"}):
+        sections = extract_text_from_document(input_path, source_ext)
+        if source_ext == "pdf" and not any(t.strip() for _, t in sections):
+            raise ValueError(
+                "No extractable text found in this PDF (it may contain scanned image pages). "
+                "Select 'PDF Document (.pdf)' to host it directly, or 'WebP/PNG' to convert as an image."
+            )
+        if target_ext == "txt":
+            body = "\n\n".join(text for _, text in sections)
+            Path(output_path).write_text(body, encoding="utf-8")
+            return output_filename
+        elif target_ext == "md":
+            lines = [f"# {base_name}\n"]
+            for p_num, text in sections:
+                if len(sections) > 1:
+                    lines.append(f"\n## Section {p_num}\n\n{text}\n")
+                else:
+                    lines.append(f"\n{text}\n")
+            Path(output_path).write_text("\n".join(lines), encoding="utf-8")
+            return output_filename
+        elif target_ext == "rtf":
+            body = "\n".join(text for _, text in sections).replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}")
+            rtf_lines = "\\par\n".join(body.splitlines())
+            Path(output_path).write_text(f"{{\\rtf1\\ansi\\deff0 {rtf_lines}}}", encoding="utf-8")
+            return output_filename
+        elif target_ext == "html":
+            body_html = "".join(f"<div class='page'>{html.escape(text)}</div>" for _, text in sections)
+            html_doc = (
+                f"<!DOCTYPE html><html><head><meta charset='utf-8'><title>{html.escape(base_name)}</title>"
+                "<style>body{font-family:system-ui,sans-serif;max-width:840px;margin:30px auto;padding:0 20px;line-height:1.6;color:#1e293b;background:#f8fafc;} .page{background:#fff;padding:24px;border-radius:10px;border:1px solid #e2e8f0;white-space:pre-wrap;margin-bottom:16px;}</style>"
+                f"</head><body><h1>{html.escape(base_name)}</h1>{body_html}</body></html>"
+            )
+            Path(output_path).write_text(html_doc, encoding="utf-8")
+            return output_filename
+        elif target_ext == "docx":
+            write_docx_document(base_name, sections, output_path)
+            return output_filename
+        elif target_ext == "pdf":
+            write_text_as_pdf(base_name, sections, output_path)
+            return output_filename
+        elif target_ext in ("csv", "json", "xlsx"):
+            records = [{"section": p_num, "content": text} for p_num, text in sections]
+            df = pd.DataFrame(records)
+            write_data_file(df, target_ext, output_path)
+            return output_filename
 
     raise ValueError(
         f"Cannot convert from .{source_ext} to .{target_ext}. Both must belong to either Images/Docs or Data/Spreadsheets."
@@ -364,6 +857,22 @@ def format_file_size(size_bytes: int) -> str:
         return f"{size_bytes / (1024 * 1024):.1f} MB"
 
 
+def normalize_upload_filename(filename: str, content_type: str = "") -> str:
+    """Ensures uploaded files retain or infer a valid safe extension from name or Content-Type."""
+    safe_name = Path(filename).name if filename else "document"
+    safe_name = re.sub(r'[\x00-\x1f<>:"/\\|?*]', '_', safe_name).strip()
+    if not safe_name or safe_name.startswith('.'):
+        safe_name = f"file_{int(time.time())}" + (Path(safe_name).suffix if Path(safe_name).suffix else "")
+
+    ext = Path(safe_name).suffix.lower().lstrip(".")
+    clean_mime = (content_type or "").split(";")[0].strip().lower()
+
+    if not ext and clean_mime in MIME_TO_EXT:
+        inferred_ext = MIME_TO_EXT[clean_mime]
+        safe_name = f"{safe_name}.{inferred_ext}"
+    return safe_name
+
+
 @app.post("/api/convert")
 async def convert_files(
     target_format: str = Form(...),
@@ -371,27 +880,33 @@ async def convert_files(
 ):
     results = []
     for file in files:
-        if not file.filename:
+        if not file.filename and not file.content_type:
             continue
-        raw_path = str(UPLOAD_DIR / file.filename)
+        normalized_name = normalize_upload_filename(file.filename or "upload", file.content_type or "")
+        raw_path = str(UPLOAD_DIR / normalized_name)
         with open(raw_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
         try:
-            out_name = process_conversion(raw_path, file.filename, target_format)
+            out_name = process_conversion(raw_path, normalized_name, target_format)
             out_file = HOSTED_DIR / out_name
             size_bytes = out_file.stat().st_size if out_file.exists() else 0
+            out_ext = out_file.suffix.lower().lstrip(".")
             safe_url = f"/files/{urllib.parse.quote(out_name)}"
             results.append({
-                "original": file.filename,
+                "original": normalized_name,
                 "hosted_name": out_name,
                 "url": safe_url,
+                "ext": out_ext,
+                "mime_type": CONTENT_TYPE_BY_EXT.get(out_ext, "application/octet-stream").split(";")[0],
                 "size_formatted": format_file_size(size_bytes),
                 "status": "ok",
             })
         except Exception as e:
+            tb = traceback.format_exc()
+            log_event("error", f"Conversion failed for {normalized_name}: {str(e)}", {"trace": tb})
             results.append({
-                "original": file.filename,
+                "original": file.filename or normalized_name,
                 "error": str(e),
                 "status": "error",
             })
@@ -410,16 +925,11 @@ async def upload_chunk(
 ):
     """Handles chunked file uploads (768KB chunks) to prevent mobile network timeouts."""
     safe_file_id = "".join(c for c in file_id if c.isalnum() or c in ("-", "_"))
-    safe_filename = Path(filename).name if filename and Path(filename).name else f"upload_{safe_file_id}.bin"
+    if not safe_file_id:
+        safe_file_id = f"upload_{int(time.time() * 1000)}"
+    normalized_name = normalize_upload_filename(filename or f"upload_{safe_file_id}.bin")
 
-    # Clean up any abandoned temp directories older than 30 minutes
-    now = time.time()
-    for p in UPLOAD_DIR.glob("temp_*"):
-        try:
-            if p.is_dir() and (now - p.stat().st_mtime > 1800):
-                shutil.rmtree(p, ignore_errors=True)
-        except Exception:
-            pass
+    cleanup_old_temp_dirs()
 
     temp_dir = UPLOAD_DIR / f"temp_{safe_file_id}"
     temp_dir.mkdir(parents=True, exist_ok=True)
@@ -428,45 +938,47 @@ async def upload_chunk(
     with open(chunk_path, "wb") as buffer:
         shutil.copyfileobj(chunk.file, buffer)
 
-    if chunk_index + 1 == total_chunks:
-        # All chunks received -> assemble final file
-        final_path = UPLOAD_DIR / safe_filename
+    all_chunks_present = len(list(temp_dir.glob("chunk_*.part"))) == total_chunks
+    if all_chunks_present or (chunk_index + 1 == total_chunks):
+        final_path = UPLOAD_DIR / normalized_name
         with open(final_path, "wb") as outfile:
             for i in range(total_chunks):
                 c_file = temp_dir / f"chunk_{i:05d}.part"
                 if not c_file.exists():
-                    log_event("error", f"Missing chunk {i} for {safe_filename}")
+                    log_event("error", f"Missing chunk {i} for {normalized_name}")
                     raise HTTPException(status_code=400, detail=f"Missing chunk {i}")
                 with open(c_file, "rb") as infile:
                     shutil.copyfileobj(infile, outfile)
 
-        # Clean up temporary chunk files
         shutil.rmtree(temp_dir, ignore_errors=True)
 
         try:
-            log_event("info", f"Assembled file ready for conversion: {safe_filename} -> {target_format}")
-            out_name = process_conversion(str(final_path), safe_filename, target_format)
+            log_event("info", f"Assembled file ready for conversion: {normalized_name} -> {target_format}")
+            out_name = process_conversion(str(final_path), normalized_name, target_format)
             out_file = HOSTED_DIR / out_name
             size_bytes = out_file.stat().st_size if out_file.exists() else 0
+            out_ext = out_file.suffix.lower().lstrip(".")
             safe_url = f"/files/{urllib.parse.quote(out_name)}"
             log_event("info", f"Successfully converted and hosted: {out_name} ({size_bytes} bytes)")
             return {
                 "status": "complete",
                 "results": [{
-                    "original": safe_filename,
+                    "original": normalized_name,
                     "hosted_name": out_name,
                     "url": safe_url,
+                    "ext": out_ext,
+                    "mime_type": CONTENT_TYPE_BY_EXT.get(out_ext, "application/octet-stream").split(";")[0],
                     "size_formatted": format_file_size(size_bytes),
                     "status": "ok",
                 }]
             }
         except Exception as e:
             tb = traceback.format_exc()
-            log_event("error", f"Conversion exception for {safe_filename}: {str(e)}", {"trace": tb})
+            log_event("error", f"Conversion exception for {normalized_name}: {str(e)}", {"trace": tb})
             return {
                 "status": "complete",
                 "results": [{
-                    "original": safe_filename,
+                    "original": normalized_name,
                     "error": str(e),
                     "status": "error",
                 }]
@@ -477,6 +989,26 @@ async def upload_chunk(
         "chunk_index": chunk_index,
         "total_chunks": total_chunks,
     }
+
+
+@app.delete("/api/files/{filename:path}")
+async def delete_hosted_file(filename: str):
+    """Deletes a file from hosted storage."""
+    unquoted = urllib.parse.unquote(filename)
+    safe_name = Path(unquoted).name
+    if not safe_name or safe_name.startswith("."):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    file_path = (HOSTED_DIR / safe_name).resolve()
+    if HOSTED_DIR.resolve() not in file_path.parents or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    try:
+        file_path.unlink()
+        log_event("info", f"Deleted hosted file: {safe_name}")
+        return {"status": "ok", "message": f"Deleted {safe_name}"}
+    except Exception as e:
+        log_event("error", f"Failed to delete {safe_name}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete file: {str(e)}")
 
 
 @app.post("/api/client-log")
@@ -498,7 +1030,9 @@ async def get_diagnostics():
         "photo_gallery": True,
         "has_pdfium": HAS_PDFIUM,
         "has_heif": HAS_HEIF,
-        "logs": CONVERSION_LOGS[-30:],
+        "has_docx": HAS_DOCX,
+        "hosted_count": len([f for f in HOSTED_DIR.iterdir() if f.is_file() and not f.name.startswith(".")]) if HOSTED_DIR.exists() else 0,
+        "logs": CONVERSION_LOGS[-40:],
     }
 
 
@@ -509,15 +1043,18 @@ async def list_hosted_files():
         for f in HOSTED_DIR.iterdir():
             if f.is_file() and not f.name.startswith("."):
                 stat = f.stat()
+                ext_clean = f.suffix.lower().lstrip(".")
                 file_list.append({
                     "name": f.name,
                     "url": f"/files/{urllib.parse.quote(f.name)}",
+                    "download_url": f"/files/{urllib.parse.quote(f.name)}?download=1",
                     "size_bytes": stat.st_size,
                     "size_formatted": format_file_size(stat.st_size),
                     "modified": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
-                    "ext": f.suffix.lower().lstrip("."),
+                    "ext": ext_clean,
+                    "mime_type": CONTENT_TYPE_BY_EXT.get(ext_clean, "application/octet-stream").split(";")[0],
+                    "is_image": ext_clean in {"png", "jpg", "jpeg", "webp", "bmp", "gif", "ico", "heic", "heif"},
                 })
-    # Sort files by newest modified first
     file_list.sort(key=lambda x: x["modified"], reverse=True)
     return file_list
 
@@ -527,10 +1064,10 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universal Converter & File Host</title>
+    <title>Universal File Converter & Permanent Host</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -544,6 +1081,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             --text-dim: #6b7280;
             --success: #10b981;
             --danger: #ef4444;
+            --warning: #f59e0b;
             --radius-md: 10px;
             --radius-lg: 16px;
         }
@@ -559,7 +1097,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             background-color: var(--bg-color);
             color: var(--text-main);
             min-height: 100vh;
-            padding: 40px 20px;
+            padding: 36px 18px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -567,15 +1105,24 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
 
         .container {
             width: 100%;
-            max-width: 820px;
+            max-width: 860px;
             display: flex;
             flex-direction: column;
-            gap: 28px;
+            gap: 24px;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
         }
 
         .header-badge {
@@ -589,9 +1136,28 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             padding: 4px 14px;
             font-size: 0.8rem;
             font-weight: 600;
-            margin-bottom: 12px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+        }
+
+        .btn-diag {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #94a3b8;
+            border-radius: 9999px;
+            padding: 4px 12px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-diag:hover {
+            color: #e2e8f0;
+            border-color: #475569;
+            background: #27354a;
         }
 
         .header h1 {
@@ -613,14 +1179,14 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             background: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: var(--radius-lg);
-            padding: 28px;
+            padding: 26px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
         }
 
         .card-title {
-            font-size: 1.25rem;
+            font-size: 1.22rem;
             font-weight: 600;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -636,11 +1202,76 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             border: 1px solid #334155;
         }
 
+        /* Direct Mobile Gallery & Action Pickers */
+        .picker-buttons-row {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        @media (max-width: 580px) {
+            .picker-buttons-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+        }
+
+        .btn-picker {
+            padding: 12px 14px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+
+        .btn-picker.btn-gallery {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            color: white;
+            border: 1px solid #3b82f6;
+        }
+
+        .btn-picker.btn-gallery:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-picker.btn-camera {
+            background: #111827;
+            color: #f3f4f6;
+            border: 1px solid #374151;
+        }
+
+        .btn-picker.btn-camera:hover {
+            background: #1f2937;
+            border-color: #4b5563;
+            transform: translateY(-1px);
+        }
+
+        .btn-picker.btn-docs {
+            background: #111827;
+            color: #f3f4f6;
+            border: 1px solid #374151;
+        }
+
+        .btn-picker.btn-docs:hover {
+            background: #1f2937;
+            border-color: #4b5563;
+            transform: translateY(-1px);
+        }
+
         /* Drag and Drop Zone */
         .dropzone {
             border: 2px dashed #334155;
             border-radius: var(--radius-md);
-            padding: 36px 20px;
+            padding: 32px 20px;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -655,24 +1286,25 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         }
 
         .dropzone-icon {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             stroke: #60a5fa;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .dropzone-text {
             font-weight: 600;
             font-size: 1rem;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
         }
 
         .dropzone-sub {
             font-size: 0.82rem;
             color: var(--text-dim);
+            line-height: 1.4;
         }
 
-        #fileInput {
+        input[type="file"] {
             display: none;
         }
 
@@ -697,29 +1329,31 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             font-family: 'JetBrains Mono', monospace;
         }
 
+        .file-chip-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 4px;
+            object-fit: cover;
+            border: 1px solid #334155;
+            flex-shrink: 0;
+        }
+
         .file-chip-remove {
             cursor: pointer;
             color: #94a3b8;
             font-weight: bold;
+            font-size: 1rem;
+            line-height: 1;
         }
 
         .file-chip-remove:hover {
             color: var(--danger);
         }
 
-        .file-chip-badge {
-            background: rgba(245, 158, 11, 0.18);
-            color: #fbbf24;
-            border: 1px solid rgba(245, 158, 11, 0.35);
-            font-size: 0.7rem;
-            padding: 1px 6px;
-            border-radius: 4px;
-        }
-
         .mobile-opt-row {
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: space-between;
             margin-top: 14px;
             font-size: 0.85rem;
             color: #94a3b8;
@@ -729,14 +1363,21 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             border: 1px solid #1e293b;
         }
 
+        .mobile-opt-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         .mobile-opt-row input[type="checkbox"] {
             accent-color: var(--accent-primary);
             width: 17px;
             height: 17px;
             cursor: pointer;
-            flex-shrink: 0;
+            display: block;
         }
 
+        /* Progress Bar */
         .progress-wrapper {
             display: none;
             margin-top: 16px;
@@ -769,7 +1410,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
 
         /* Form elements */
         .form-row {
-            margin-top: 20px;
+            margin-top: 18px;
             display: flex;
             gap: 12px;
             flex-direction: column;
@@ -779,7 +1420,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             font-size: 0.875rem;
             font-weight: 600;
             color: var(--text-muted);
-            margin-bottom: 4px;
+            margin-bottom: 6px;
             display: block;
         }
 
@@ -829,7 +1470,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             justify-content: center;
             gap: 8px;
             box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
-            margin-top: 8px;
+            margin-top: 6px;
         }
 
         .btn-submit:hover:not(:disabled) {
@@ -870,9 +1511,10 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 6px 0;
+            padding: 8px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            font-size: 0.85rem;
+            font-size: 0.88rem;
+            word-break: break-all;
         }
 
         .result-item:last-child {
@@ -884,7 +1526,83 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 6px 12px;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            font-family: inherit;
+            outline: none;
+            width: 140px;
+            transition: all 0.2s;
+        }
+
+        .search-box:focus {
+            border-color: var(--accent-primary);
+            width: 180px;
+        }
+
+        .filter-btn-group {
+            display: inline-flex;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 2px;
+        }
+
+        .btn-filter {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-filter.active {
+            background: var(--accent-primary);
+            color: white;
+            font-weight: 600;
+        }
+
+        .view-toggle {
+            display: inline-flex;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 2px;
+        }
+
+        .btn-view {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 5px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-view.active {
+            background: #1e293b;
+            color: #38bdf8;
         }
 
         .btn-refresh {
@@ -1008,12 +1726,222 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             color: white;
         }
 
+        .btn-action.delete {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+
+        .btn-action.delete:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Grid View */
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .grid-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s;
+        }
+
+        .grid-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+
+        .grid-thumb {
+            height: 120px;
+            background: #182234;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .grid-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .grid-icon-doc {
+            font-size: 2.2rem;
+            color: #64748b;
+        }
+
+        .grid-body {
+            padding: 10px 12px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .grid-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-main);
+            text-decoration: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-bottom: 4px;
+        }
+
+        .grid-name:hover {
+            color: #60a5fa;
+        }
+
+        .grid-meta {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        .grid-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .grid-actions .btn-action {
+            flex: 1;
+            justify-content: center;
+            padding: 5px 6px;
+            font-size: 0.74rem;
+        }
+
         .empty-state {
             text-align: center;
             padding: 36px 20px;
             color: var(--text-dim);
             font-size: 0.9rem;
         }
+
+        /* Diagnostics Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-card {
+            background: #111827;
+            border: 1px solid #334155;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 700px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #1f293d;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.4rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .diag-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+        }
+
+        .diag-box {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            padding: 10px 14px;
+            border-radius: 8px;
+        }
+
+        .diag-label {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .diag-val {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-top: 4px;
+        }
+
+        .log-list {
+            background: #090d16;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            max-height: 240px;
+            overflow-y: auto;
+            color: #94a3b8;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .log-entry {
+            display: flex;
+            gap: 8px;
+        }
+
+        .log-time {
+            color: #64748b;
+            white-space: nowrap;
+        }
+
+        .log-status-info { color: #38bdf8; }
+        .log-status-error { color: #f87171; }
+        .log-status-client { color: #fbbf24; }
 
         /* Spinner */
         .spinner {
@@ -1023,420 +1951,11 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             border-top-color: white;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
+            display: none;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
-        }
-
-        .file-chip-thumb {
-            width: 22px;
-            height: 22px;
-            border-radius: 4px;
-            object-fit: cover;
-            border: 1px solid #334155;
-            flex-shrink: 0;
-        }
-
-        /* Direct Mobile Gallery & Action Pickers */
-        .picker-buttons-row {
-            display: grid;
-            grid-template-columns: 1.3fr 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 14px;
-        }
-
-        @media (max-width: 580px) {
-            .picker-buttons-row {
-                grid-template-columns: 1fr;
-                gap: 8px;
-            }
-        }
-
-        .btn-picker {
-            padding: 12px 14px;
-            border-radius: var(--radius-md);
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-        }
-
-        .btn-picker.btn-gallery {
-            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
-            color: white;
-            border: 1px solid #3b82f6;
-        }
-
-        .btn-picker.btn-gallery:hover {
-            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
-        }
-
-        .btn-picker.btn-camera {
-            background: #111827;
-            color: #f3f4f6;
-            border: 1px solid #374151;
-        }
-
-        .btn-picker.btn-camera:hover {
-            background: #1f2937;
-            border-color: #4b5563;
-            transform: translateY(-1px);
-        }
-
-        .btn-picker.btn-docs {
-            background: #111827;
-            color: #f3f4f6;
-            border: 1px solid #374151;
-        }
-
-        .btn-picker.btn-docs:hover {
-            background: #1f2937;
-            border-color: #4b5563;
-            transform: translateY(-1px);
-        }
-
-        /* Filter bar & view toggle */
-        .header-controls {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .view-toggle {
-            display: inline-flex;
-            background: #0f172a;
-            border: 1px solid #1e293b;
-            border-radius: 8px;
-            padding: 2px;
-        }
-
-        .view-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            padding: 5px 10px;
-            border-radius: 6px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.15s;
-        }
-
-        .view-btn.active {
-            background: #1e293b;
-            color: #38bdf8;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        }
-
-        .filter-bar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 16px;
-            overflow-x: auto;
-            padding-bottom: 4px;
-        }
-
-        .filter-pill {
-            background: #0f172a;
-            border: 1px solid #1e293b;
-            color: var(--text-dim);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.15s;
-        }
-
-        .filter-pill:hover {
-            color: var(--text-main);
-            border-color: #334155;
-        }
-
-        .filter-pill.active {
-            background: rgba(59, 130, 246, 0.15);
-            border-color: #3b82f6;
-            color: #60a5fa;
-            font-weight: 600;
-        }
-
-        /* Visual Gallery Grid */
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 14px;
-        }
-
-        @media (max-width: 540px) {
-            .gallery-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
-            }
-        }
-
-        .gallery-card {
-            background: #0f172a;
-            border: 1px solid #1e293b;
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            transition: all 0.2s ease;
-        }
-
-        .gallery-card:hover {
-            border-color: #3b82f6;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 18px rgba(0,0,0,0.4);
-        }
-
-        .gallery-preview-wrapper {
-            position: relative;
-            width: 100%;
-            height: 140px;
-            background: #090d16;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            overflow: hidden;
-        }
-
-        .gallery-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.25s ease;
-        }
-
-        .gallery-card:hover .gallery-img {
-            transform: scale(1.05);
-        }
-
-        .gallery-doc-placeholder {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(180deg, #111827 0%, #0b0f19 100%);
-        }
-
-        .gallery-badge {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(4px);
-            color: #38bdf8;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            padding: 2px 6px;
-            border-radius: 4px;
-            border: 1px solid rgba(56, 189, 248, 0.3);
-        }
-
-        .gallery-zoom-icon {
-            position: absolute;
-            bottom: 8px;
-            right: 8px;
-            background: rgba(15, 23, 42, 0.75);
-            color: white;
-            padding: 4px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .gallery-preview-wrapper:hover .gallery-zoom-icon {
-            opacity: 1;
-        }
-
-        .gallery-body {
-            padding: 10px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            flex: 1;
-        }
-
-        .gallery-title {
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: var(--text-main);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .gallery-meta {
-            font-size: 0.72rem;
-            color: var(--text-dim);
-            margin-bottom: 6px;
-        }
-
-        .gallery-actions {
-            display: flex;
-            gap: 6px;
-            margin-top: auto;
-        }
-
-        .gallery-btn {
-            flex: 1;
-            padding: 5px 8px;
-            background: #1e293b;
-            border: 1px solid #334155;
-            color: var(--text-muted);
-            border-radius: 6px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            text-decoration: none;
-            transition: all 0.15s;
-        }
-
-        .gallery-btn:hover {
-            color: white;
-            background: #334155;
-        }
-
-        .gallery-btn.download {
-            background: rgba(59, 130, 246, 0.15);
-            border-color: rgba(59, 130, 246, 0.35);
-            color: #60a5fa;
-        }
-
-        .gallery-btn.download:hover {
-            background: var(--accent-primary);
-            color: white;
-        }
-
-        /* Lightbox Modal */
-        .lightbox-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-
-        .lightbox-backdrop {
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(8px);
-        }
-
-        .lightbox-dialog {
-            position: relative;
-            max-width: 90vw;
-            max-height: 90vh;
-            display: flex;
-            flex-direction: column;
-            background: #111827;
-            border: 1px solid #1f293d;
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            z-index: 10;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
-        }
-
-        .lightbox-close {
-            position: absolute;
-            top: 10px;
-            right: 12px;
-            background: rgba(0, 0, 0, 0.6);
-            border: none;
-            color: white;
-            font-size: 24px;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 20;
-            transition: background 0.2s;
-        }
-
-        .lightbox-close:hover {
-            background: rgba(239, 68, 68, 0.8);
-        }
-
-        .lightbox-img-wrapper {
-            max-width: 85vw;
-            max-height: 70vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #000;
-            overflow: hidden;
-        }
-
-        .lightbox-img-wrapper img {
-            max-width: 100%;
-            max-height: 70vh;
-            object-fit: contain;
-        }
-
-        .lightbox-info {
-            padding: 14px 18px;
-            background: #111827;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            flex-wrap: wrap;
-            border-top: 1px solid #1f293d;
-        }
-
-        .lightbox-title {
-            font-weight: 600;
-            font-size: 0.95rem;
-            color: var(--text-main);
-        }
-
-        .lightbox-meta {
-            font-size: 0.78rem;
-            color: var(--text-dim);
-            margin-top: 2px;
-        }
-
-        .lightbox-actions {
-            display: flex;
-            gap: 8px;
         }
     </style>
 </head>
@@ -1444,12 +1963,18 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-                <div class="header-badge" style="margin-bottom:0;">⚡ Instant Conversion & Permanent Hosting</div>
+            <div class="header-top">
+                <div class="header-badge">⚡ Instant Conversion & Permanent Hosting</div>
                 <div class="header-badge" style="margin-bottom:0; background:rgba(16, 185, 129, 0.15); color:#34d399; border-color:rgba(16, 185, 129, 0.35);">v1.4.0 • Mobile Shield & Photo Gallery</div>
+                <button class="btn-diag" id="openDiagBtn" title="View Server Diagnostics and Logs">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    <span>Diagnostics v1.4.0</span>
+                </button>
             </div>
             <h1>Universal File Converter</h1>
-            <p>Convert images, spreadsheets, and markdown tables. Hosted instantly at <code>/files</code>.</p>
+            <p>Convert images, documents, and spreadsheets. Hosted permanently at <code>/files</code>.</p>
         </div>
 
         <!-- Upload & Convert Card -->
@@ -1458,38 +1983,35 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                 <span>Upload & Convert</span>
             </div>
 
-            <form id="uploadForm">
-                <!-- Direct Mobile Gallery & Action Pickers -->
-                <div class="picker-buttons-row">
-                    <button type="button" class="btn-picker btn-gallery" id="btnGallery">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                            <polyline points="21 15 16 10 5 21"></polyline>
-                        </svg>
-                        <span>🖼️ Photo Gallery</span>
-                    </button>
-                    <button type="button" class="btn-picker btn-camera" id="btnCamera">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                            <circle cx="12" cy="13" r="4"></circle>
-                        </svg>
-                        <span>📸 Take Photo</span>
-                    </button>
-                    <button type="button" class="btn-picker btn-docs" id="btnDocs">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                        </svg>
-                        <span>📁 Browse Files</span>
-                    </button>
-                </div>
-                <input type="file" id="galleryInput" multiple accept="image/*,.heic,.heif" style="display:none;">
-                <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;">
-                <input type="file" id="docInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.json,.html" style="display:none;">
+            <!-- Direct Action Pickers for mobile & quick select -->
+            <div class="picker-buttons-row">
+                <button type="button" class="btn-picker btn-gallery" id="btnPickGallery">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span>Photo Gallery</span>
+                </button>
+                <button type="button" class="btn-picker btn-camera" id="btnPickCamera">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                    <span>Camera</span>
+                </button>
+                <button type="button" class="btn-picker btn-docs" id="btnPickDocs">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    <span>Documents</span>
+                </button>
+            </div>
 
+            <form id="uploadForm">
                 <!-- Drag and Drop Box -->
                 <div class="dropzone" id="dropZone">
                     <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1499,56 +2021,73 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                     </svg>
                     <div class="dropzone-text">Drag & drop files here, or click to browse</div>
                     <div class="dropzone-sub">
-                        Images: PNG, JPG, JPEG, WEBP, HEIC, BMP, ICO &bull; Docs & Notes: PDF, MD, TXT, HTML &bull; Data: CSV, JSON, XLSX
+                        Images: PNG, JPG, WEBP, BMP, ICO, HEIC, GIF &bull; Docs: PDF, DOCX, DOC, RTF, TXT, MD, HTML &bull; Data: CSV, JSON, XLSX, XLS
                     </div>
-                    <input type="file" id="fileInput" multiple accept="image/*,.heic,.heif,.csv,.json,.xlsx,.html,.md,.txt,.pdf">
+                    <input type="file" id="fileInput" multiple accept="*/*">
+                    <input type="file" id="galleryInput" multiple accept="image/*,.heic,.heif">
+                    <input type="file" id="cameraInput" accept="image/*" capture="environment">
+                    <input type="file" id="docsInput" multiple accept=".pdf,.docx,.doc,.txt,.md,.rtf,.xlsx,.xls,.csv,.json,.html">
                 </div>
 
                 <!-- Staged files display -->
                 <div class="staged-files" id="stagedFiles"></div>
+
+                <!-- Mobile Shield & Upload Optimization -->
+                <div class="mobile-opt-row">
+                    <div class="mobile-opt-left">
+                        <input type="checkbox" id="mobileShield" checked>
+                        <div>
+                            <span style="font-weight:600; color:#e2e8f0;">Mobile Shield & Resumable Chunks</span>
+                            <div style="font-size:0.75rem; color:#64748b;">Splits large files into 768KB chunks to prevent cellular upload timeouts</div>
+                        </div>
+                    </div>
+                    <span id="stagedCountText" style="font-size:0.8rem; color:#38bdf8;">0 staged</span>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress-wrapper" id="progressWrapper">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressBar"></div>
+                    </div>
+                    <div class="progress-status" id="progressStatus">Uploading 0%</div>
+                </div>
 
                 <!-- Target Format Selection -->
                 <div class="form-row">
                     <div>
                         <label for="targetFormat">Select Target Format</label>
                         <select id="targetFormat" name="target_format" required>
-                            <optgroup label="Documents & Notes">
-                                <option value="pdf">Keep / Host as PDF (.pdf)</option>
-                                <option value="md">Extract to Markdown Notes (.md)</option>
-                                <option value="txt">Extract to Plain Text (.txt)</option>
-                                <option value="html">Extract to HTML Notes (.html)</option>
+                            <optgroup label="Direct Hosting">
+                                <option value="keep">Keep Original Format (Direct Host)</option>
                             </optgroup>
                             <optgroup label="Images">
-                                <option value="webp">WebP Image (.webp)</option>
+                                <option value="webp" selected>WebP Image (.webp) - High Quality & Small</option>
                                 <option value="png">PNG Image (.png)</option>
                                 <option value="jpg">JPEG Image (.jpg)</option>
                                 <option value="ico">Windows Icon (.ico)</option>
                                 <option value="bmp">Bitmap Image (.bmp)</option>
+                                <option value="gif">GIF Animation / Image (.gif)</option>
+                            </optgroup>
+                            <optgroup label="Documents & Notes">
+                                <option value="pdf">PDF Document (.pdf)</option>
+                                <option value="docx">Word Document (.docx)</option>
+                                <option value="md">Markdown Notes (.md)</option>
+                                <option value="txt">Plain Text (.txt)</option>
+                                <option value="html">HTML Webpage (.html)</option>
+                                <option value="rtf">Rich Text Format (.rtf)</option>
                             </optgroup>
                             <optgroup label="Data & Spreadsheets">
-                                <option value="csv">CSV (.csv)</option>
-                                <option value="json">JSON (.json)</option>
-                                <option value="xlsx">Excel Spreadsheet (.xlsx)</option>
+                                <option value="csv">CSV Spreadsheet (.csv)</option>
+                                <option value="xlsx">Excel Workbook (.xlsx)</option>
+                                <option value="json">JSON Structured Data (.json)</option>
                             </optgroup>
                         </select>
-                    </div>
-
-                    <div class="mobile-opt-row">
-                        <input type="checkbox" id="optImages" checked>
-                        <label for="optImages" style="margin-bottom:0; cursor:pointer;">⚡ Fast Mobile Upload: Auto-optimize large photos for speed</label>
                     </div>
 
                     <button type="submit" class="btn-submit" id="submitBtn">
                         <div class="spinner" id="spinner"></div>
                         <span id="btnText">Convert & Host Files</span>
                     </button>
-
-                    <div class="progress-wrapper" id="progressWrapper">
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="progressFill"></div>
-                        </div>
-                        <div class="progress-status" id="progressStatus">Uploading...</div>
-                    </div>
                 </div>
             </form>
 
@@ -1563,62 +2102,77 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                     <span class="badge-count" id="filesCount">0 files</span>
                 </div>
                 <div class="header-controls">
+                    <input type="text" class="search-box" id="searchBox" placeholder="Filter files...">
+                    <div class="filter-btn-group">
+                        <button type="button" class="btn-filter active" data-filter="all">All</button>
+                        <button type="button" class="btn-filter" data-filter="images">Images</button>
+                        <button type="button" class="btn-filter" data-filter="docs">Docs</button>
+                        <button type="button" class="btn-filter" data-filter="data">Data</button>
+                    </div>
                     <div class="view-toggle">
-                        <button type="button" class="view-btn active" id="btnViewGallery" title="Visual Photo Gallery Grid">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                            <span>Gallery</span>
+                        <button type="button" class="btn-view active" id="viewListBtn" title="List View">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                         </button>
-                        <button type="button" class="view-btn" id="btnViewList" title="Detailed List View">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-                            <span>List</span>
+                        <button type="button" class="btn-view" id="viewGridBtn" title="Grid View">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                         </button>
                     </div>
                     <button class="btn-refresh" id="refreshBtn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="23 4 23 10 17 10"></polyline>
                             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                         </svg>
-                        Refresh
+                        <span>Refresh</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Category Filter Tabs -->
-            <div class="filter-bar">
-                <button type="button" class="filter-pill active" data-filter="all">All (<span id="countAll">0</span>)</button>
-                <button type="button" class="filter-pill" data-filter="images">🖼️ Photos (<span id="countImages">0</span>)</button>
-                <button type="button" class="filter-pill" data-filter="docs">📄 Docs & Notes (<span id="countDocs">0</span>)</button>
-                <button type="button" class="filter-pill" data-filter="data">📊 Spreadsheets (<span id="countData">0</span>)</button>
-            </div>
-
-            <div class="files-list" id="filesList">
-                <div class="empty-state">Loading hosted files...</div>
+            <div id="filesContainer">
+                <div class="files-list" id="filesList">
+                    <div class="empty-state">Loading hosted files...</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Lightbox Modal for Fullscreen Photo & File Viewing -->
-    <div class="lightbox-modal" id="lightboxModal">
-        <div class="lightbox-backdrop" id="lightboxBackdrop"></div>
-        <div class="lightbox-dialog">
-            <button type="button" class="lightbox-close" id="lightboxClose" title="Close preview">&times;</button>
-            <div class="lightbox-img-wrapper">
-                <img id="lightboxImg" src="" alt="Preview">
+    <!-- Diagnostics Modal -->
+    <div class="modal-overlay" id="diagModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">System Diagnostics & Logs</div>
+                <button type="button" class="modal-close" id="closeDiagBtn">&times;</button>
             </div>
-            <div class="lightbox-info">
-                <div>
-                    <div class="lightbox-title" id="lightboxTitle">photo.jpg</div>
-                    <div class="lightbox-meta" id="lightboxMeta">1.2 MB &bull; 2026-10-18</div>
+            <div class="modal-body">
+                <div class="diag-grid">
+                    <div class="diag-box">
+                        <div class="diag-label">Status</div>
+                        <div class="diag-val" id="diagStatus">Checking...</div>
+                    </div>
+                    <div class="diag-box">
+                        <div class="diag-label">PDFium Engine</div>
+                        <div class="diag-val" id="diagPdfium">--</div>
+                    </div>
+                    <div class="diag-box">
+                        <div class="diag-label">HEIF Engine</div>
+                        <div class="diag-val" id="diagHeif">--</div>
+                    </div>
+                    <div class="diag-box">
+                        <div class="diag-label">Docx Engine</div>
+                        <div class="diag-val" id="diagDocx">--</div>
+                    </div>
+                    <div class="diag-box">
+                        <div class="diag-label">Hosted Files</div>
+                        <div class="diag-val" id="diagHosted">--</div>
+                    </div>
                 </div>
-                <div class="lightbox-actions">
-                    <button type="button" class="btn-action" id="lightboxCopyBtn">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                        <span>Copy Link</span>
-                    </button>
-                    <a href="#" id="lightboxDownloadBtn" download class="btn-action download">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        <span>Download</span>
-                    </a>
+
+                <div style="font-weight:600; font-size:0.9rem; color:#e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                    <span>Recent Conversion Logs</span>
+                    <button type="button" class="btn-refresh" id="diagRefreshBtn" style="padding:3px 8px; font-size:0.75rem;">Reload Logs</button>
+                </div>
+
+                <div class="log-list" id="diagLogs">
+                    <div style="color:#64748b;">Loading logs...</div>
                 </div>
             </div>
         </div>
@@ -1627,73 +2181,63 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
     <script>
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
-        const btnGallery = document.getElementById('btnGallery');
         const galleryInput = document.getElementById('galleryInput');
-        const btnCamera = document.getElementById('btnCamera');
         const cameraInput = document.getElementById('cameraInput');
-        const btnDocs = document.getElementById('btnDocs');
-        const docInput = document.getElementById('docInput');
-        const btnViewGallery = document.getElementById('btnViewGallery');
-        const btnViewList = document.getElementById('btnViewList');
-        const countAll = document.getElementById('countAll');
-        const countImages = document.getElementById('countImages');
-        const countDocs = document.getElementById('countDocs');
-        const countData = document.getElementById('countData');
-        const filterPills = document.querySelectorAll('.filter-pill');
+        const docsInput = document.getElementById('docsInput');
 
-        const lightboxModal = document.getElementById('lightboxModal');
-        const lightboxBackdrop = document.getElementById('lightboxBackdrop');
-        const lightboxClose = document.getElementById('lightboxClose');
-        const lightboxImg = document.getElementById('lightboxImg');
-        const lightboxTitle = document.getElementById('lightboxTitle');
-        const lightboxMeta = document.getElementById('lightboxMeta');
-        const lightboxCopyBtn = document.getElementById('lightboxCopyBtn');
-        const lightboxDownloadBtn = document.getElementById('lightboxDownloadBtn');
+        const btnPickGallery = document.getElementById('btnPickGallery');
+        const btnPickCamera = document.getElementById('btnPickCamera');
+        const btnPickDocs = document.getElementById('btnPickDocs');
 
         const stagedContainer = document.getElementById('stagedFiles');
+        const stagedCountText = document.getElementById('stagedCountText');
+        const mobileShield = document.getElementById('mobileShield');
+
         const uploadForm = document.getElementById('uploadForm');
         const targetFormat = document.getElementById('targetFormat');
-        const optImages = document.getElementById('optImages');
         const submitBtn = document.getElementById('submitBtn');
         const spinner = document.getElementById('spinner');
         const btnText = document.getElementById('btnText');
-        const progressWrapper = document.getElementById('progressWrapper');
-        const progressFill = document.getElementById('progressFill');
-        const progressStatus = document.getElementById('progressStatus');
         const statusBox = document.getElementById('statusBox');
-        const filesList = document.getElementById('filesList');
+
+        const progressWrapper = document.getElementById('progressWrapper');
+        const progressBar = document.getElementById('progressBar');
+        const progressStatus = document.getElementById('progressStatus');
+
+        const filesContainer = document.getElementById('filesContainer');
         const filesCount = document.getElementById('filesCount');
         const refreshBtn = document.getElementById('refreshBtn');
+        const searchBox = document.getElementById('searchBox');
+        const filterBtns = document.querySelectorAll('.btn-filter');
+        const viewListBtn = document.getElementById('viewListBtn');
+        const viewGridBtn = document.getElementById('viewGridBtn');
+
+        const openDiagBtn = document.getElementById('openDiagBtn');
+        const closeDiagBtn = document.getElementById('closeDiagBtn');
+        const diagModal = document.getElementById('diagModal');
+        const diagRefreshBtn = document.getElementById('diagRefreshBtn');
 
         let stagedFilesList = [];
+        let allHostedFiles = [];
+        let currentFilter = 'all';
+        let currentView = 'list';
 
-        // Direct Mobile Picker buttons
-        btnGallery.addEventListener('click', () => galleryInput.click());
-        btnCamera.addEventListener('click', () => cameraInput.click());
-        btnDocs.addEventListener('click', () => docInput.click());
-
-        galleryInput.addEventListener('change', () => {
-            if (galleryInput.files && galleryInput.files.length) {
-                addFiles(Array.from(galleryInput.files));
-            }
-            galleryInput.value = '';
-        });
-        cameraInput.addEventListener('change', () => {
-            if (cameraInput.files && cameraInput.files.length) {
-                addFiles(Array.from(cameraInput.files));
-            }
-            cameraInput.value = '';
-        });
-        docInput.addEventListener('change', () => {
-            if (docInput.files && docInput.files.length) {
-                addFiles(Array.from(docInput.files));
-            }
-            docInput.value = '';
-        });
-
-        // Drag & Drop handlers
+        // Picker click bindings
+        btnPickGallery.addEventListener('click', () => galleryInput.click());
+        btnPickCamera.addEventListener('click', () => cameraInput.click());
+        btnPickDocs.addEventListener('click', () => docsInput.click());
         dropZone.addEventListener('click', () => fileInput.click());
 
+        [fileInput, galleryInput, cameraInput, docsInput].forEach(inp => {
+            inp.addEventListener('change', () => {
+                if (inp.files && inp.files.length) {
+                    addFiles(Array.from(inp.files));
+                    inp.value = '';
+                }
+            });
+        });
+
+        // Drag & Drop
         ['dragenter', 'dragover'].forEach(name => {
             dropZone.addEventListener(name, (e) => {
                 e.preventDefault();
@@ -1716,317 +2260,96 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             }
         });
 
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files) {
-                addFiles(Array.from(fileInput.files));
-            }
-        });
-
-        async function addFiles(newFiles) {
+        function addFiles(newFiles) {
             for (const f of newFiles) {
                 if (!stagedFilesList.some(item => item.name === f.name && item.size === f.size)) {
-                    let standaloneFile = f;
-                    try {
-                        if (f.size <= 25 * 1024 * 1024 && typeof f.arrayBuffer === 'function') {
-                            const buf = await f.arrayBuffer();
-                            standaloneFile = new File([buf], f.name, { type: f.type, lastModified: f.lastModified });
-                        } else {
-                            const blobSlice = f.slice(0, f.size, f.type);
-                            standaloneFile = new File([blobSlice], f.name, { type: f.type, lastModified: f.lastModified });
-                        }
-                    } catch (_) {
-                        try {
-                            const blobSlice = f.slice(0, f.size);
-                            blobSlice.name = f.name;
-                            blobSlice.lastModified = f.lastModified;
-                            standaloneFile = blobSlice;
-                        } catch (e) {
-                            standaloneFile = f;
-                        }
-                    }
-                    stagedFilesList.push(standaloneFile);
+                    stagedFilesList.push(f);
                 }
-            }
-            const hasPdf = stagedFilesList.some(f => f.name.toLowerCase().endsWith('.pdf'));
-            const isImg = stagedFilesList.some(f => /\.(jpe?g|png|webp|heic|heif|bmp)$/i.test(f.name));
-            if (hasPdf && !isImg) {
-                targetFormat.value = 'pdf';
-            } else if (isImg && !hasPdf) {
-                targetFormat.value = 'webp';
             }
             renderStagedFiles();
         }
 
-        function removeFile(index) {
+        window.removeStagedFile = function(index) {
             stagedFilesList.splice(index, 1);
             renderStagedFiles();
-        }
+        };
 
         function renderStagedFiles() {
             stagedContainer.innerHTML = '';
+            stagedCountText.textContent = `${stagedFilesList.length} staged`;
+
             stagedFilesList.forEach((file, idx) => {
                 const chip = document.createElement('div');
                 chip.className = 'file-chip';
-                const isLarge = file.size > 10 * 1024 * 1024;
-                const sizeStr = file.size >= 1024 * 1024 
-                    ? (file.size / (1024 * 1024)).toFixed(1) + ' MB'
-                    : (file.size / 1024).toFixed(1) + ' KB';
-                const isImg = file.type.startsWith('image/') || /\.(jpe?g|png|webp|heic|heif|bmp|gif)$/i.test(file.name);
+                const sizeStr = (file.size / 1024).toFixed(1) + ' KB';
+
                 let thumbHtml = '';
-                if (isImg) {
-                    try {
-                        const blobUrl = URL.createObjectURL(file);
-                        thumbHtml = `<img class="file-chip-thumb" src="${blobUrl}" alt="thumb">`;
-                    } catch (_) {}
+                if (file.type && file.type.startsWith('image/')) {
+                    const thumbUrl = URL.createObjectURL(file);
+                    thumbHtml = `<img src="${thumbUrl}" class="file-chip-thumb" alt="thumb">`;
                 }
+
                 chip.innerHTML = `
                     ${thumbHtml}
                     <span>${file.name} (${sizeStr})</span>
-                    ${isLarge ? '<span class="file-chip-badge" title="Large file">Large</span>' : ''}
-                    <span class="file-chip-remove" onclick="removeFile(${idx})">&times;</span>
+                    <span class="file-chip-remove" onclick="removeStagedFile(${idx})">&times;</span>
                 `;
                 stagedContainer.appendChild(chip);
             });
         }
 
-        // Client-side photo downscaling for ultra-fast mobile upload
-        async function optimizeImageForUpload(file) {
-            const isImage = file.type.startsWith('image/') || /\.(jpe?g|png|webp|bmp)$/i.test(file.name);
-            if (!isImage || file.size < 1.2 * 1024 * 1024) {
-                return file;
-            }
-
-            return new Promise((resolve) => {
-                const img = new Image();
-                const url = URL.createObjectURL(file);
-                img.onload = () => {
-                    URL.revokeObjectURL(url);
-                    const maxDim = 2560;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > maxDim || height > maxDim) {
-                        if (width > height) {
-                            height = Math.round((height * maxDim) / width);
-                            width = maxDim;
-                        } else {
-                            width = Math.round((width * maxDim) / height);
-                            height = maxDim;
-                        }
-                    }
-
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    canvas.toBlob(
-                        (blob) => {
-                            if (blob && blob.size < file.size) {
-                                const newName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
-                                resolve(new File([blob], newName, { type: 'image/jpeg' }));
-                            } else {
-                                resolve(file);
-                            }
-                        },
-                        'image/jpeg',
-                        0.88
-                    );
-                };
-                img.onerror = () => {
-                    URL.revokeObjectURL(url);
-                    resolve(file);
-                };
-                img.src = url;
-            });
+        function updateProgress(percent, label) {
+            progressWrapper.style.display = 'block';
+            progressBar.style.width = Math.min(100, Math.max(0, percent)) + '%';
+            progressStatus.textContent = label || `${Math.round(percent)}%`;
         }
 
-        // Global store for failed files so users can tap "Retry" on mobile
-        let lastFailedBatch = [];
-
-        window.retrySingleFailed = async function(idx) {
-            const item = lastFailedBatch[idx];
-            if (!item || !item.file) return;
-            stagedFilesList = [item.file];
-            renderStagedFiles();
-            uploadForm.requestSubmit();
-        };
-
-        // Single file upload via XMLHttpRequest with real-time progress (< 512KB)
-        function uploadSingleFile(file, targetExt, onProgress) {
-            return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                const formData = new FormData();
-                formData.append('target_format', targetExt);
-                formData.append('files', file, file.name);
-
-                xhr.upload.onprogress = (e) => {
-                    if (e.lengthComputable && onProgress) {
-                        onProgress(e.loaded, e.total);
-                    }
-                };
-
-                xhr.onload = () => {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        try {
-                            const data = JSON.parse(xhr.responseText);
-                            resolve(data);
-                        } catch (err) {
-                            reject(new Error("Invalid server JSON response"));
-                        }
-                    } else if (xhr.status === 502 || xhr.status === 503) {
-                        reject(new Error("SERVER_WAKING_UP"));
-                    } else if (xhr.status === 413) {
-                        reject(new Error("File exceeds cloud payload limit."));
-                    } else {
-                        let errMsg = "Server error " + xhr.status;
-                        try {
-                            const parsed = JSON.parse(xhr.responseText);
-                            if (parsed.detail) errMsg = parsed.detail;
-                        } catch (_) {}
-                        reject(new Error(errMsg));
-                    }
-                };
-
-                xhr.onerror = () => reject(new Error("NETWORK_DISCONNECTED"));
-                xhr.ontimeout = () => reject(new Error("REQUEST_TIMEOUT"));
-                xhr.timeout = 180000;
-
-                xhr.open('POST', '/api/convert');
-                xhr.send(formData);
-            });
+        function resetProgress() {
+            progressWrapper.style.display = 'none';
+            progressBar.style.width = '0%';
+            progressStatus.textContent = '0%';
         }
 
-        // Chunked file upload (768KB chunks) with auto-retry per chunk for resilient mobile uploads
-        async function uploadFileChunked(file, targetExt, onProgress) {
-            const CHUNK_SIZE = 768 * 1024; // 768 KB per chunk (optimal for mobile packet windows)
-            const totalChunks = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
-            const fileId = Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+        // Chunked file upload
+        async function uploadChunked(file, format) {
+            const CHUNK_SIZE = 768 * 1024;
+            const totalChunks = Math.ceil(file.size / CHUNK_SIZE) || 1;
+            const fileId = Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
 
-            for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
-                const start = chunkIdx * CHUNK_SIZE;
+            for (let i = 0; i < totalChunks; i++) {
+                const start = i * CHUNK_SIZE;
                 const end = Math.min(file.size, start + CHUNK_SIZE);
-                let chunkBlob = file.slice(start, end);
-                try {
-                    if (typeof chunkBlob.arrayBuffer === 'function') {
-                        const chunkBuf = await chunkBlob.arrayBuffer();
-                        chunkBlob = new Blob([chunkBuf], { type: 'application/octet-stream' });
-                    }
-                } catch (_) {}
-                const isFinal = (chunkIdx + 1 === totalChunks);
+                const chunkBlob = file.slice(start, end);
 
-                let attempt = 0;
-                let chunkSuccess = false;
-                let lastError = null;
-
-                while (attempt < 4 && !chunkSuccess) {
-                    attempt++;
-                    try {
-                        const res = await uploadSingleChunk(
-                            fileId,
-                            chunkIdx,
-                            totalChunks,
-                            file.name,
-                            targetExt,
-                            chunkBlob,
-                            isFinal,
-                            (loaded, _) => {
-                                const bytesSentBefore = chunkIdx * CHUNK_SIZE;
-                                const currentTotalSent = bytesSentBefore + loaded;
-                                if (onProgress) {
-                                    onProgress(currentTotalSent, file.size, chunkIdx + 1, totalChunks);
-                                }
-                            }
-                        );
-                        chunkSuccess = true;
-                        if (isFinal) {
-                            return res;
-                        }
-                    } catch (err) {
-                        lastError = err;
-                        const isWakeUp = (err.message || '').includes('SERVER_WAKING_UP');
-                        // Fire background beacon
-                        try {
-                            fetch('/api/client-log', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    event: 'chunk_fail',
-                                    filename: file.name,
-                                    status: `Chunk ${chunkIdx + 1}/${totalChunks} attempt ${attempt}/4`,
-                                    detail: err.message || String(err),
-                                    user_agent: (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : ''
-                                })
-                            }).catch(() => {});
-                        } catch (_) {}
-
-                        if (attempt < 4) {
-                            const delayMs = isWakeUp ? 5000 * attempt : 1500 * attempt;
-                            await new Promise(r => setTimeout(r, delayMs));
-                        }
-                    }
-                }
-
-                if (!chunkSuccess) {
-                    const finalErr = new Error(lastError ? lastError.message : 'Connection dropped');
-                    finalErr.chunkIdx = chunkIdx + 1;
-                    finalErr.totalChunks = totalChunks;
-                    throw finalErr;
-                }
-            }
-        }
-
-        function uploadSingleChunk(fileId, chunkIdx, totalChunks, filename, targetExt, chunkBlob, isFinal, onProgress) {
-            return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
                 const formData = new FormData();
                 formData.append('file_id', fileId);
-                formData.append('chunk_index', chunkIdx);
+                formData.append('chunk_index', i);
                 formData.append('total_chunks', totalChunks);
-                formData.append('filename', filename);
-                formData.append('target_format', targetExt);
-                formData.append('chunk', chunkBlob, 'blob');
+                formData.append('filename', file.name);
+                formData.append('target_format', format);
+                formData.append('chunk', chunkBlob, file.name);
 
-                xhr.upload.onprogress = (e) => {
-                    if (e.lengthComputable && onProgress) {
-                        onProgress(e.loaded, e.total);
-                    }
-                };
+                const res = await fetch('/api/upload-chunk', {
+                    method: 'POST',
+                    body: formData
+                });
 
-                xhr.onload = () => {
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        try {
-                            const data = JSON.parse(xhr.responseText);
-                            resolve(data);
-                        } catch (_) {
-                            reject(new Error("Invalid server JSON response"));
-                        }
-                    } else if (xhr.status === 502 || xhr.status === 503) {
-                        reject(new Error("SERVER_WAKING_UP"));
-                    } else if (xhr.status === 413) {
-                        reject(new Error("File payload exceeds server limits"));
-                    } else {
-                        let errMsg = "Server error " + xhr.status;
-                        try {
-                            const p = JSON.parse(xhr.responseText);
-                            if (p.detail) errMsg = p.detail;
-                        } catch (_) {}
-                        reject(new Error(errMsg));
-                    }
-                };
+                if (!res.ok) {
+                    const err = await res.text();
+                    throw new Error(`Chunk upload failed: ${err}`);
+                }
 
-                xhr.onerror = () => reject(new Error("Cellular connection interrupted"));
-                xhr.ontimeout = () => reject(new Error("Upload request timed out"));
-                // Allow up to 180s on the final chunk since conversion executes then
-                xhr.timeout = isFinal ? 180000 : 50000;
+                const data = await res.json();
+                const pct = ((i + 1) / totalChunks) * 100;
+                updateProgress(pct, `Uploading ${file.name} (${i + 1}/${totalChunks})`);
 
-                xhr.open('POST', '/api/upload-chunk');
-                xhr.send(formData);
-            });
+                if (data.status === 'complete') {
+                    return data.results;
+                }
+            }
         }
 
-        // Form Submit Handler
+        // Form Submit
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (stagedFilesList.length === 0) {
@@ -2034,168 +2357,61 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                 return;
             }
 
-            const targetExt = targetFormat.value;
-            const filesToProcess = [...stagedFilesList];
-            const total = filesToProcess.length;
-
             submitBtn.disabled = true;
             spinner.style.display = 'inline-block';
             btnText.textContent = 'Processing...';
             statusBox.style.display = 'none';
-            progressWrapper.style.display = 'block';
-            progressFill.style.width = '0%';
-            progressStatus.textContent = 'Preparing files...';
+            resetProgress();
 
-            let wakeLock = null;
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                }
-            } catch (_) {}
-
-            const aggregatedResults = [];
-            lastFailedBatch = [];
+            const format = targetFormat.value;
+            const useChunks = mobileShield.checked || stagedFilesList.some(f => f.size > 1.5 * 1024 * 1024);
+            const allResults = [];
+            let hasErrors = false;
 
             try {
-                for (let i = 0; i < total; i++) {
-                    const originalFile = filesToProcess[i];
-                    let fileToUpload = originalFile;
-                    try {
-                        const blobSlice = originalFile.slice(0, originalFile.size, originalFile.type);
-                        fileToUpload = new File([blobSlice], originalFile.name, { type: originalFile.type, lastModified: originalFile.lastModified });
-                    } catch (_) {
-                        try {
-                            const blobSlice = originalFile.slice(0, originalFile.size);
-                            blobSlice.name = originalFile.name;
-                            blobSlice.lastModified = originalFile.lastModified;
-                            fileToUpload = blobSlice;
-                        } catch (e) {
-                            fileToUpload = originalFile;
+                if (useChunks) {
+                    // Chunked upload sequentially
+                    for (let fIdx = 0; fIdx < stagedFilesList.length; fIdx++) {
+                        const file = stagedFilesList[fIdx];
+                        updateProgress(0, `Uploading ${file.name}...`);
+                        const results = await uploadChunked(file, format);
+                        if (results) {
+                            allResults.push(...results);
                         }
                     }
+                } else {
+                    // Standard single batch POST
+                    updateProgress(40, 'Uploading files...');
+                    const formData = new FormData();
+                    formData.append('target_format', format);
+                    stagedFilesList.forEach(file => formData.append('files', file));
 
-                    // Step 1: Client optimization if enabled for photos
-                    if (optImages.checked) {
-                        progressStatus.textContent = `[${i + 1}/${total}] Checking optimization: ${originalFile.name}...`;
-                        fileToUpload = await optimizeImageForUpload(fileToUpload);
-                    }
+                    const response = await fetch('/api/convert', {
+                        method: 'POST',
+                        body: formData
+                    });
 
-                    // Step 2: Always use chunked pipeline with retry loops & assembly verification
-                    const isChunked = true;
-                    let attempt = 0;
-                    let success = false;
-                    let lastError = null;
-
-                    while (attempt < 3 && !success) {
-                        attempt++;
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        let errMsg = 'Server error ' + response.status;
                         try {
-                            progressStatus.textContent = `[${i + 1}/${total}] Uploading ${fileToUpload.name}...`;
-                            let responseData;
-                            if (isChunked) {
-                                responseData = await uploadFileChunked(
-                                    fileToUpload,
-                                    targetExt,
-                                    (loaded, totalBytes, chunkNum, totalChunks) => {
-                                        const filePct = totalBytes > 0 ? loaded / totalBytes : 0;
-                                        const overallPct = Math.round(((i + filePct) / total) * 100);
-                                        progressFill.style.width = overallPct + '%';
-                                        const sizeText = totalBytes >= 1024 * 1024
-                                            ? `${(loaded / (1024 * 1024)).toFixed(1)}MB / ${(totalBytes / (1024 * 1024)).toFixed(1)}MB`
-                                            : `${Math.round(loaded / 1024)}KB / ${Math.round(totalBytes / 1024)}KB`;
-                                        progressStatus.textContent = `[${i + 1}/${total}] Uploading ${fileToUpload.name} — Chunk ${chunkNum}/${totalChunks} (${sizeText})...`;
-                                    }
-                                );
-                            } else {
-                                responseData = await uploadSingleFile(
-                                    fileToUpload,
-                                    targetExt,
-                                    (loaded, totalBytes) => {
-                                        const filePct = totalBytes > 0 ? loaded / totalBytes : 0;
-                                        const overallPct = Math.round(((i + filePct) / total) * 100);
-                                        progressFill.style.width = overallPct + '%';
-                                        const loadedKb = (loaded / 1024).toFixed(0);
-                                        const totalKb = (totalBytes / 1024).toFixed(0);
-                                        progressStatus.textContent = `[${i + 1}/${total}] Uploading ${fileToUpload.name} (${loadedKb} KB / ${totalKb} KB)...`;
-                                    }
-                                );
-                            }
-
-                            progressStatus.textContent = `[${i + 1}/${total}] Finished converting ${fileToUpload.name}!`;
-                            if (responseData.results && responseData.results.length > 0) {
-                                let fileBatchFailed = false;
-                                for (const r of responseData.results) {
-                                    r.file = fileToUpload;
-                                    if (r.status !== 'ok') {
-                                        lastFailedBatch.push(r);
-                                        fileBatchFailed = true;
-                                    }
-                                }
-                                aggregatedResults.push(...responseData.results);
-                                if (!fileBatchFailed) {
-                                    stagedFilesList = stagedFilesList.filter(f => f.name !== originalFile.name || f.size !== originalFile.size);
-                                    renderStagedFiles();
-                                }
-                            }
-                            success = true;
-                        } catch (err) {
-                            lastError = err;
-                            const errStr = err.message || String(err);
-                            if (errStr.includes("SERVER_WAKING_UP") && attempt < 3) {
-                                progressStatus.textContent = `Cloud server is spinning up from sleep. Retrying in 6s (Attempt ${attempt}/3)...`;
-                                await new Promise(r => setTimeout(r, 6000));
-                            } else if ((errStr.includes("Cellular") || errStr.includes("NETWORK_DISCONNECTED") || errStr.includes("connection")) && attempt < 3) {
-                                progressStatus.textContent = `Connection blip. Retrying in 2s (Attempt ${attempt}/3)...`;
-                                await new Promise(r => setTimeout(r, 2000));
-                            } else {
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!success) {
-                        let rawMsg = lastError ? (lastError.message || String(lastError)) : "Upload interrupted";
-                        let msg = rawMsg;
-                        if (rawMsg.includes("NETWORK_DISCONNECTED") || rawMsg.includes("Cellular connection interrupted") || rawMsg.includes("connection dropped")) {
-                            msg = "Connection interrupted over mobile data.";
-                        } else if (rawMsg.includes("REQUEST_TIMEOUT") || rawMsg.includes("timed out")) {
-                            msg = "Request timed out over mobile data.";
-                        } else if (rawMsg.includes("SERVER_WAKING_UP")) {
-                            msg = "Cloud server was spinning up. Tap Retry to process now.";
-                        }
-                        
-                        const failEntry = {
-                            original: originalFile.name,
-                            error: msg,
-                            status: "error",
-                            file: fileToUpload
-                        };
-                        aggregatedResults.push(failEntry);
-                        lastFailedBatch.push(failEntry);
-
-                        try {
-                            fetch('/api/client-log', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    event: 'upload_failed',
-                                    filename: originalFile.name,
-                                    status: 'final_failure',
-                                    detail: msg,
-                                    user_agent: (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : ''
-                                })
-                            }).catch(() => {});
+                            const parsed = JSON.parse(errText);
+                            if (parsed.detail) errMsg = parsed.detail;
                         } catch (_) {}
+                        throw new Error(errMsg);
+                    }
+
+                    const data = await response.json();
+                    if (data.results) {
+                        allResults.push(...data.results);
                     }
                 }
 
-                progressFill.style.width = '100%';
-                progressStatus.textContent = 'Done!';
+                updateProgress(100, 'Conversion Complete!');
 
-                // Render Results
-                let hasErrors = false;
+                // Render result summary
                 let html = '<div style="font-weight:600; margin-bottom:8px;">Conversion Results:</div>';
-                let failIdx = 0;
-                aggregatedResults.forEach(res => {
+                allResults.forEach(res => {
                     if (res.status === 'ok') {
                         html += `
                             <div class="result-item">
@@ -2204,11 +2420,9 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                         `;
                     } else {
                         hasErrors = true;
-                        const thisIdx = failIdx++;
                         html += `
-                            <div class="result-item" style="color:#f87171; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                            <div class="result-item" style="color:#f87171;">
                                 <span>&#10007; <strong>${res.original}</strong>: ${res.error}</span>
-                                <button type="button" onclick="retrySingleFailed(${thisIdx})" style="background:#2563eb; color:#fff; border:none; padding:4px 12px; border-radius:6px; font-size:0.8rem; cursor:pointer; font-weight:600; white-space:nowrap;">🔄 Retry</button>
                             </div>
                         `;
                     }
@@ -2218,25 +2432,27 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                 statusBox.className = hasErrors ? 'status-box error' : 'status-box success';
                 statusBox.style.display = 'block';
 
-                // Clear staged files only if all files succeeded without errors
-                if (!hasErrors) {
-                    stagedFilesList = [];
-                    fileInput.value = '';
-                    renderStagedFiles();
-                }
+                stagedFilesList = [];
+                renderStagedFiles();
                 loadHostedFiles();
+            } catch (err) {
+                let msg = err.message || 'Unknown network error';
+                showStatus('Error: ' + msg, 'error');
+                fetch('/api/client-log', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        event: 'upload_error',
+                        filename: stagedFilesList.map(f => f.name).join(', '),
+                        status: 'error',
+                        detail: msg
+                    })
+                }).catch(() => {});
             } finally {
-                if (wakeLock) {
-                    try { await wakeLock.release(); } catch (_) {}
-                    wakeLock = null;
-                }
                 submitBtn.disabled = false;
                 spinner.style.display = 'none';
                 btnText.textContent = 'Convert & Host Files';
-                setTimeout(() => {
-                    progressWrapper.style.display = 'none';
-                    progressFill.style.width = '0%';
-                }, 3000);
+                setTimeout(resetProgress, 3000);
             }
         });
 
@@ -2246,248 +2462,221 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             statusBox.style.display = 'block';
         }
 
-        // State for hosted files
-        let allHostedFiles = [];
-        let currentFilter = 'all';
-        let currentViewMode = localStorage.getItem('file_converter_view') || 'gallery';
-
-        function isImageExt(ext) {
-            return ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'ico', 'gif', 'svg', 'heic', 'heif'].includes((ext || '').toLowerCase());
-        }
-
-        function isDocExt(ext) {
-            return ['pdf', 'md', 'txt', 'html', 'doc', 'docx'].includes((ext || '').toLowerCase());
-        }
-
-        function isDataExt(ext) {
-            return ['csv', 'json', 'xlsx', 'xls'].includes((ext || '').toLowerCase());
-        }
-
-        // View toggle events
-        btnViewGallery.addEventListener('click', () => {
-            currentViewMode = 'gallery';
-            localStorage.setItem('file_converter_view', 'gallery');
-            btnViewGallery.classList.add('active');
-            btnViewList.classList.remove('active');
-            renderHostedFiles();
-        });
-
-        btnViewList.addEventListener('click', () => {
-            currentViewMode = 'list';
-            localStorage.setItem('file_converter_view', 'list');
-            btnViewList.classList.add('active');
-            btnViewGallery.classList.remove('active');
-            renderHostedFiles();
-        });
-
-        // Initialize view mode button state
-        if (currentViewMode === 'list') {
-            btnViewList.classList.add('active');
-            btnViewGallery.classList.remove('active');
-        } else {
-            btnViewGallery.classList.add('active');
-            btnViewList.classList.remove('active');
-        }
-
-        // Filter pills event listeners
-        filterPills.forEach(pill => {
-            pill.addEventListener('click', () => {
-                filterPills.forEach(p => p.classList.remove('active'));
-                pill.classList.add('active');
-                currentFilter = pill.getAttribute('data-filter') || 'all';
-                renderHostedFiles();
-            });
-        });
-
-        // Lightbox controller
-        let currentLightboxUrl = '';
-
-        function openLightbox(url, name, sizeFormatted, dateModified) {
-            currentLightboxUrl = url;
-            lightboxImg.src = url;
-            lightboxTitle.textContent = name;
-            lightboxMeta.textContent = `${sizeFormatted} • ${dateModified}`;
-            lightboxDownloadBtn.href = url;
-            lightboxDownloadBtn.setAttribute('download', name);
-            lightboxModal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeLightbox() {
-            lightboxModal.style.display = 'none';
-            lightboxImg.src = '';
-            document.body.style.overflow = '';
-        }
-
-        lightboxClose.addEventListener('click', closeLightbox);
-        lightboxBackdrop.addEventListener('click', closeLightbox);
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && lightboxModal.style.display === 'flex') {
-                closeLightbox();
-            }
-        });
-
-        lightboxCopyBtn.addEventListener('click', () => {
-            if (currentLightboxUrl) {
-                copyFileLink(currentLightboxUrl, lightboxCopyBtn);
-            }
-        });
-
-        // Render hosted files (gallery grid or list view)
-        function renderHostedFiles() {
-            // Calculate category counts
-            const totalCount = allHostedFiles.length;
-            const imgCount = allHostedFiles.filter(f => isImageExt(f.ext)).length;
-            const docCount = allHostedFiles.filter(f => isDocExt(f.ext)).length;
-            const dataCount = allHostedFiles.filter(f => isDataExt(f.ext)).length;
-
-            countAll.textContent = totalCount;
-            countImages.textContent = imgCount;
-            countDocs.textContent = docCount;
-            countData.textContent = dataCount;
-
-            filesCount.textContent = `${totalCount} file${totalCount === 1 ? '' : 's'}`;
-
-            if (totalCount === 0) {
-                filesList.className = 'files-list';
-                filesList.innerHTML = '<div class="empty-state">No files hosted yet. Upload and convert your first file above!</div>';
-                return;
-            }
-
-            // Filter files
-            let filtered = allHostedFiles;
-            if (currentFilter === 'images') {
-                filtered = allHostedFiles.filter(f => isImageExt(f.ext));
-            } else if (currentFilter === 'docs') {
-                filtered = allHostedFiles.filter(f => isDocExt(f.ext));
-            } else if (currentFilter === 'data') {
-                filtered = allHostedFiles.filter(f => isDataExt(f.ext));
-            }
-
-            if (filtered.length === 0) {
-                filesList.className = 'files-list';
-                filesList.innerHTML = '<div class="empty-state">No files found matching the selected category.</div>';
-                return;
-            }
-
-            if (currentViewMode === 'gallery') {
-                filesList.className = 'gallery-grid';
-                filesList.innerHTML = filtered.map(file => {
-                    const fullUrl = window.location.origin + file.url;
-                    const isImg = isImageExt(file.ext);
-                    const safeName = file.name.replace(/'/g, "\\'");
-
-                    let previewHtml = '';
-                    if (isImg) {
-                        previewHtml = `
-                            <div class="gallery-preview-wrapper" onclick="openLightbox('${file.url}', '${safeName}', '${file.size_formatted}', '${file.modified}')">
-                                <img class="gallery-img" src="${file.url}" alt="${safeName}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'gallery-doc-placeholder\\'>🖼️ Image</div>'">
-                                <span class="gallery-badge">.${file.ext}</span>
-                                <div class="gallery-zoom-icon">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        const icon = isDocExt(file.ext) ? '📄' : (isDataExt(file.ext) ? '📊' : '📁');
-                        previewHtml = `
-                            <a href="${file.url}" target="_blank" class="gallery-preview-wrapper" style="text-decoration:none;">
-                                <div class="gallery-doc-placeholder">
-                                    <span style="font-size:2rem;">${icon}</span>
-                                    <span>${file.ext.toUpperCase()} Document</span>
-                                </div>
-                                <span class="gallery-badge">.${file.ext}</span>
-                            </a>
-                        `;
-                    }
-
-                    return `
-                        <div class="gallery-card">
-                            ${previewHtml}
-                            <div class="gallery-body">
-                                <div class="gallery-title" title="${file.name}">${file.name}</div>
-                                <div class="gallery-meta">${file.size_formatted} &bull; ${file.modified.split(' ')[0]}</div>
-                                <div class="gallery-actions">
-                                    <button class="gallery-btn" onclick="copyFileLink('${fullUrl}', this)">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                        <span>Link</span>
-                                    </button>
-                                    <a href="${file.url}" download="${file.name}" class="gallery-btn download">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                        <span>Save</span>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            } else {
-                filesList.className = 'files-list';
-                filesList.innerHTML = filtered.map(file => {
-                    const fullUrl = window.location.origin + file.url;
-                    return `
-                        <div class="file-card">
-                            <div class="file-info">
-                                <span class="file-badge">.${file.ext}</span>
-                                <div>
-                                    <a href="${file.url}" target="_blank" class="file-name" title="${file.name}">${file.name}</a>
-                                    <div class="file-meta">${file.size_formatted} &bull; ${file.modified}</div>
-                                </div>
-                            </div>
-                            <div class="file-actions">
-                                <button class="btn-action" onclick="copyFileLink('${fullUrl}', this)">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                    </svg>
-                                    <span>Copy Link</span>
-                                </button>
-                                <a href="${file.url}" download="${file.name}" class="btn-action download">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                        <polyline points="7 10 12 15 17 10"></polyline>
-                                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                                    </svg>
-                                    <span>Download</span>
-                                </a>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
-        }
-
-        // Fetch & render hosted files list
+        // Hosted files loading & rendering
         async function loadHostedFiles() {
             try {
                 const response = await fetch('/api/files');
                 allHostedFiles = await response.json();
                 renderHostedFiles();
             } catch (err) {
-                filesList.className = 'files-list';
-                filesList.innerHTML = '<div class="empty-state" style="color:#ef4444;">Failed to load hosted files.</div>';
+                filesContainer.innerHTML = '<div class="empty-state" style="color:#ef4444;">Failed to load hosted files.</div>';
             }
         }
 
-        // Copy link helper
-        function copyFileLink(url, btn) {
+        function filterAndSearchFiles() {
+            const query = searchBox.value.toLowerCase().trim();
+            return allHostedFiles.filter(file => {
+                const matchesQuery = !query || file.name.toLowerCase().includes(query) || file.ext.toLowerCase().includes(query);
+                if (!matchesQuery) return false;
+
+                if (currentFilter === 'images') {
+                    return file.is_image;
+                } else if (currentFilter === 'docs') {
+                    return ['pdf', 'docx', 'doc', 'txt', 'md', 'rtf', 'html'].includes(file.ext);
+                } else if (currentFilter === 'data') {
+                    return ['csv', 'json', 'xlsx', 'xls'].includes(file.ext);
+                }
+                return true;
+            });
+        }
+
+        function renderHostedFiles() {
+            const filtered = filterAndSearchFiles();
+            filesCount.textContent = `${filtered.length} of ${allHostedFiles.length} file${allHostedFiles.length === 1 ? '' : 's'}`;
+
+            if (filtered.length === 0) {
+                filesContainer.innerHTML = `<div class="empty-state">${allHostedFiles.length === 0 ? 'No files hosted yet. Upload and convert above!' : 'No matching files found.'}</div>`;
+                return;
+            }
+
+            if (currentView === 'list') {
+                filesContainer.innerHTML = `<div class="files-list">${filtered.map(renderListCard).join('')}</div>`;
+            } else {
+                filesContainer.innerHTML = `<div class="files-grid">${filtered.map(renderGridCard).join('')}</div>`;
+            }
+        }
+
+        function renderListCard(file) {
+            const fullUrl = window.location.origin + file.url;
+            return `
+                <div class="file-card">
+                    <div class="file-info">
+                        <span class="file-badge">.${file.ext}</span>
+                        <div style="overflow:hidden;">
+                            <a href="${file.url}" target="_blank" class="file-name" title="${file.name}">${file.name}</a>
+                            <div class="file-meta">${file.size_formatted} &bull; ${file.modified}</div>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn-action" onclick="copyFileLink('${fullUrl}', this)">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            <span>Copy Link</span>
+                        </button>
+                        <a href="${file.download_url}" class="btn-action download" title="Direct Download">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>Download</span>
+                        </a>
+                        <button class="btn-action delete" onclick="deleteFile('${file.name}')" title="Delete File">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderGridCard(file) {
+            const fullUrl = window.location.origin + file.url;
+            let thumb = `<div class="grid-icon-doc">📄</div>`;
+            if (file.is_image) {
+                thumb = `<img src="${file.url}" alt="${file.name}" loading="lazy">`;
+            }
+
+            return `
+                <div class="grid-card">
+                    <div class="grid-thumb">
+                        ${thumb}
+                    </div>
+                    <div class="grid-body">
+                        <div>
+                            <a href="${file.url}" target="_blank" class="grid-name" title="${file.name}">${file.name}</a>
+                            <div class="grid-meta">${file.size_formatted} &bull; .${file.ext}</div>
+                        </div>
+                        <div class="grid-actions">
+                            <button class="btn-action" onclick="copyFileLink('${fullUrl}', this)">Copy</button>
+                            <a href="${file.download_url}" class="btn-action download">Get</a>
+                            <button class="btn-action delete" onclick="deleteFile('${file.name}')">&times;</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.copyFileLink = function(url, btn) {
             navigator.clipboard.writeText(url).then(() => {
                 const span = btn.querySelector('span');
-                const origText = span.textContent;
-                span.textContent = 'Copied!';
+                const orig = span ? span.textContent : btn.textContent;
+                if (span) span.textContent = 'Copied!';
+                else btn.textContent = 'Copied!';
                 btn.style.borderColor = '#10b981';
                 btn.style.color = '#10b981';
                 setTimeout(() => {
-                    span.textContent = origText;
+                    if (span) span.textContent = orig;
+                    else btn.textContent = orig;
                     btn.style.borderColor = '';
                     btn.style.color = '';
                 }, 2000);
             }).catch(() => {
-                alert('Copied link: ' + url);
+                alert('Copied URL: ' + url);
             });
-        }
+        };
+
+        window.deleteFile = async function(name) {
+            if (!confirm(`Are you sure you want to permanently delete "${name}"?`)) return;
+            try {
+                const res = await fetch(`/api/files/${encodeURIComponent(name)}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Deletion failed: ' + res.status);
+                loadHostedFiles();
+            } catch (err) {
+                alert('Error deleting file: ' + err.message);
+            }
+        };
+
+        // Filter / Search / View events
+        searchBox.addEventListener('input', renderHostedFiles);
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderHostedFiles();
+            });
+        });
+
+        viewListBtn.addEventListener('click', () => {
+            viewListBtn.classList.add('active');
+            viewGridBtn.classList.remove('active');
+            currentView = 'list';
+            renderHostedFiles();
+        });
+
+        viewGridBtn.addEventListener('click', () => {
+            viewGridBtn.classList.add('active');
+            viewListBtn.classList.remove('active');
+            currentView = 'grid';
+            renderHostedFiles();
+        });
 
         refreshBtn.addEventListener('click', loadHostedFiles);
+
+        // Diagnostics Modal
+        async function loadDiagnostics() {
+            try {
+                const res = await fetch('/api/diagnostics');
+                const data = await res.json();
+                document.getElementById('diagStatus').textContent = data.status || 'healthy';
+                document.getElementById('diagPdfium').textContent = data.has_pdfium ? 'Available' : 'Missing';
+                document.getElementById('diagPdfium').style.color = data.has_pdfium ? '#10b981' : '#f87171';
+                document.getElementById('diagHeif').textContent = data.has_heif ? 'Available' : 'Missing';
+                document.getElementById('diagHeif').style.color = data.has_heif ? '#10b981' : '#f87171';
+                document.getElementById('diagDocx').textContent = data.has_docx ? 'Available' : 'XML Fallback';
+                document.getElementById('diagHosted').textContent = data.hosted_count;
+
+                const logsContainer = document.getElementById('diagLogs');
+                if (!data.logs || data.logs.length === 0) {
+                    logsContainer.innerHTML = '<div style="color:#64748b;">No conversion logs recorded yet.</div>';
+                } else {
+                    logsContainer.innerHTML = data.logs.slice().reverse().map(l => {
+                        const cls = l.status === 'error' ? 'log-status-error' : (l.status === 'client' ? 'log-status-client' : 'log-status-info');
+                        return `
+                            <div class="log-entry">
+                                <span class="log-time">[${l.timestamp.split(' ')[1] || ''}]</span>
+                                <span class="${cls}">[${l.status.toUpperCase()}]</span>
+                                <span>${l.message}</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (err) {
+                document.getElementById('diagStatus').textContent = 'Error';
+            }
+        }
+
+        openDiagBtn.addEventListener('click', () => {
+            diagModal.style.display = 'flex';
+            loadDiagnostics();
+        });
+
+        closeDiagBtn.addEventListener('click', () => {
+            diagModal.style.display = 'none';
+        });
+
+        diagRefreshBtn.addEventListener('click', loadDiagnostics);
+
+        diagModal.addEventListener('click', (e) => {
+            if (e.target === diagModal) diagModal.style.display = 'none';
+        });
+
         loadHostedFiles();
     </script>
 </body>
@@ -2511,4 +2700,3 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)
-
