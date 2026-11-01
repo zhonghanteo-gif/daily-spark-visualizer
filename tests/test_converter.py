@@ -632,3 +632,87 @@ def test_scanned_image_pdf_to_docx_error(tmp_path):
         process_conversion(str(empty_pdf), "empty_scan.pdf", "docx")
 
 
+def test_rtf_unicode_uc_skipping():
+    """Proves bug fix: RTF stripper correctly consumes fallback char after \\uN instead of appending '?'."""
+    # 1. Right single quote / apostrophe: \u8217?
+    rtf1 = r"{\rtf1\ansi It\u8217?s a great day!}"
+    assert strip_rtf(rtf1) == "It’s a great day!"
+
+    # 2. Chinese and European accented characters: \u19990?\u30028?
+    rtf2 = r"{\rtf1\ansi Hello \u19990?\u30028? \u233?\u224?\u252?}"
+    assert strip_rtf(rtf2) == "Hello 世界 éàü"
+
+    # 3. uc0 explicit zero skip count
+    rtf3 = r"{\rtf1\ansi\uc0\u19990\u30028}"
+    assert strip_rtf(rtf3) == "世界"
+
+
+def test_rtf_writing_unicode_roundtrip(tmp_path):
+    """Proves bug fix: non-ASCII characters converted to RTF are encoded cleanly as \\uN? and roundtrip."""
+    txt_file = tmp_path / "test_unicode.txt"
+    txt_file.write_text("Hello 世界! Café and résumé.", encoding="utf-8")
+
+    out_name = process_conversion(str(txt_file), "test_unicode.txt", "rtf")
+    out_file = HOSTED_DIR / out_name
+    assert out_file.exists()
+
+    # Verify standard RTF escape syntax in file
+    content = out_file.read_text(encoding="ascii")
+    assert "\\u19990?" in content
+    assert "\\u30028?" in content
+
+    # Verify extracted text matches original
+    extracted = extract_text_from_document(str(out_file), "rtf")
+    assert len(extracted) == 1
+    assert "Hello 世界! Café and résumé." in extracted[0][1]
+    out_file.unlink()
+
+
+def test_docx_control_character_sanitization(tmp_path):
+    """Proves bug fix: DOCX generation strips XML 1.0 illegal control characters so files reload cleanly."""
+    dirty_text = "Clean text\x00with null\x0bvertical tab\x0cand form feed\x0e."
+    docx_out = tmp_path / "test_dirty.docx"
+
+    write_docx_document("Title \x00 Here", [(1, dirty_text)], str(docx_out))
+    assert docx_out.exists()
+
+    # Re-extract to verify no XML syntax error and valid document structure
+    extracted = extract_text_from_document(str(docx_out), "docx")
+    assert len(extracted) == 1
+    content = extracted[0][1]
+    assert "Clean textwith null" in content
+    assert "vertical tab" in content
+    assert "and form feed." in content
+    assert "\x00" not in content
+    assert "\x0b" not in content
+    assert "\x0c" not in content
+    assert "\x0e" not in content
+
+
+def test_empty_file_conversion_error(tmp_path):
+    """Proves bug fix: 0-byte file input gives clear user-friendly error instead of library crashes."""
+    empty_file = tmp_path / "empty_test.csv"
+    empty_file.write_bytes(b"")
+
+    with pytest.raises(ValueError, match="The uploaded file is empty \\(0 bytes\\)"):
+        process_conversion(str(empty_file), "empty_test.csv", "json")
+
+
+def test_empty_csv_reading(tmp_path):
+    """Proves bug fix: read_data_file returns empty DataFrame for 0-byte CSV without crashing."""
+    empty_csv = tmp_path / "empty_sheet.csv"
+    empty_csv.write_bytes(b"")
+
+    df = read_data_file(str(empty_csv), "csv")
+    assert df.empty
+
+
+def test_encrypted_ole_docx_detection(tmp_path):
+    """Proves bug fix: password-protected or legacy OLE documents return informative error."""
+    encrypted_docx = tmp_path / "protected.docx"
+    encrypted_docx.write_bytes(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1\x00\x00\x00\x00\x00\x00")
+
+    with pytest.raises(ValueError, match="encrypted or legacy binary Office document"):
+        extract_text_from_document(str(encrypted_docx), "docx")
+
+

@@ -224,8 +224,13 @@ def read_data_file(input_path: str, ext: str) -> pd.DataFrame:
     if ext == "csv":
         try:
             return pd.read_csv(input_path)
+        except pd.errors.EmptyDataError:
+            return pd.DataFrame()
         except UnicodeDecodeError:
-            return pd.read_csv(input_path, encoding="latin1")
+            try:
+                return pd.read_csv(input_path, encoding="latin1")
+            except pd.errors.EmptyDataError:
+                return pd.DataFrame()
     elif ext in ("xlsx", "xls"):
         return pd.read_excel(input_path)
     elif ext == "json":
@@ -453,23 +458,34 @@ def strip_html_tags(html_str: str) -> str:
 
 
 def strip_rtf(text: str) -> str:
-    """Extracts plain text from RTF content, ignoring font/color tables and unescaping chars."""
-    pattern = re.compile(r"\\([a-z]{1,32})(-?\d+)? ?|\\\'([0-9a-fA-F]{2})|\\([^a-z])|([{}])|[\r\n]+|(.)", re.IGNORECASE)
+    """Extracts plain text from RTF content, ignoring font/color tables, properly handling unicode escapes and skipping uc fallback chars."""
+    pattern = re.compile(
+        r"\\([a-z]{1,32})(-?\d+)? ?|\\\'([0-9a-fA-F]{2})|\\([^a-z])|([{}])|[\r\n]+|(.)",
+        re.IGNORECASE,
+    )
     destinations = {"fonttbl", "colortbl", "stylesheet", "info", "generator", "*"}
     out = []
     stack = []
     ignoring = 0
+    uc_skip = 1
+    skipping_chars = 0
+
     for match in pattern.finditer(text):
         word, arg, hex_byte, char, brace, raw_char = match.groups()
         if brace == "{":
-            stack.append(ignoring)
+            stack.append((ignoring, uc_skip))
         elif brace == "}":
             if stack:
-                ignoring = stack.pop()
+                ignoring, uc_skip = stack.pop()
         elif word:
             w_lower = word.lower()
             if w_lower in destinations:
                 ignoring = 1
+            elif w_lower == "uc" and arg:
+                try:
+                    uc_skip = max(0, int(arg))
+                except Exception:
+                    pass
             elif w_lower in ("par", "line"):
                 if not ignoring:
                     out.append("\n")
@@ -485,17 +501,24 @@ def strip_rtf(text: str) -> str:
                         out.append(chr(val))
                     except Exception:
                         pass
+                    skipping_chars = uc_skip
         elif hex_byte:
-            if not ignoring:
+            if skipping_chars > 0:
+                skipping_chars -= 1
+            elif not ignoring:
                 try:
                     out.append(bytes.fromhex(hex_byte).decode("cp1252"))
                 except Exception:
                     pass
         elif char:
-            if not ignoring:
+            if skipping_chars > 0:
+                skipping_chars -= 1
+            elif not ignoring:
                 out.append(char)
         elif raw_char:
-            if not ignoring:
+            if skipping_chars > 0:
+                skipping_chars -= 1
+            elif not ignoring:
                 out.append(raw_char)
     cleaned = "".join(out).strip()
     return re.sub(r"\n{3,}", "\n\n", cleaned)
@@ -543,6 +566,20 @@ def extract_text_from_document(input_path: str, source_ext: str) -> list[tuple[i
         return all_text
 
     if source_ext == "docx":
+        # Check for OLE encrypted or legacy binary Office header
+        try:
+            with open(input_path, "rb") as f:
+                header = f.read(8)
+            if header.startswith(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"):
+                raise ValueError(
+                    "This document appears to be an encrypted or legacy binary Office document. "
+                    "Please save it as an unencrypted DOCX or DOC file before converting."
+                )
+        except ValueError:
+            raise
+        except Exception:
+            pass
+
         if HAS_DOCX:
             try:
                 doc = python_docx.Document(input_path)
@@ -618,18 +655,25 @@ def extract_text_from_document(input_path: str, source_ext: str) -> list[tuple[i
     return [(1, raw_text)] if raw_text else [(1, "")]
 
 
+def clean_xml_string(val: str) -> str:
+    """Removes XML 1.0 illegal control characters."""
+    return re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\ud800-\udfff\ufffe\uffff]", "", val or "")
+
+
 def write_docx_document(title: str, sections: list[tuple[int, str]], output_path: str):
     """Writes extracted text sections to a valid .docx file."""
+    clean_title = clean_xml_string(title)
     if HAS_DOCX:
         try:
             doc = python_docx.Document()
-            doc.add_heading(title, level=1)
+            doc.add_heading(clean_title, level=1)
             for p_num, text in sections:
                 if len(sections) > 1:
                     doc.add_heading(f"Page {p_num}", level=2)
                 for para in text.splitlines():
-                    if para.strip():
-                        doc.add_paragraph(para.strip())
+                    cleaned_para = clean_xml_string(para.strip())
+                    if cleaned_para:
+                        doc.add_paragraph(cleaned_para)
             doc.save(output_path)
             return
         except Exception:
@@ -637,8 +681,8 @@ def write_docx_document(title: str, sections: list[tuple[int, str]], output_path
 
     # Fallback to minimal valid OpenXML archive with properly XML-escaped text
     body_xml = "".join(
-        f"<w:p><w:r><w:t>{ saxutils.escape(line) }</w:t></w:r></w:p>"
-        for _, text in sections for line in text.splitlines() if line.strip()
+        f"<w:p><w:r><w:t>{ saxutils.escape(clean_xml_string(line.strip())) }</w:t></w:r></w:p>"
+        for _, text in sections for line in text.splitlines() if clean_xml_string(line.strip())
     )
     with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr(
@@ -722,6 +766,14 @@ def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
 
     output_filename = f"{base_name}.{target_ext}"
     output_path = str(HOSTED_DIR / output_filename)
+
+    if Path(input_path).stat().st_size == 0:
+        if source_ext == target_ext:
+            if Path(input_path).resolve() != Path(output_path).resolve():
+                shutil.copyfile(input_path, output_path)
+            log_event("info", f"Direct pass-through hosted (.{source_ext}): {output_filename}")
+            return output_filename
+        raise ValueError("The uploaded file is empty (0 bytes).")
 
     # 1. Direct pass-through when source and target formats match
     if source_ext == target_ext:
@@ -818,9 +870,18 @@ def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
             Path(output_path).write_text("\n".join(lines), encoding="utf-8")
             return output_filename
         elif target_ext == "rtf":
-            body = "\n".join(text for _, text in sections).replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}")
-            rtf_lines = "\\par\n".join(body.splitlines())
-            Path(output_path).write_text(f"{{\\rtf1\\ansi\\deff0 {rtf_lines}}}", encoding="utf-8")
+            raw_body = "\n".join(text for _, text in sections)
+            escaped_body = raw_body.replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}")
+            rtf_chars = []
+            for c in escaped_body:
+                code = ord(c)
+                if code > 127:
+                    rtf_chars.append(f"\\u{code}?")
+                else:
+                    rtf_chars.append(c)
+            rtf_encoded = "".join(rtf_chars)
+            rtf_lines = "\\par\n".join(rtf_encoded.splitlines())
+            Path(output_path).write_text(f"{{\\rtf1\\ansi\\deff0 {rtf_lines}}}", encoding="ascii", errors="replace")
             return output_filename
         elif target_ext == "html":
             body_html = "".join(f"<div class='page'>{html.escape(text)}</div>" for _, text in sections)
@@ -1041,20 +1102,23 @@ async def list_hosted_files():
     file_list = []
     if HOSTED_DIR.exists():
         for f in HOSTED_DIR.iterdir():
-            if f.is_file() and not f.name.startswith("."):
-                stat = f.stat()
-                ext_clean = f.suffix.lower().lstrip(".")
-                file_list.append({
-                    "name": f.name,
-                    "url": f"/files/{urllib.parse.quote(f.name)}",
-                    "download_url": f"/files/{urllib.parse.quote(f.name)}?download=1",
-                    "size_bytes": stat.st_size,
-                    "size_formatted": format_file_size(stat.st_size),
-                    "modified": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
-                    "ext": ext_clean,
-                    "mime_type": CONTENT_TYPE_BY_EXT.get(ext_clean, "application/octet-stream").split(";")[0],
-                    "is_image": ext_clean in {"png", "jpg", "jpeg", "webp", "bmp", "gif", "ico", "heic", "heif"},
-                })
+            try:
+                if f.is_file() and not f.name.startswith("."):
+                    stat = f.stat()
+                    ext_clean = f.suffix.lower().lstrip(".")
+                    file_list.append({
+                        "name": f.name,
+                        "url": f"/files/{urllib.parse.quote(f.name)}",
+                        "download_url": f"/files/{urllib.parse.quote(f.name)}?download=1",
+                        "size_bytes": stat.st_size,
+                        "size_formatted": format_file_size(stat.st_size),
+                        "modified": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                        "ext": ext_clean,
+                        "mime_type": CONTENT_TYPE_BY_EXT.get(ext_clean, "application/octet-stream").split(";")[0],
+                        "is_image": ext_clean in {"png", "jpg", "jpeg", "webp", "bmp", "gif", "ico", "heic", "heif"},
+                    })
+            except (FileNotFoundError, OSError):
+                continue
     file_list.sort(key=lambda x: x["modified"], reverse=True)
     return file_list
 
