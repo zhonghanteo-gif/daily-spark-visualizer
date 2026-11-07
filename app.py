@@ -1313,7 +1313,77 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             transform: rotate(180deg);
         }
 
-        /* Black & White Page Option (Monochrome High Contrast Theme) */
+        /* Webpage Theme Switcher Bar */
+        .theme-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 6px 0 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .theme-bar-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .theme-switcher {
+            display: inline-flex;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 9999px;
+            padding: 3px;
+            gap: 3px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+        }
+
+        .theme-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 5px 12px;
+            border-radius: 9999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .theme-btn:hover:not(.active) {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .theme-btn:active {
+            transform: scale(0.96);
+        }
+
+        .theme-btn.active {
+            background: var(--accent-primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .theme-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        /* Black & White Page Option (Monochrome High Contrast Base) */
         body.bw-mode {
             --bg-color: #09090b;
             --card-bg: #121214;
@@ -1326,44 +1396,337 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             --text-dim: #71717a;
             --success: #ffffff;
             --danger: #d4d4d8;
-            filter: grayscale(100%);
         }
 
-        body.bw-mode .header h1 {
-            background: linear-gradient(135deg, #ffffff 40%, #71717a);
+        /* Black & White Light (Paper Page Mode) */
+        body.bw-page-light {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --card-border: #cbd5e1;
+            --accent-primary: #09090b;
+            --accent-hover: #27272a;
+            --accent-glow: rgba(0, 0, 0, 0.15);
+            --text-main: #09090b;
+            --text-muted: #52525b;
+            --text-dim: #71717a;
+            --success: #09090b;
+            --danger: #71717a;
+            --warning: #52525b;
+            background-color: #f8fafc;
+            color: #09090b;
+        }
+
+        body.bw-page-light .header h1 {
+            background: linear-gradient(135deg, #09090b 40%, #52525b);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        body.bw-mode .btn-picker.btn-gallery {
+        body.bw-page-light .header-badge {
+            background: #f4f4f5 !important;
+            color: #09090b !important;
+            border-color: #d4d4d8 !important;
+        }
+
+        body.bw-page-light .btn-diag,
+        body.bw-page-light .btn-bw-toggle {
+            background: #ffffff !important;
+            border-color: #d4d4d8 !important;
+            color: #09090b !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+        }
+
+        body.bw-page-light .btn-diag:hover,
+        body.bw-page-light .btn-bw-toggle:hover {
+            background: #f4f4f5 !important;
+            border-color: #09090b !important;
+            color: #000000 !important;
+        }
+
+        body.bw-page-light .theme-switcher {
+            background: #ffffff;
+            border-color: #d4d4d8;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        body.bw-page-light .theme-btn {
+            color: #71717a;
+        }
+
+        body.bw-page-light .theme-btn.active {
+            background: #09090b;
+            color: #ffffff;
+        }
+
+        body.bw-page-light .card {
+            background: #ffffff;
+            border-color: #e4e4e7;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        body.bw-page-light .btn-picker.btn-gallery {
+            background: #09090b !important;
+            color: #ffffff !important;
+            border-color: #09090b !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+        }
+
+        body.bw-page-light .btn-picker.btn-gallery:hover {
             background: #27272a !important;
-            border-color: #52525b !important;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.3) !important;
+        }
+
+        body.bw-page-light .btn-picker.btn-camera,
+        body.bw-page-light .btn-picker.btn-docs {
+            background: #ffffff !important;
+            color: #09090b !important;
+            border-color: #d4d4d8 !important;
+        }
+
+        body.bw-page-light .btn-picker.btn-camera:hover,
+        body.bw-page-light .btn-picker.btn-docs:hover {
+            background: #f4f4f5 !important;
+            border-color: #09090b !important;
+        }
+
+        body.bw-page-light .dropzone {
+            background: #fafafa;
+            border-color: #d4d4d8;
+            color: #09090b;
+        }
+
+        body.bw-page-light .dropzone:hover,
+        body.bw-page-light .dropzone.dragover {
+            background: #f4f4f5;
+            border-color: #09090b;
+        }
+
+        body.bw-page-light .dropzone-icon {
+            stroke: #09090b;
+        }
+
+        body.bw-page-light .mobile-opt-row {
+            background: #f4f4f5;
+            border-color: #e4e4e7;
+            color: #52525b;
+        }
+
+        body.bw-page-light .mobile-opt-row span {
+            color: #09090b !important;
+        }
+
+        body.bw-page-light select {
+            background: #ffffff;
+            color: #09090b;
+            border-color: #d4d4d8;
+        }
+
+        body.bw-page-light optgroup {
+            background: #f4f4f5;
+            color: #71717a;
+        }
+
+        body.bw-page-light option {
+            background: #ffffff;
+            color: #09090b;
+        }
+
+        body.bw-page-light .btn-submit {
+            background: #09090b !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.2) !important;
+        }
+
+        body.bw-page-light .btn-submit:hover:not(:disabled) {
+            background: #27272a !important;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3) !important;
+        }
+
+        body.bw-page-light .file-card {
+            background: #ffffff;
+            border-color: #e4e4e7;
+        }
+
+        body.bw-page-light .file-card:hover {
+            border-color: #09090b;
+        }
+
+        body.bw-page-light .file-name {
+            color: #09090b;
+        }
+
+        body.bw-page-light .file-badge {
+            background: #09090b;
+            color: #ffffff;
+            border-color: #09090b;
+        }
+
+        body.bw-page-light .badge-count {
+            background: #f4f4f5;
+            color: #09090b;
+            border-color: #d4d4d8;
+        }
+
+        body.bw-page-light .search-box {
+            background: #ffffff;
+            color: #09090b;
+            border-color: #d4d4d8;
+        }
+
+        body.bw-page-light .filter-btn-group,
+        body.bw-page-light .view-toggle {
+            background: #f4f4f5;
+            border-color: #d4d4d8;
+        }
+
+        body.bw-page-light .btn-filter {
+            color: #71717a;
+        }
+
+        body.bw-page-light .btn-filter.active {
+            background: #09090b !important;
+            color: #ffffff !important;
+        }
+
+        body.bw-page-light .btn-view.active {
+            background: #ffffff;
+            color: #09090b;
+        }
+
+        body.bw-page-light .btn-refresh {
+            background: #ffffff;
+            border-color: #d4d4d8;
+            color: #09090b;
+        }
+
+        body.bw-page-light .btn-action {
+            background: #ffffff;
+            border-color: #d4d4d8;
+            color: #09090b;
+        }
+
+        body.bw-page-light .btn-action.download {
+            background: #09090b !important;
+            color: #ffffff !important;
+            border-color: #09090b !important;
+        }
+
+        body.bw-page-light .btn-action.delete {
+            background: #ffffff !important;
+            color: #09090b !important;
+            border-color: #d4d4d8 !important;
+        }
+
+        body.bw-page-light .btn-action.delete:hover {
+            background: #09090b !important;
+            color: #ffffff !important;
+            border-color: #09090b !important;
+        }
+
+        body.bw-page-light .grid-card {
+            background: #ffffff;
+            border-color: #e4e4e7;
+        }
+
+        body.bw-page-light .grid-thumb {
+            background: #f4f4f5;
+        }
+
+        body.bw-page-light .grid-name {
+            color: #09090b;
+        }
+
+        body.bw-page-light .file-chip {
+            background: #f4f4f5;
+            color: #09090b;
+            border-color: #d4d4d8;
+        }
+
+        body.bw-page-light .modal-card {
+            background: #ffffff;
+            border-color: #d4d4d8;
+            color: #09090b;
+        }
+
+        body.bw-page-light .diag-box {
+            background: #f4f4f5;
+            border-color: #e4e4e7;
+        }
+
+        body.bw-page-light .diag-val {
+            color: #09090b;
+        }
+
+        body.bw-page-light .log-list {
+            background: #f8fafc;
+            border-color: #e4e4e7;
+            color: #09090b;
+        }
+
+        /* Black & White Dark (Monochrome Dark Page Mode) */
+        body.bw-page-dark {
+            --bg-color: #000000;
+            --card-bg: #0d0d0d;
+            --card-border: #262626;
+            --accent-primary: #ffffff;
+            --accent-hover: #e5e5e5;
+            --accent-glow: rgba(255, 255, 255, 0.2);
+            --text-main: #ffffff;
+            --text-muted: #a3a3a3;
+            --text-dim: #737373;
+            --success: #ffffff;
+            --danger: #d4d4d8;
+            --warning: #a1a1aa;
+            background-color: #000000;
+            color: #ffffff;
+            filter: grayscale(100%);
+        }
+
+        body.bw-page-dark .header h1 {
+            background: linear-gradient(135deg, #ffffff 40%, #737373);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        body.bw-page-dark .theme-switcher {
+            background: #0d0d0d;
+            border-color: #262626;
+        }
+
+        body.bw-page-dark .theme-btn.active {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        body.bw-page-dark .btn-picker.btn-gallery {
+            background: #262626 !important;
+            border-color: #404040 !important;
             box-shadow: 0 2px 8px rgba(0,0,0,0.5) !important;
         }
 
-        body.bw-mode .btn-submit {
+        body.bw-page-dark .btn-submit {
             background: #ffffff !important;
             color: #000000 !important;
             box-shadow: 0 4px 16px rgba(255, 255, 255, 0.25) !important;
         }
 
-        body.bw-mode .btn-submit:hover:not(:disabled) {
-            background: #e4e4e7 !important;
+        body.bw-page-dark .btn-submit:hover:not(:disabled) {
+            background: #e5e5e5 !important;
             box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4) !important;
         }
 
-        body.bw-mode .btn-filter.active {
+        body.bw-page-dark .btn-filter.active {
             background: #ffffff !important;
             color: #000000 !important;
         }
 
-        body.bw-mode .btn-action.download {
-            background: #27272a !important;
-            border-color: #52525b !important;
+        body.bw-page-dark .btn-action.download {
+            background: #262626 !important;
+            border-color: #404040 !important;
             color: #ffffff !important;
         }
 
-        body.bw-mode .btn-action.download:hover {
+        body.bw-page-dark .btn-action.download:hover {
             background: #ffffff !important;
             color: #000000 !important;
         }
@@ -2417,6 +2780,25 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             </div>
             <h1>Universal File Converter</h1>
             <p>Convert images, documents, and spreadsheets. Hosted permanently at <code>/files</code>.</p>
+
+            <!-- Webpage Theme Switcher (Color, B&W Light Paper, B&W Dark Monochrome) -->
+            <div class="theme-bar">
+                <span class="theme-bar-label">Page Theme:</span>
+                <div class="theme-switcher" id="themeSwitcher" role="group" aria-label="Webpage Black & White display options">
+                    <button type="button" class="theme-btn active" data-theme="color" id="themeBtnColor" title="Default Color Theme">
+                        <span class="theme-dot" style="background:#3b82f6;"></span>
+                        <span>Color</span>
+                    </button>
+                    <button type="button" class="theme-btn" data-theme="bw-light" id="themeBtnBwLight" title="Black & White Paper Page (Light Mode)">
+                        <span class="theme-dot" style="background:#ffffff; border:1px solid #71717a;"></span>
+                        <span>B&W Light (Paper)</span>
+                    </button>
+                    <button type="button" class="theme-btn" data-theme="bw-dark" id="themeBtnBwDark" title="Black & White Dark Page (Monochrome)">
+                        <span class="theme-dot" style="background:#000000; border:1px solid #a1a1aa;"></span>
+                        <span>B&W Dark (Monochrome)</span>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Upload & Convert Card -->
@@ -3149,40 +3531,79 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             if (e.target === diagModal) diagModal.style.display = 'none';
         });
 
-        // Black & White Page Mode Toggle
-        function initBwPageMode() {
-            const isBw = localStorage.getItem('bw_page_mode') === 'true';
-            applyBwPageMode(isBw);
-        }
-
-        function applyBwPageMode(enabled) {
-            if (enabled) {
-                document.body.classList.add('bw-mode');
-                if (bwToggleText) bwToggleText.textContent = 'B&W Page: On';
+        // Webpage Black & White Theme Manager (Color, B&W Light Paper, B&W Dark Monochrome)
+        function setWebpageTheme(theme) {
+            const validTheme = ['color', 'bw-light', 'bw-dark'].includes(theme) ? theme : 'color';
+            
+            // Remove existing theme classes
+            document.body.classList.remove('bw-mode', 'bw-page-light', 'bw-page-dark');
+            
+            if (validTheme === 'bw-light') {
+                document.body.classList.add('bw-mode', 'bw-page-light');
+                if (bwToggleText) bwToggleText.textContent = 'B&W Page: Light';
+                if (bwPageToggle) {
+                    bwPageToggle.style.borderColor = '#09090b';
+                    bwPageToggle.style.color = '#09090b';
+                }
+            } else if (validTheme === 'bw-dark') {
+                document.body.classList.add('bw-mode', 'bw-page-dark');
+                if (bwToggleText) bwToggleText.textContent = 'B&W Page: Dark';
                 if (bwPageToggle) {
                     bwPageToggle.style.borderColor = '#ffffff';
                     bwPageToggle.style.color = '#ffffff';
                 }
             } else {
-                document.body.classList.remove('bw-mode');
                 if (bwToggleText) bwToggleText.textContent = 'B&W Page: Off';
                 if (bwPageToggle) {
                     bwPageToggle.style.borderColor = '';
                     bwPageToggle.style.color = '';
                 }
             }
-        }
-
-        if (bwPageToggle) {
-            bwPageToggle.addEventListener('click', () => {
-                const currentlyBw = document.body.classList.contains('bw-mode');
-                const nextState = !currentlyBw;
-                localStorage.setItem('bw_page_mode', nextState.toString());
-                applyBwPageMode(nextState);
+            
+            // Sync theme buttons in theme switcher bar
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === validTheme);
             });
+            
+            // Persist theme selection in localStorage
+            localStorage.setItem('webpage_theme', validTheme);
+            localStorage.setItem('bw_page_mode', validTheme !== 'color' ? 'true' : 'false');
         }
 
-        initBwPageMode();
+        function applyBwPageMode(enabled) {
+            setWebpageTheme(enabled ? 'bw-light' : 'color');
+        }
+
+        function initWebpageTheme() {
+            let savedTheme = localStorage.getItem('webpage_theme');
+            if (!savedTheme) {
+                const legacyMode = localStorage.getItem('bw_page_mode');
+                savedTheme = legacyMode === 'true' ? 'bw-light' : 'color';
+            }
+            setWebpageTheme(savedTheme);
+            
+            // Direct click handlers on theme switcher options
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const chosen = btn.dataset.theme;
+                    if (chosen) setWebpageTheme(chosen);
+                });
+            });
+            
+            // Quick cycling via header pill button
+            if (bwPageToggle) {
+                bwPageToggle.addEventListener('click', () => {
+                    const current = localStorage.getItem('webpage_theme') || 'color';
+                    let next = 'color';
+                    if (current === 'color') next = 'bw-light';
+                    else if (current === 'bw-light') next = 'bw-dark';
+                    else next = 'color';
+                    setWebpageTheme(next);
+                });
+            }
+        }
+
+        initWebpageTheme();
         loadHostedFiles();
     </script>
 </body>

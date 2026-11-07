@@ -842,6 +842,14 @@ def test_bw_diagnostics_and_dashboard():
     assert "bwToggleText" in html_text
     assert "bwConvertOption" in html_text
     assert "bw-mode" in html_text
+    assert "themeSwitcher" in html_text
+    assert "themeBtnColor" in html_text
+    assert "themeBtnBwLight" in html_text
+    assert "themeBtnBwDark" in html_text
+    assert "bw-page-light" in html_text
+    assert "bw-page-dark" in html_text
+    assert "setWebpageTheme" in html_text
+
 
 
 
