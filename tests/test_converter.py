@@ -85,6 +85,61 @@ def test_zeroblur_page_endpoint():
     assert "no-cache" in response.headers["Cache-Control"]
 
 
+def test_zeroblur_themes_and_selection_navigation():
+    response = client.get("/zeroblur")
+    assert response.status_code == 200
+    # 5 themes switcher
+    assert "themeBtnEditorial" in response.text
+    assert "themeBtnLiquidGlass" in response.text
+    assert "themeBtnColor" in response.text
+    assert "themeBtnBwLight" in response.text
+    assert "themeBtnBwDark" in response.text
+    assert "zeroblurThemeToggle" in response.text
+    assert "toggleZeroblurSwitcherNavBtn" in response.text
+    assert "liquid-bg-orbs" in response.text
+
+    # Stepper navigation bar
+    assert "selection-stepper-bar" in response.text
+    assert "pill-step-platform" in response.text
+    assert "pill-step-footage" in response.text
+    assert "pill-step-fps" in response.text
+    assert "pill-step-unsharp" in response.text
+    assert "pill-step-switches" in response.text
+    assert "pill-step-master" in response.text
+
+    # Modular selection blocks
+    assert "step-platform" in response.text
+    assert "step-footage" in response.text
+    assert "step-fps" in response.text
+    assert "step-unsharp" in response.text
+    assert "step-switches" in response.text
+    assert "step-master" in response.text
+
+    # Selection navigation buttons (Next/Prev)
+    assert "btn-step-next" in response.text
+    assert "btn-step-prev" in response.text
+    assert "data-next-step" in response.text
+    assert "data-prev-step" in response.text
+
+    # Clean View toggle
+    assert "btnToggleCleanMode" in response.text
+    assert "cleanModeStatusText" in response.text
+    assert "btnExpandAllSelections" in response.text
+
+    # Selection summary badges
+    assert "summaryPlatform" in response.text
+    assert "summaryFootage" in response.text
+    assert "summaryMasterStatus" in response.text
+    assert "fpsValueBadge" in response.text
+    assert "labelSharpenVal" in response.text
+    assert "labelDurationVal" in response.text
+
+    # Tab navigation rows
+    assert "page-nav-row" in response.text
+    assert "btn-nav-next-tab" in response.text
+    assert "btn-nav-prev-tab" in response.text
+
+
 def test_formats_page_alias():
     response = client.get("/formats")
     assert response.status_code == 200

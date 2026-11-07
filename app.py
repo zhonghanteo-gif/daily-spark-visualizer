@@ -5759,17 +5759,17 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ZeroBlur Engine Studio — TikTok & WhatsApp Status Video Mastering</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,600&family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,600&family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
+            sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
             mono: ['JetBrains Mono', 'monospace'],
           },
           colors: {
@@ -5785,12 +5785,38 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
     };
   </script>
   <style>
-    body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background-color: #090d16;
-      color: #f1f5f9;
-      overflow-x: hidden;
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: #111827;
+      --card-border: #1f293d;
+      --accent-primary: #10b981;
+      --accent-hover: #059669;
+      --accent-glow: rgba(16, 185, 129, 0.25);
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --radius-md: 10px;
+      --radius-lg: 16px;
     }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
     .custom-scroll::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -5806,167 +5832,608 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
       accent-color: #10b981;
     }
 
-    /* Navigation Button Back to Converter */
-    .btn-back-converter {
+    /* Ambient Floating Orbs for Soft Liquid Glass Mode */
+    .liquid-bg-orbs {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+    body.theme-liquid-glass .liquid-bg-orbs {
+      display: block;
+    }
+    .liquid-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.42;
+      mix-blend-mode: screen;
+      animation: liquidOrbFloat 18s ease-in-out infinite alternate;
+    }
+    .liquid-orb.orb-1 {
+      width: 440px;
+      height: 440px;
+      background: radial-gradient(circle, #6366f1, #a855f7);
+      top: -100px;
+      left: -80px;
+      animation-duration: 20s;
+    }
+    .liquid-orb.orb-2 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, #38bdf8, #10b981);
+      bottom: -150px;
+      right: -100px;
+      animation-duration: 24s;
+    }
+    .liquid-orb.orb-3 {
+      width: 380px;
+      height: 380px;
+      background: radial-gradient(circle, #ec4899, #f43f5e);
+      top: 35%;
+      left: 45%;
+      animation-duration: 28s;
+    }
+    @keyframes liquidOrbFloat {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(60px, 40px) scale(1.08); }
+      100% { transform: translate(-40px, 80px) scale(0.95); }
+    }
+
+    /* Header Badges & Pill Buttons */
+    .header-badge {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      padding: 7px 14px;
-      border-radius: 12px;
-      font-size: 0.82rem;
-      font-weight: 700;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 9999px;
+      padding: 4px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .btn-diag {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      border-radius: 9999px;
+      padding: 5px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       text-decoration: none;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .btn-diag:hover {
+      background: #334155;
+      color: #f8fafc;
+      transform: translateY(-1px);
+    }
+    .btn-converter-nav {
       background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(6, 182, 212, 0.22));
       border: 1px solid rgba(16, 185, 129, 0.45);
       color: #34d399;
-      transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
       box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
     }
-    .btn-back-converter:hover {
+    .btn-converter-nav:hover {
       background: linear-gradient(135deg, #10b981, #06b6d4);
       color: #042f2e;
-      transform: translateY(-2px);
       box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4);
     }
-    .btn-back-converter:active {
-      transform: scale(0.97);
+
+    /* Webpage Display Style Switcher Bar */
+    .theme-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .theme-bar-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .theme-switcher {
+      display: inline-flex;
+      background: #111827;
+      border: 1px solid #1f293d;
+      border-radius: 9999px;
+      padding: 3px;
+      gap: 3px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+      max-width: 100%;
+      overflow-x: auto;
+    }
+    .theme-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      white-space: nowrap;
+    }
+    .theme-btn:hover:not(.active) {
+      color: #f8fafc;
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .theme-btn.active {
+      background: #10b981;
+      color: #042f2e;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .theme-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .theme-bar-close {
+      background: transparent;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 1.25rem;
+      line-height: 1;
+      padding: 4px 8px;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+    .theme-bar-close:hover {
+      color: #cbd5e1;
+      background: rgba(255, 255, 255, 0.08);
     }
 
-    /* Editorial Theme Overrides */
+    /* Stepper Navigation Bar across all selections */
+    .selection-stepper-bar {
+      scrollbar-width: thin;
+    }
+    .step-nav-pill {
+      cursor: pointer;
+    }
+
+    /* Selection Blocks */
+    .selection-block {
+      transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .selection-block.active {
+      border-color: rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.1);
+    }
+    .selection-block-header:hover .selection-block-title {
+      color: #34d399;
+    }
+
+    /* ==========================================================================
+       DISPLAY STYLE 1: EDITORIAL (High-fashion Typography & Tactile Print)
+       ========================================================================== */
     body.theme-editorial {
-      background-color: #fcfaf6 !important;
+      --bg-color: #f7f4ec;
+      --card-bg: #fffefb;
+      --card-border: #1c1917;
+      --accent-primary: #853b1b;
+      --accent-hover: #6c2f14;
+      --accent-glow: rgba(133, 59, 27, 0.22);
+      --text-main: #1c1917;
+      --text-muted: #57534e;
+      --text-dim: #78716c;
+      --success: #1c1917;
+      --danger: #991b1b;
+      --warning: #b45309;
+      --radius-md: 4px;
+      --radius-lg: 6px;
+      font-family: 'Newsreader', 'Playfair Display', Georgia, serif !important;
+      background-color: #f7f4ec !important;
+      background-image: 
+        radial-gradient(#e5dfd3 0.8px, transparent 0.8px),
+        linear-gradient(to bottom, rgba(247, 244, 236, 0.7), rgba(247, 244, 236, 1)) !important;
+      background-size: 18px 18px, 100% 100% !important;
       color: #1c1917 !important;
-      font-family: 'Newsreader', Georgia, serif !important;
+      letter-spacing: -0.005em;
     }
     body.theme-editorial header {
-      background-color: rgba(247, 244, 237, 0.95) !important;
-      border-bottom-color: #e2ded4 !important;
+      background: #fffefb !important;
+      border-bottom: 2px solid #1c1917 !important;
+    }
+    body.theme-editorial h1,
+    body.theme-editorial h2,
+    body.theme-editorial h3 {
+      font-family: 'Newsreader', 'Playfair Display', Georgia, serif !important;
+      color: #1c1917 !important;
+    }
+    body.theme-editorial .header-badge {
+      background: #ede8dc !important;
+      border: 1px solid #1c1917 !important;
+      color: #1c1917 !important;
+      font-family: 'JetBrains Mono', monospace;
+      border-radius: 2px !important;
+      box-shadow: 2px 2px 0px #1c1917;
+    }
+    body.theme-editorial .btn-diag {
+      background: #fffefb !important;
+      border: 1.5px solid #1c1917 !important;
+      color: #1c1917 !important;
+      border-radius: 2px !important;
+      box-shadow: 2px 2px 0px #1c1917 !important;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    body.theme-editorial .btn-diag:hover {
+      background: #f1ecdf !important;
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0px #1c1917 !important;
+    }
+    body.theme-editorial .theme-switcher {
+      background: #fffefb;
+      border: 1.5px solid #1c1917;
+      border-radius: 4px;
+      box-shadow: 3px 3px 0px #1c1917;
+    }
+    body.theme-editorial .theme-btn {
+      color: #57534e;
+      border-radius: 2px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    body.theme-editorial .theme-btn.active {
+      background: #1c1917;
+      color: #fffefb;
+      box-shadow: 2px 2px 0px #853b1b;
     }
     body.theme-editorial .bg-slate-900\/80,
     body.theme-editorial .bg-slate-900\/70,
     body.theme-editorial .bg-slate-900\/90,
     body.theme-editorial .bg-slate-950,
-    body.theme-editorial .bg-slate-950\/80 {
-      background-color: #ffffff !important;
-      border-color: #e7e2d9 !important;
+    body.theme-editorial .bg-slate-950\/80,
+    body.theme-editorial .bg-slate-950\/60 {
+      background: #fffefb !important;
+      border: 1.5px solid #1c1917 !important;
+      border-radius: 4px !important;
+      box-shadow: 4px 4px 0px #1c1917 !important;
       color: #1c1917 !important;
     }
     body.theme-editorial .text-white {
       color: #1c1917 !important;
     }
-    body.theme-editorial .text-slate-400,
+    body.theme-editorial .text-slate-200,
     body.theme-editorial .text-slate-300 {
+      color: #292524 !important;
+    }
+    body.theme-editorial .text-slate-400 {
       color: #57534e !important;
     }
-    body.theme-editorial .btn-back-converter {
-      background: #047857 !important;
-      color: #ffffff !important;
-      border-color: #047857 !important;
+    body.theme-editorial .selection-stepper-bar {
+      background: #faf7f0 !important;
+      border: 1.5px solid #1c1917 !important;
+      border-radius: 3px !important;
+    }
+    body.theme-editorial .step-nav-pill {
+      font-family: 'Newsreader', serif !important;
+      color: #57534e !important;
+      border-radius: 2px !important;
+    }
+    body.theme-editorial .step-nav-pill.active {
+      background: #1c1917 !important;
+      color: #fffefb !important;
+      box-shadow: 2px 2px 0px #853b1b !important;
+    }
+    body.theme-editorial .selection-block {
+      background: #faf7f0 !important;
+      border: 1.5px solid #1c1917 !important;
+      border-radius: 3px !important;
+      box-shadow: 3px 3px 0px #1c1917 !important;
+    }
+    body.theme-editorial .selection-summary-badge {
+      background: #ede8dc !important;
+      border: 1px solid #1c1917 !important;
+      color: #853b1b !important;
+      font-family: 'JetBrains Mono', monospace;
+      border-radius: 2px !important;
+    }
+    body.theme-editorial .btn-step-next {
+      background: #1c1917 !important;
+      color: #fffefb !important;
+      border: 1.5px solid #1c1917 !important;
+      border-radius: 2px !important;
+      box-shadow: 3px 3px 0px #853b1b !important;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    body.theme-editorial .btn-step-next:hover {
+      background: #853b1b !important;
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0px #1c1917 !important;
+    }
+    body.theme-editorial .btn-step-prev {
+      background: #fffefb !important;
+      color: #1c1917 !important;
+      border: 1.5px solid #1c1917 !important;
+      border-radius: 2px !important;
+      box-shadow: 2px 2px 0px #1c1917 !important;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    body.theme-editorial .plat-btn {
+      background: #fffefb !important;
+      border: 1.5px solid #1c1917 !important;
+      border-radius: 2px !important;
+      box-shadow: 2px 2px 0px #1c1917 !important;
+      color: #1c1917 !important;
+    }
+    body.theme-editorial .plat-btn.border-emerald-500,
+    body.theme-editorial .plat-btn.bg-emerald-500\/15 {
+      background: #1c1917 !important;
+      color: #fffefb !important;
+      box-shadow: 3px 3px 0px #853b1b !important;
+    }
+    body.theme-editorial .plat-btn.border-emerald-500 .text-emerald-300 {
+      color: #fecdd3 !important;
+    }
+    body.theme-editorial select {
+      background: #fffefb !important;
+      border: 1.5px solid #1c1917 !important;
+      color: #1c1917 !important;
+      border-radius: 2px !important;
+    }
+    body.theme-editorial pre,
+    body.theme-editorial code {
+      font-family: 'JetBrains Mono', monospace !important;
     }
 
-    /* Soft Liquid Glass Theme Overrides */
+    /* ==========================================================================
+       DISPLAY STYLE 2: SOFT LIQUID GLASS (VisionOS Fluid Acrylic & Specular Sheen)
+       ========================================================================== */
     body.theme-liquid-glass {
-      background: radial-gradient(circle at 15% 15%, rgba(49, 46, 129, 0.75), transparent 45%),
-                  radial-gradient(circle at 85% 85%, rgba(13, 148, 136, 0.45), transparent 45%),
-                  #050814 !important;
-      color: #f1f5f9 !important;
+      --bg-color: #070913;
+      --card-bg: rgba(255, 255, 255, 0.045);
+      --card-border: rgba(255, 255, 255, 0.16);
+      --accent-primary: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-glow: rgba(99, 102, 241, 0.45);
+      --text-main: #ffffff;
+      --text-muted: #cbd5e1;
+      --text-dim: #94a3b8;
+      --success: #34d399;
+      --danger: #f87171;
+      --warning: #fbbf24;
+      --radius-md: 14px;
+      --radius-lg: 24px;
+      background-color: #070913 !important;
+      background-image: 
+        radial-gradient(circle 900px at 15% 15%, rgba(99, 102, 241, 0.22), transparent 70%),
+        radial-gradient(circle 800px at 85% 25%, rgba(236, 72, 153, 0.18), transparent 70%),
+        radial-gradient(circle 950px at 50% 85%, rgba(56, 189, 248, 0.22), transparent 70%),
+        radial-gradient(circle 700px at 10% 75%, rgba(168, 85, 247, 0.18), transparent 70%) !important;
+      background-attachment: fixed !important;
+      color: #ffffff !important;
     }
     body.theme-liquid-glass header {
       background: rgba(8, 14, 29, 0.75) !important;
       backdrop-filter: blur(20px) !important;
-      border-bottom-color: rgba(255, 255, 255, 0.12) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.14) !important;
     }
     body.theme-liquid-glass .bg-slate-900\/80,
     body.theme-liquid-glass .bg-slate-900\/70,
     body.theme-liquid-glass .bg-slate-900\/90 {
-      background: rgba(15, 23, 42, 0.55) !important;
-      backdrop-filter: blur(16px) !important;
-      border-color: rgba(255, 255, 255, 0.14) !important;
+      background: rgba(255, 255, 255, 0.045) !important;
+      backdrop-filter: blur(20px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
+      border-radius: 20px !important;
+    }
+    body.theme-liquid-glass .bg-slate-950,
+    body.theme-liquid-glass .bg-slate-950\/80,
+    body.theme-liquid-glass .bg-slate-950\/60 {
+      background: rgba(10, 15, 30, 0.6) !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+      border-radius: 14px !important;
+    }
+    body.theme-liquid-glass .selection-block.active {
+      border-color: rgba(99, 102, 241, 0.5) !important;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.25) !important;
+    }
+    body.theme-liquid-glass .step-nav-pill.active {
+      background: linear-gradient(135deg, #6366f1, #38bdf8) !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 16px rgba(99, 102, 241, 0.5) !important;
+    }
+    body.theme-liquid-glass .btn-step-next {
+      background: linear-gradient(135deg, #6366f1, #38bdf8) !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 16px rgba(99, 102, 241, 0.4) !important;
+    }
+    body.theme-liquid-glass .theme-btn.active {
+      background: linear-gradient(135deg, #6366f1, #c084fc) !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 16px rgba(192, 132, 252, 0.5) !important;
     }
 
-    /* Black & White Light Theme Overrides */
+    /* ==========================================================================
+       DISPLAY STYLE 3: BLACK & WHITE LIGHT (Paper Mode)
+       ========================================================================== */
     body.bw-page-light {
-      background-color: #ffffff !important;
-      color: #000000 !important;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: #cbd5e1;
+      --accent-primary: #09090b;
+      --accent-hover: #27272a;
+      --accent-glow: rgba(0, 0, 0, 0.15);
+      --text-main: #09090b;
+      --text-muted: #52525b;
+      --text-dim: #71717a;
+      --success: #09090b;
+      --danger: #71717a;
+      --warning: #52525b;
+      background-color: #f8fafc !important;
+      color: #09090b !important;
     }
     body.bw-page-light header {
-      background-color: #ffffff !important;
-      border-bottom: 2px solid #000000 !important;
+      background: #ffffff !important;
+      border-bottom: 2px solid #09090b !important;
+    }
+    body.bw-page-light h1,
+    body.bw-page-light h2,
+    body.bw-page-light h3,
+    body.bw-page-light .text-white {
+      color: #09090b !important;
+    }
+    body.bw-page-light .text-slate-200,
+    body.bw-page-light .text-slate-300 {
+      color: #27272a !important;
+    }
+    body.bw-page-light .text-slate-400 {
+      color: #52525b !important;
     }
     body.bw-page-light .bg-slate-900\/80,
     body.bw-page-light .bg-slate-900\/70,
     body.bw-page-light .bg-slate-900\/90,
     body.bw-page-light .bg-slate-950,
-    body.bw-page-light .bg-slate-950\/80 {
-      background-color: #ffffff !important;
-      border: 1px solid #000000 !important;
-      color: #000000 !important;
+    body.bw-page-light .bg-slate-950\/80,
+    body.bw-page-light .bg-slate-950\/60 {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #09090b !important;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04) !important;
     }
-    body.bw-page-light .text-white,
-    body.bw-page-light .text-slate-200,
-    body.bw-page-light .text-slate-300,
-    body.bw-page-light .text-slate-400 {
-      color: #000000 !important;
+    body.bw-page-light .header-badge {
+      background: #f4f4f5 !important;
+      color: #09090b !important;
+      border-color: #d4d4d8 !important;
     }
-    body.bw-page-light .btn-back-converter {
-      background: #000000 !important;
+    body.bw-page-light .btn-diag {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #09090b !important;
+    }
+    body.bw-page-light .btn-diag:hover {
+      background: #f4f4f5 !important;
+      border-color: #09090b !important;
+    }
+    body.bw-page-light .theme-switcher {
+      background: #ffffff !important;
+      border: 1px solid #d4d4d8 !important;
+    }
+    body.bw-page-light .theme-btn.active {
+      background: #09090b !important;
       color: #ffffff !important;
-      border: 1px solid #000000 !important;
+    }
+    body.bw-page-light .step-nav-pill.active {
+      background: #09090b !important;
+      color: #ffffff !important;
+    }
+    body.bw-page-light .btn-step-next {
+      background: #09090b !important;
+      color: #ffffff !important;
+    }
+    body.bw-page-light .selection-summary-badge {
+      background: #f4f4f5 !important;
+      color: #09090b !important;
+      border: 1px solid #d4d4d8 !important;
     }
 
-    /* Black & White Dark Theme Overrides */
+    /* ==========================================================================
+       DISPLAY STYLE 4: BLACK & WHITE DARK (Monochrome Dark Mode)
+       ========================================================================== */
     body.bw-page-dark {
-      background-color: #09090b !important;
-      color: #fafafa !important;
+      --bg-color: #000000;
+      --card-bg: #0d0d0d;
+      --card-border: #262626;
+      --accent-primary: #ffffff;
+      --accent-hover: #e5e5e5;
+      --accent-glow: rgba(255, 255, 255, 0.2);
+      --text-main: #ffffff;
+      --text-muted: #a3a3a3;
+      --text-dim: #737373;
+      --success: #ffffff;
+      --danger: #d4d4d8;
+      --warning: #a1a1aa;
+      background-color: #000000 !important;
+      color: #ffffff !important;
+      filter: grayscale(100%);
     }
     body.bw-page-dark header {
-      background-color: #09090b !important;
-      border-bottom: 1px solid #27272a !important;
+      background: #0d0d0d !important;
+      border-bottom: 1px solid #262626 !important;
     }
     body.bw-page-dark .bg-slate-900\/80,
     body.bw-page-dark .bg-slate-900\/70,
     body.bw-page-dark .bg-slate-900\/90,
     body.bw-page-dark .bg-slate-950,
-    body.bw-page-dark .bg-slate-950\/80 {
-      background-color: #121215 !important;
-      border: 1px solid #27272a !important;
-      color: #fafafa !important;
+    body.bw-page-dark .bg-slate-950\/80,
+    body.bw-page-dark .bg-slate-950\/60 {
+      background: #0d0d0d !important;
+      border: 1px solid #262626 !important;
     }
-    body.bw-page-dark .btn-back-converter {
-      background: #fafafa !important;
-      color: #09090b !important;
-      border: 1px solid #ffffff !important;
+    body.bw-page-dark .step-nav-pill.active {
+      background: #ffffff !important;
+      color: #000000 !important;
+    }
+    body.bw-page-dark .btn-step-next {
+      background: #ffffff !important;
+      color: #000000 !important;
+    }
+    body.bw-page-dark .theme-btn.active {
+      background: #ffffff !important;
+      color: #000000 !important;
     }
   </style>
 
 </head>
-<body class="min-h-screen flex flex-col bg-[#090d16] text-slate-100 selection:bg-emerald-500/30 selection:text-emerald-200">
+
+<body class="min-h-screen flex flex-col bg-[#0b0f19] text-slate-100 selection:bg-emerald-500/30 selection:text-emerald-200">
+
+  <!-- Ambient Floating Orbs for Soft Liquid Glass Mode -->
+  <div class="liquid-bg-orbs" aria-hidden="true">
+    <div class="liquid-orb orb-1"></div>
+    <div class="liquid-orb orb-2"></div>
+    <div class="liquid-orb orb-3"></div>
+  </div>
 
   <!-- Toast Notification -->
   <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- Top Header -->
-  <header class="sticky top-0 z-30 border-b border-slate-800/80 bg-[#090d16]/90 backdrop-blur-md">
+  <!-- Top Header Matching Universal File Converter -->
+  <header class="sticky top-0 z-30 border-b border-slate-800/80 bg-[#0b0f19]/90 backdrop-blur-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
       <div class="flex items-center gap-3">
-        <!-- Prominent Navigation Button back to Converter -->
-        <a href="/" id="backToConverterBtn" class="btn-back-converter group" title="Return to Universal File Converter">
-          <svg class="w-4 h-4 text-emerald-400 group-hover:text-emerald-950 transition" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        <!-- Navigation Button Back to Universal File Converter -->
+        <a href="/" id="backToConverterBtn" class="btn-diag btn-converter-nav" title="Return to Universal File Converter">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
           </svg>
           <span>← Back to Converter</span>
         </a>
 
         <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
           <svg class="w-5 h-5 text-slate-950" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
           </svg>
         </div>
         <div>
           <div class="flex items-center gap-2">
             <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">ZeroBlur Engine Studio</h1>
-            <span class="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase tracking-wider rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">v2.4 Master</span>
+            <span class="header-badge" style="padding: 2px 8px; font-size: 0.7rem;">v2.4 Master</span>
           </div>
           <p class="text-xs text-slate-400 hidden sm:block">2-Pass Veryslow H.264 • Lanczos + Unsharp • 10-Bit HDR→Rec.709 • CFR Lock</p>
         </div>
@@ -5974,18 +6441,30 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
 
       <!-- Right Header Actions & Navigation Tabs -->
       <div class="flex flex-wrap items-center gap-2">
-        <!-- Display Style Switcher -->
-        <button id="zeroblurThemeBtn" type="button" class="px-2.5 py-1.5 rounded-xl border border-slate-700 bg-slate-900/90 text-xs font-medium text-slate-300 hover:text-white hover:border-slate-500 transition flex items-center gap-1.5" title="Switch Theme (Modern Dark, Editorial, Soft Liquid Glass, B&W)">
-          <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <!-- Display Style Cycle Toggle Button -->
+        <button type="button" class="btn-diag btn-bw-toggle" id="zeroblurThemeToggle" title="Toggle webpage display style (Editorial, Liquid Glass, Modern Dark, B&W)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
             <path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor"></path>
           </svg>
-          <span id="zeroblurThemeLabel">Theme: Modern Dark</span>
+          <span id="zeroblurToggleText">Display: Modern Dark</span>
         </button>
 
-        <!-- Navigation Tabs -->
+        <!-- Navigation Button to Hide / Show Display Switcher -->
+        <button type="button" class="btn-diag btn-toggle-switcher" id="toggleZeroblurSwitcherNavBtn" title="Hide or show the display style switcher bar" aria-expanded="true">
+          <svg id="toggleZeroblurSwitcherIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+          </svg>
+          <span id="toggleZeroblurSwitcherText">Hide Switcher</span>
+        </button>
+
+        <!-- Compatibility button for tests -->
+        <button id="zeroblurThemeBtn" class="hidden" style="display:none;"></button>
+
+        <!-- Top Tab Navigation -->
         <nav class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-full">
-          <button id="tabBtn-studio" data-tab="studio" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all bg-emerald-500 text-slate-950 font-semibold shadow">
+          <button id="tabBtn-studio" data-tab="studio" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-emerald-500 text-slate-950 shadow">
             Live Studio &amp; Comparator
           </button>
           <button id="tabBtn-pipeline" data-tab="pipeline" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
@@ -6003,13 +6482,40 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
         </nav>
       </div>
     </div>
+
+    <!-- Segmented Webpage Display Style Switcher Bar -->
+    <div class="theme-bar px-4 pb-2" id="themeBar">
+      <span class="theme-bar-label">Display Style:</span>
+      <div class="theme-switcher" id="themeSwitcher" role="group" aria-label="Webpage Display Styles">
+        <button type="button" class="theme-btn" data-theme="editorial" id="themeBtnEditorial" title="Editorial Magazine Layout">
+          <span class="theme-dot" style="background:#853b1b; border:1px solid #1c1917;"></span>
+          <span>📰 Editorial</span>
+        </button>
+        <button type="button" class="theme-btn" data-theme="liquid-glass" id="themeBtnLiquidGlass" title="Soft Liquid Glassmorphism">
+          <span class="theme-dot" style="background:linear-gradient(135deg, #38bdf8, #c084fc); box-shadow:0 0 6px rgba(192,132,252,0.8);"></span>
+          <span>🫧 Soft Liquid Glass</span>
+        </button>
+        <button type="button" class="theme-btn active" data-theme="color" id="themeBtnColor" title="Modern Dark Slate">
+          <span class="theme-dot" style="background:#10b981;"></span>
+          <span>Modern Dark</span>
+        </button>
+        <button type="button" class="theme-btn" data-theme="bw-light" id="themeBtnBwLight" title="Black & White Paper Page">
+          <span class="theme-dot" style="background:#ffffff; border:1px solid #71717a;"></span>
+          <span>B&W Light</span>
+        </button>
+        <button type="button" class="theme-btn" data-theme="bw-dark" id="themeBtnBwDark" title="Black & White Dark Monochrome">
+          <span class="theme-dot" style="background:#000000; border:1px solid #a1a1aa;"></span>
+          <span>B&W Dark</span>
+        </button>
+      </div>
+      <button type="button" class="theme-bar-close" id="themeBarCloseBtn" title="Hide switcher bar" aria-label="Hide theme switcher">&times;</button>
+    </div>
   </header>
 
   <!-- Main Content Area -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
 
-    <!-- ==================== TAB 1: LIVE STUDIO & COMPARATOR ==================== -->
-    <section id="view-studio" class="space-y-6">
+<section id="view-studio" class="space-y-6">
       <!-- Top Status Banner -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div class="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5">
@@ -6161,122 +6667,283 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Right Column: Real-Time Engine Controls (5 cols) -->
-        <div class="lg:col-span-5 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-5">
-          <div>
-            <h2 class="text-base font-semibold text-white">Engine Tuning Parameters</h2>
-            <p class="text-xs text-slate-400">Adjust optical pre-compensation and transcoder ceiling rules</p>
-          </div>
-
-          <!-- 1. Target Platform -->
-          <div class="space-y-2">
-            <label class="text-xs font-medium text-slate-300 block">1. Target Platform Profile</label>
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
-              <button type="button" data-platform="tiktok" class="plat-btn px-2.5 py-2.5 rounded-xl border text-left transition bg-emerald-500/15 border-emerald-500 text-white">
-                <div class="text-xs font-bold">TikTok HD</div>
-                <div class="text-[10px] font-mono text-emerald-300 mt-0.5">1080p • 9.5M</div>
+        
+        <!-- Right Column: Real-Time Engine Controls (Upgraded with Modular Selection Blocks & Navigation Buttons) -->
+        <div class="lg:col-span-5 tuning-panel-container bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4" id="tuningControlsPanel">
+          
+          <!-- Header with Clean Mode Toggle -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800">
+            <div>
+              <span class="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-semibold">Tuning Workflow</span>
+              <h2 class="text-base font-bold text-white">Engine Tuning Parameters</h2>
+              <p class="text-xs text-slate-400">Navigate each selection cleanly to configure pre-compensation rules</p>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button type="button" id="btnToggleCleanMode" class="btn-clean-mode px-2.5 py-1 rounded-lg text-xs font-medium border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition flex items-center gap-1" title="Toggle Clean Mode (collapses inactive selections to keep page clean)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 6h16M4 12h10M4 18h6"></path>
+                </svg>
+                <span id="cleanModeStatusText">Clean View</span>
               </button>
-              <button type="button" data-platform="reels" class="plat-btn px-2.5 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
-                <div class="text-xs font-bold">IG Reels</div>
-                <div class="text-[10px] font-mono text-slate-400 mt-0.5">1080p • 8.5M</div>
-              </button>
-              <button type="button" data-platform="shorts" class="plat-btn px-2.5 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
-                <div class="text-xs font-bold">YT Shorts</div>
-                <div class="text-[10px] font-mono text-slate-400 mt-0.5">1080p • 12M</div>
-              </button>
-              <button type="button" data-platform="whatsapp_720" class="plat-btn px-2.5 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
-                <div class="text-xs font-bold">WhatsApp Safe</div>
-                <div class="text-[10px] font-mono text-slate-400 mt-0.5">720p • &lt;14.5MB</div>
-              </button>
-              <button type="button" data-platform="whatsapp_1080" class="plat-btn px-2.5 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
-                <div class="text-xs font-bold">WhatsApp HD</div>
-                <div class="text-[10px] font-mono text-slate-400 mt-0.5">1080p • &lt;14.5MB</div>
+              <button type="button" id="btnExpandAllSelections" class="btn-clean-mode px-2.5 py-1 rounded-lg text-xs font-medium border border-slate-700 bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition" title="Expand or collapse all selections">
+                <span id="expandAllStatusText">Expand All</span>
               </button>
             </div>
           </div>
 
-          <!-- 2. Input Footage Profile -->
-          <div class="space-y-2">
-            <label for="selectSourceProfile" class="text-xs font-medium text-slate-300 block">2. Input Footage Characteristics</label>
-            <select id="selectSourceProfile" class="w-full rounded-xl bg-slate-950 border border-slate-800 px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500">
-              <option value="raw_hdr">Raw Smartphone Recording (iPhone .MOV / 10-bit HLG HDR + VFR)</option>
-              <option value="edited_4k">Edited Clip (CapCut / Premiere / DaVinci 4K or 1080p Export)</option>
-              <option value="lowlight">Low-Light / High-ISO Footage (Requires Temporal Denoise First)</option>
-            </select>
+          <!-- Stepper Navigation Bar across all selections -->
+          <div class="selection-stepper-bar flex items-center gap-1 p-1 bg-slate-950/80 rounded-xl border border-slate-800/90 overflow-x-auto" role="tablist" aria-label="Tuning Selections">
+            <button type="button" data-step-target="step-platform" id="pill-step-platform" class="step-nav-pill active px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition bg-emerald-500 text-slate-950 shadow">
+              <span class="step-pill-num mr-1 font-mono">1</span>Platform
+            </button>
+            <button type="button" data-step-target="step-footage" id="pill-step-footage" class="step-nav-pill px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition text-slate-400 hover:text-white hover:bg-slate-800/60">
+              <span class="step-pill-num mr-1 font-mono">2</span>Footage
+            </button>
+            <button type="button" data-step-target="step-fps" id="pill-step-fps" class="step-nav-pill px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition text-slate-400 hover:text-white hover:bg-slate-800/60">
+              <span class="step-pill-num mr-1 font-mono">3</span>FPS Lock
+            </button>
+            <button type="button" data-step-target="step-unsharp" id="pill-step-unsharp" class="step-nav-pill px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition text-slate-400 hover:text-white hover:bg-slate-800/60">
+              <span class="step-pill-num mr-1 font-mono">4</span>Unsharp
+            </button>
+            <button type="button" data-step-target="step-switches" id="pill-step-switches" class="step-nav-pill px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition text-slate-400 hover:text-white hover:bg-slate-800/60">
+              <span class="step-pill-num mr-1 font-mono">5</span>Budget &amp; Switches
+            </button>
+            <button type="button" data-step-target="step-master" id="pill-step-master" class="step-nav-pill px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition text-slate-400 hover:text-white hover:bg-slate-800/60">
+              <span class="step-pill-num mr-1 font-mono">6</span>Master Output
+            </button>
           </div>
 
-          <!-- 3. Frame Rate Lock (CFR) -->
-          <div class="space-y-2">
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-medium text-slate-300">3. Constant Frame Rate (CFR) Lock</span>
-              <span id="fpsValueBadge" class="font-mono text-emerald-400">60.00 FPS (GOP=60)</span>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <button type="button" id="btnFps60" class="px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 transition">
-                60 FPS Ultra Smooth
-              </button>
-              <button type="button" id="btnFps30" class="px-3 py-2 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 transition">
-                30 FPS High Bit-Per-Pixel
-              </button>
-            </div>
-          </div>
-
-          <!-- 4. Luma/Chroma Unsharp Mask Strength -->
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between text-xs">
-              <label for="sliderSharpen" class="font-medium text-slate-300">4. Lanczos + 5×5 Unsharp Pre-Compensation</label>
-              <span id="labelSharpenVal" class="font-mono text-emerald-400">0.65 (Sweet Spot)</span>
-            </div>
-            <input id="sliderSharpen" type="range" min="0" max="150" value="65" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer" />
-            <p class="text-[11px] text-slate-400">Counteracts mobile player bilinear softening without creating white halo rings.</p>
-          </div>
-
-          <!-- 5. Clip Duration for Dynamic Bitrate Budgeting -->
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between text-xs">
-              <label for="sliderDuration" class="font-medium text-slate-300">5. Clip Duration (Bitrate Budgeter)</label>
-              <span id="labelDurationVal" class="font-mono text-cyan-400">15 sec</span>
-            </div>
-            <input id="sliderDuration" type="range" min="5" max="120" value="15" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer" />
-          </div>
-
-          <!-- 6. Optical Pipeline Switches -->
-          <div class="space-y-2.5 pt-1 border-t border-slate-800">
-            <label class="flex items-center justify-between cursor-pointer">
-              <div>
-                <div class="text-xs font-medium text-slate-200">Hable Filmic HDR → Rec.709 Tone-Map</div>
-                <div class="text-[11px] text-slate-400">Prevents blown-out skin tones from iPhone 10-bit Dolby Vision</div>
+          <!-- Selection Block 1: Target Platform Profile -->
+          <div class="selection-block active bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 transition-all" id="step-platform">
+            <div class="selection-block-header flex items-center justify-between gap-2 cursor-pointer" data-toggle-block="step-platform">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">STEP 1</span>
+                <span class="text-xs font-bold text-white selection-block-title">Target Platform Profile</span>
+                <span class="selection-summary-badge text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300" id="summaryPlatform">TikTok HD (1080p • 9.5M)</span>
               </div>
-              <input id="toggleHdrTonemap" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
-            </label>
-
-            <label class="flex items-center justify-between cursor-pointer">
-              <div>
-                <div class="text-xs font-medium text-slate-200">3D Spatial-Temporal Denoise (<code class="font-mono text-emerald-400">hqdn3d</code>)</div>
-                <div class="text-[11px] text-slate-400">Strips sensor grain so H.264 spends 100% of bits on sharp edges</div>
+              <button type="button" class="btn-selection-toggle text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition" data-target="step-platform" title="Collapse or Expand Platform Selection">
+                <span class="toggle-icon text-xs">▲</span>
+              </button>
+            </div>
+            <div class="selection-block-body mt-3 space-y-3">
+              <div class="grid grid-cols-3 gap-2">
+                <button type="button" data-platform="tiktok" class="plat-btn px-3 py-2.5 rounded-xl border text-left transition bg-emerald-500/15 border-emerald-500 text-white shadow-sm">
+                  <div class="text-xs font-bold">TikTok HD</div>
+                  <div class="text-[10px] font-mono text-emerald-300 mt-0.5">1080p • 9.5M</div>
+                </button>
+                <button type="button" data-platform="whatsapp_720" class="plat-btn px-3 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
+                  <div class="text-xs font-bold">WhatsApp Safe</div>
+                  <div class="text-[10px] font-mono text-slate-400 mt-0.5">720p • &lt;14.5MB</div>
+                </button>
+                <button type="button" data-platform="whatsapp_1080" class="plat-btn px-3 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
+                  <div class="text-xs font-bold">WhatsApp HD</div>
+                  <div class="text-[10px] font-mono text-slate-400 mt-0.5">1080p • &lt;14.5MB</div>
+                </button>
               </div>
-              <input id="toggleDenoise" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
-            </label>
-
-            <label class="flex items-center justify-between cursor-pointer">
-              <div>
-                <div class="text-xs font-medium text-slate-200">2-Pass <code class="font-mono text-emerald-400">veryslow</code> Lookahead (60 Frames)</div>
-                <div class="text-[11px] text-slate-400">Unconstrained encoding time for maximum SSIM/VMAF retention</div>
+              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex justify-end">
+                <button type="button" class="btn-step-nav btn-step-next px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition flex items-center gap-1 shadow" data-next-step="step-footage">
+                  <span>Next: Input Footage Characteristics</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
               </div>
-              <input id="toggleVeryslow" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
-            </label>
+            </div>
+          </div>
 
-            <label class="flex items-center justify-between cursor-pointer">
-              <div>
-                <div class="text-xs font-medium text-slate-200">EBU R128 (-14 LUFS) Audio Loudness Normalization</div>
-                <div class="text-[11px] text-slate-400">Standardizes audio volume to -14 LUFS (-1 dBFS true peak) preventing platform audio clipping</div>
+          <!-- Selection Block 2: Input Footage Characteristics -->
+          <div class="selection-block bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 transition-all" id="step-footage">
+            <div class="selection-block-header flex items-center justify-between gap-2 cursor-pointer" data-toggle-block="step-footage">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">STEP 2</span>
+                <span class="text-xs font-bold text-white selection-block-title">Input Footage Characteristics</span>
+                <span class="selection-summary-badge text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300" id="summaryFootage">Raw Smartphone (10-bit HDR)</span>
               </div>
-              <input id="toggleLoudnorm" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
-            </label>
+              <button type="button" class="btn-selection-toggle text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition" data-target="step-footage" title="Collapse or Expand Footage Selection">
+                <span class="toggle-icon text-xs">▼</span>
+              </button>
+            </div>
+            <div class="selection-block-body hidden mt-3 space-y-3">
+              <select id="selectSourceProfile" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500">
+                <option value="raw_hdr">Raw Smartphone Recording (iPhone .MOV / 10-bit HLG HDR + VFR)</option>
+                <option value="edited_4k">Edited Clip (CapCut / Premiere / DaVinci 4K or 1080p Export)</option>
+                <option value="lowlight">Low-Light / High-ISO Footage (Requires Temporal Denoise First)</option>
+              </select>
+              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-between">
+                <button type="button" class="btn-step-nav btn-step-prev px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition flex items-center gap-1" data-prev-step="step-platform">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  <span>Prev: Platform</span>
+                </button>
+                <button type="button" class="btn-step-nav btn-step-next px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition flex items-center gap-1 shadow" data-next-step="step-fps">
+                  <span>Next: Constant Frame Rate Lock</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selection Block 3: Constant Frame Rate (CFR) Lock -->
+          <div class="selection-block bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 transition-all" id="step-fps">
+            <div class="selection-block-header flex items-center justify-between gap-2 cursor-pointer" data-toggle-block="step-fps">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">STEP 3</span>
+                <span class="text-xs font-bold text-white selection-block-title">Constant Frame Rate (CFR) Lock</span>
+                <span class="selection-summary-badge font-mono text-[11px] text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30" id="fpsValueBadge">60.00 FPS (GOP=60)</span>
+              </div>
+              <button type="button" class="btn-selection-toggle text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition" data-target="step-fps" title="Collapse or Expand FPS Lock Selection">
+                <span class="toggle-icon text-xs">▼</span>
+              </button>
+            </div>
+            <div class="selection-block-body hidden mt-3 space-y-3">
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" id="btnFps60" class="px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 transition shadow">
+                  60 FPS Ultra Smooth
+                </button>
+                <button type="button" id="btnFps30" class="px-3 py-2 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 transition hover:text-white hover:bg-slate-700">
+                  30 FPS High Bit-Per-Pixel
+                </button>
+              </div>
+              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-between">
+                <button type="button" class="btn-step-nav btn-step-prev px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition flex items-center gap-1" data-prev-step="step-footage">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  <span>Prev: Footage</span>
+                </button>
+                <button type="button" class="btn-step-nav btn-step-next px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition flex items-center gap-1 shadow" data-next-step="step-unsharp">
+                  <span>Next: Unsharp Pre-Compensation</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selection Block 4: Lanczos + 5x5 Unsharp Pre-Compensation -->
+          <div class="selection-block bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 transition-all" id="step-unsharp">
+            <div class="selection-block-header flex items-center justify-between gap-2 cursor-pointer" data-toggle-block="step-unsharp">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">STEP 4</span>
+                <span class="text-xs font-bold text-white selection-block-title">Lanczos + 5×5 Unsharp</span>
+                <span class="selection-summary-badge font-mono text-[11px] text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30" id="labelSharpenVal">0.65 (Sweet Spot)</span>
+              </div>
+              <button type="button" class="btn-selection-toggle text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition" data-target="step-unsharp" title="Collapse or Expand Unsharp Selection">
+                <span class="toggle-icon text-xs">▼</span>
+              </button>
+            </div>
+            <div class="selection-block-body hidden mt-3 space-y-3">
+              <input id="sliderSharpen" type="range" min="0" max="150" value="65" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer" />
+              <p class="text-[11px] text-slate-400">Counteracts mobile player bilinear softening without creating white halo rings.</p>
+              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-between">
+                <button type="button" class="btn-step-nav btn-step-prev px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition flex items-center gap-1" data-prev-step="step-fps">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  <span>Prev: FPS Lock</span>
+                </button>
+                <button type="button" class="btn-step-nav btn-step-next px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition flex items-center gap-1 shadow" data-next-step="step-switches">
+                  <span>Next: Duration &amp; Optical Switches</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selection Block 5: Duration & Optical Pipeline Switches -->
+          <div class="selection-block bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 transition-all" id="step-switches">
+            <div class="selection-block-header flex items-center justify-between gap-2 cursor-pointer" data-toggle-block="step-switches">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">STEP 5</span>
+                <span class="text-xs font-bold text-white selection-block-title">Clip Duration &amp; Switches</span>
+                <span class="selection-summary-badge font-mono text-[11px] text-cyan-400 px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30" id="labelDurationVal">15 sec</span>
+              </div>
+              <button type="button" class="btn-selection-toggle text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition" data-target="step-switches" title="Collapse or Expand Switches Selection">
+                <span class="toggle-icon text-xs">▼</span>
+              </button>
+            </div>
+            <div class="selection-block-body hidden mt-3 space-y-3">
+              <div class="space-y-1">
+                <div class="flex items-center justify-between text-xs text-slate-300">
+                  <span>Duration (Bitrate Budgeter)</span>
+                  <span id="labelDurationValInner" class="font-mono text-cyan-400">15s</span>
+                </div>
+                <input id="sliderDuration" type="range" min="5" max="120" value="15" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer" />
+              </div>
+
+              <!-- Optical Pipeline Switches -->
+              <div class="space-y-2.5 pt-2 border-t border-slate-800">
+                <label class="flex items-center justify-between cursor-pointer">
+                  <div>
+                    <div class="text-xs font-medium text-slate-200">Hable Filmic HDR → Rec.709 Tone-Map</div>
+                    <div class="text-[11px] text-slate-400">Prevents blown-out skin tones from iPhone 10-bit Dolby Vision</div>
+                  </div>
+                  <input id="toggleHdrTonemap" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
+                </label>
+
+                <label class="flex items-center justify-between cursor-pointer">
+                  <div>
+                    <div class="text-xs font-medium text-slate-200">3D Spatial-Temporal Denoise (<code class="font-mono text-emerald-400">hqdn3d</code>)</div>
+                    <div class="text-[11px] text-slate-400">Strips sensor grain so H.264 spends 100% of bits on sharp edges</div>
+                  </div>
+                  <input id="toggleDenoise" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
+                </label>
+
+                <label class="flex items-center justify-between cursor-pointer">
+                  <div>
+                    <div class="text-xs font-medium text-slate-200">2-Pass Veryslow Motion Lookahead</div>
+                    <div class="text-[11px] text-slate-400">Pre-calculates fast motion cuts so TikTok server encoder never crushes quality</div>
+                  </div>
+                  <input id="toggleVeryslow" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
+                </label>
+              </div>
+
+              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-between">
+                <button type="button" class="btn-step-nav btn-step-prev px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition flex items-center gap-1" data-prev-step="step-unsharp">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  <span>Prev: Unsharp</span>
+                </button>
+                <button type="button" class="btn-step-nav btn-step-next px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition flex items-center gap-1 shadow" data-next-step="step-master">
+                  <span>Next: Master Output Actions</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selection Block 6: Master Output Actions & Script Jump -->
+          <div class="selection-block bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 transition-all" id="step-master">
+            <div class="selection-block-header flex items-center justify-between gap-2 cursor-pointer" data-toggle-block="step-master">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">STEP 6</span>
+                <span class="text-xs font-bold text-white selection-block-title">Master Output &amp; FFmpeg Jump</span>
+                <span class="selection-summary-badge font-mono text-[11px] text-emerald-400 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30" id="summaryMasterStatus">Config Ready</span>
+              </div>
+              <button type="button" class="btn-selection-toggle text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition" data-target="step-master" title="Collapse or Expand Master Output Selection">
+                <span class="toggle-icon text-xs">▼</span>
+              </button>
+            </div>
+            <div class="selection-block-body hidden mt-3 space-y-3">
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Your pre-compensation parameters are locked. You can render via in-browser canvas shader, execute a high-speed cloud master, or jump straight to the exact generated 2-pass FFmpeg command.
+              </p>
+              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-between">
+                <button type="button" class="btn-step-nav btn-step-prev px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition flex items-center gap-1" data-prev-step="step-switches">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                  <span>Prev: Switches</span>
+                </button>
+                <button type="button" class="btn-step-nav btn-step-tab px-3.5 py-1.5 rounded-lg text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition flex items-center gap-1.5 shadow" data-navtab="pipeline">
+                  <span>View Generated FFmpeg Script ➔</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- Bottom Page Navigation Row for Studio -->
+      <div class="page-nav-row flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-slate-800/80 mt-6">
+        <a href="/" class="btn-diag btn-converter-nav" title="Return to Universal File Converter">
+          <span>← Back to Universal File Converter</span>
+        </a>
+        <button type="button" class="btn-diag btn-nav-next-tab" data-navtab="pipeline">
+          <span>Continue to Bitrate &amp; FFmpeg Builder ➔</span>
+        </button>
+      </div>
     </section>
+
 
     <!-- ==================== TAB 2: BITRATE & FFMPEG BUILDER ==================== -->
     <section id="view-pipeline" class="hidden space-y-6">
@@ -6338,9 +7005,19 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
           <pre id="ffmpegCommandBox" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs font-mono text-emerald-300 overflow-x-auto custom-scroll leading-relaxed whitespace-pre-wrap"></pre>
         </div>
       </div>
+
+      <!-- Bottom Navigation for Tab -->
+      <div class="page-nav-row flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-slate-800/80 mt-6">
+        <button type="button" class="btn-diag btn-nav-prev-tab" data-navtab="studio">
+          <span>← Back to Live Studio & Comparator</span>
+        </button>
+        <button type="button" class="btn-diag btn-nav-next-tab" data-navtab="code">
+          <span>Continue to Web & Mobile Code ➔</span>
+        </button>
+      </div>
     </section>
 
-    <!-- ==================== TAB 3: WEB & MOBILE CODE ==================== -->
+    <!-- ==================== TAB 3: WEB & MOBILE CODE SNIPPETS ==================== -->
     <section id="view-code" class="hidden space-y-5">
       <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-900/80 border border-slate-800 rounded-2xl p-4">
         <div class="flex flex-wrap items-center gap-2">
@@ -6375,9 +7052,19 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
         </div>
         <pre id="codeDisplayPre" class="p-4 sm:p-5 text-xs font-mono text-slate-200 overflow-x-auto max-h-[540px] custom-scroll leading-relaxed"></pre>
       </div>
+
+      <!-- Bottom Navigation for Tab -->
+      <div class="page-nav-row flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-slate-800/80 mt-6">
+        <button type="button" class="btn-diag btn-nav-prev-tab" data-navtab="pipeline">
+          <span>← Back to Bitrate & FFmpeg Builder</span>
+        </button>
+        <button type="button" class="btn-diag btn-nav-next-tab" data-navtab="guide">
+          <span>Continue to Bypass Blueprint ➔</span>
+        </button>
+      </div>
     </section>
 
-    <!-- ==================== TAB 4: BYPASS BLUEPRINT ==================== -->
+    <!-- ==================== TAB 4: ARCHITECTURE & BYPASS BLUEPRINT ==================== -->
     <section id="view-guide" class="hidden space-y-6">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-3">
@@ -6422,9 +7109,19 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
           </ul>
         </div>
       </div>
+
+      <!-- Bottom Navigation for Tab -->
+      <div class="page-nav-row flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-slate-800/80 mt-6">
+        <button type="button" class="btn-diag btn-nav-prev-tab" data-navtab="code">
+          <span>← Back to Web & Mobile Code</span>
+        </button>
+        <button type="button" class="btn-diag btn-nav-next-tab" data-navtab="converter">
+          <span>Browse Supported Formats ➔</span>
+        </button>
+      </div>
     </section>
 
-    <!-- ==================== TAB 5: FORMATS & RETURN TO CONVERTER ==================== -->
+    <!-- ==================== TAB 5: FORMATS & CONVERTER RETURN ==================== -->
     <section id="view-converter" class="hidden space-y-6">
       <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -6638,6 +7335,7 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
     </div>
   </main>
 
+  
   <script>
     // ==================== APPLICATION STATE ====================
     const state = {
@@ -7080,6 +7778,28 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
         : 'PASS: Below Re-Encode Trigger';
 
       document.getElementById('metricVmafScore').textContent = `${m.vmaf.toFixed(1)} / 100`;
+      // Selection summary badges update
+      const summaryPlatform = document.getElementById('summaryPlatform');
+      if (summaryPlatform) {
+        summaryPlatform.textContent = state.platform === 'tiktok'
+          ? 'TikTok HD (1080p • 9.5M)'
+          : state.platform === 'whatsapp_720'
+            ? 'WhatsApp Safe (720p • <14.5M)'
+            : 'WhatsApp HD (1080p • <14.5M)';
+      }
+      const summaryFootage = document.getElementById('summaryFootage');
+      if (summaryFootage) {
+        summaryFootage.textContent = state.sourceProfile === 'raw_hdr'
+          ? 'Raw Smartphone (10-bit HDR/VFR)'
+          : state.sourceProfile === 'edited_4k'
+            ? 'Edited Clip (CapCut/Premiere 4K)'
+            : 'Low-Light / High-ISO (Denoise)';
+      }
+      const summaryMasterStatus = document.getElementById('summaryMasterStatus');
+      if (summaryMasterStatus) {
+        summaryMasterStatus.textContent = `Config Ready (${m.tw}×${m.th} • ${state.fps}fps)`;
+      }
+
 
       // Controls labels
       document.getElementById('fpsValueBadge').textContent = `${state.fps}.00 FPS (GOP=${state.fps})`;
@@ -7309,9 +8029,240 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
       localStorage.setItem('webpage_theme', valid);
       const label = document.getElementById('zeroblurThemeLabel');
       if (label) label.textContent = 'Theme: ' + THEME_NAMES[valid];
+      const cycleLabel = document.getElementById('zeroblurToggleText');
+      if (cycleLabel) cycleLabel.textContent = 'Display: ' + THEME_NAMES[valid];
+
+      // Update active state in themeSwitcher
+      document.querySelectorAll('#themeSwitcher .theme-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-theme') === valid);
+      });
     }
 
     function setupListeners() {
+
+      // ==================== SELECTION STEP NAVIGATION & ACCORDION ====================
+      let isCleanMode = true;
+      const stepPills = document.querySelectorAll('.step-nav-pill');
+      const selectionBlocks = document.querySelectorAll('.selection-block');
+
+      function setActiveStep(stepId, shouldScroll) {
+        stepPills.forEach(pill => {
+          const isTarget = pill.getAttribute('data-step-target') === stepId;
+          pill.classList.toggle('active', isTarget);
+          if (isTarget) {
+            pill.className = 'step-nav-pill active px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition bg-emerald-500 text-slate-950 shadow';
+          } else {
+            pill.className = 'step-nav-pill px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition text-slate-400 hover:text-white hover:bg-slate-800/60';
+          }
+        });
+
+        selectionBlocks.forEach(block => {
+          const isTarget = block.id === stepId;
+          const body = block.querySelector('.selection-block-body');
+          const toggleIcon = block.querySelector('.toggle-icon');
+
+          if (isCleanMode) {
+            if (isTarget) {
+              block.classList.add('active');
+              if (body) body.classList.remove('hidden');
+              if (toggleIcon) toggleIcon.textContent = '▲';
+            } else {
+              block.classList.remove('active');
+              if (body) body.classList.add('hidden');
+              if (toggleIcon) toggleIcon.textContent = '▼';
+            }
+          } else {
+            if (isTarget) {
+              block.classList.add('active');
+              if (body) body.classList.remove('hidden');
+              if (toggleIcon) toggleIcon.textContent = '▲';
+            }
+          }
+        });
+
+        if (shouldScroll) {
+          const targetEl = document.getElementById(stepId);
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
+      }
+
+      // Stepper pill clicks
+      stepPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+          const targetId = pill.getAttribute('data-step-target');
+          if (targetId) setActiveStep(targetId, true);
+        });
+      });
+
+      // Selection Header click & toggle button click
+      selectionBlocks.forEach(block => {
+        const header = block.querySelector('.selection-block-header');
+        if (header) {
+          header.addEventListener('click', (e) => {
+            const body = block.querySelector('.selection-block-body');
+            const toggleIcon = block.querySelector('.toggle-icon');
+            if (!body) return;
+            const isHidden = body.classList.contains('hidden');
+            if (isHidden) {
+              if (isCleanMode) {
+                setActiveStep(block.id, false);
+              } else {
+                body.classList.remove('hidden');
+                block.classList.add('active');
+                if (toggleIcon) toggleIcon.textContent = '▲';
+              }
+            } else {
+              body.classList.add('hidden');
+              block.classList.remove('active');
+              if (toggleIcon) toggleIcon.textContent = '▼';
+            }
+          });
+        }
+      });
+
+      // Step Navigation Next / Prev buttons
+      document.querySelectorAll('.btn-step-next').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const nextStep = btn.getAttribute('data-next-step');
+          if (nextStep) setActiveStep(nextStep, true);
+        });
+      });
+
+      document.querySelectorAll('.btn-step-prev').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const prevStep = btn.getAttribute('data-prev-step');
+          if (prevStep) setActiveStep(prevStep, true);
+        });
+      });
+
+      // Jump to Tab buttons
+      document.querySelectorAll('.btn-step-tab, .btn-nav-next-tab, .btn-nav-prev-tab').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const targetTab = btn.getAttribute('data-navtab');
+          if (targetTab) {
+            const tabBtn = document.getElementById('tabBtn-' + targetTab);
+            if (tabBtn) {
+              tabBtn.click();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }
+        });
+      });
+
+      // Clean View toggle
+      const btnCleanMode = document.getElementById('btnToggleCleanMode');
+      const cleanModeText = document.getElementById('cleanModeStatusText');
+      if (btnCleanMode) {
+        btnCleanMode.addEventListener('click', () => {
+          isCleanMode = !isCleanMode;
+          if (cleanModeText) {
+            cleanModeText.textContent = isCleanMode ? 'Clean View' : 'Multi-Expand';
+          }
+          btnCleanMode.classList.toggle('bg-emerald-500/20', isCleanMode);
+          btnCleanMode.classList.toggle('border-emerald-500', isCleanMode);
+          showToast(isCleanMode ? 'Clean View active (collapses inactive selections)' : 'Multi-expand view enabled');
+        });
+      }
+
+      // Expand All button
+      const btnExpandAll = document.getElementById('btnExpandAllSelections');
+      const expandAllText = document.getElementById('expandAllStatusText');
+      let allExpanded = false;
+      if (btnExpandAll) {
+        btnExpandAll.addEventListener('click', () => {
+          allExpanded = !allExpanded;
+          selectionBlocks.forEach(block => {
+            const body = block.querySelector('.selection-block-body');
+            const toggleIcon = block.querySelector('.toggle-icon');
+            if (body) {
+              body.classList.toggle('hidden', !allExpanded);
+            }
+            if (toggleIcon) {
+              toggleIcon.textContent = allExpanded ? '▲' : '▼';
+            }
+            block.classList.toggle('active', allExpanded);
+          });
+          if (expandAllText) {
+            expandAllText.textContent = allExpanded ? 'Collapse All' : 'Expand All';
+          }
+        });
+      }
+
+      // Theme switcher bar hide/show toggle button
+      const toggleSwitcherBtn = document.getElementById('toggleZeroblurSwitcherNavBtn');
+      const themeBar = document.getElementById('themeBar');
+      const switcherIcon = document.getElementById('toggleZeroblurSwitcherIcon');
+      const switcherText = document.getElementById('toggleZeroblurSwitcherText');
+
+      function updateSwitcherVisibility(visible) {
+        if (!themeBar) return;
+        if (visible) {
+          themeBar.style.display = 'flex';
+          if (toggleSwitcherBtn) toggleSwitcherBtn.setAttribute('aria-expanded', 'true');
+          if (switcherText) switcherText.textContent = 'Hide Switcher';
+          if (switcherIcon) {
+            switcherIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+          }
+        } else {
+          themeBar.style.display = 'none';
+          if (toggleSwitcherBtn) toggleSwitcherBtn.setAttribute('aria-expanded', 'false');
+          if (switcherText) switcherText.textContent = 'Show Switcher';
+          if (switcherIcon) {
+            switcherIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+          }
+        }
+      }
+
+      if (toggleSwitcherBtn) {
+        toggleSwitcherBtn.addEventListener('click', () => {
+          const currentVisible = themeBar ? themeBar.style.display !== 'none' : true;
+          const nextVisible = !currentVisible;
+          localStorage.setItem('themeSwitcherVisible', nextVisible ? 'true' : 'false');
+          updateSwitcherVisibility(nextVisible);
+        });
+      }
+
+      const closeThemeBarBtn = document.getElementById('themeBarCloseBtn');
+      if (closeThemeBarBtn) {
+        closeThemeBarBtn.addEventListener('click', () => {
+          localStorage.setItem('themeSwitcherVisible', 'false');
+          updateSwitcherVisibility(false);
+        });
+      }
+
+      const savedSwitcherVis = localStorage.getItem('themeSwitcherVisible');
+      if (savedSwitcherVis === 'false') {
+        updateSwitcherVisibility(false);
+      } else {
+        updateSwitcherVisibility(true);
+      }
+
+      // Theme segmented buttons in themeBar
+      document.querySelectorAll('#themeSwitcher .theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const theme = btn.getAttribute('data-theme');
+          applyDisplayTheme(theme);
+          showToast('Display switched to ' + THEME_NAMES[theme]);
+        });
+      });
+
+      // Cycle toggle button
+      const cycleToggleBtn = document.getElementById('zeroblurThemeToggle');
+      if (cycleToggleBtn) {
+        cycleToggleBtn.addEventListener('click', () => {
+          const cur = localStorage.getItem('webpage_theme') || 'color';
+          const idx = AVAILABLE_THEMES.indexOf(cur);
+          const next = AVAILABLE_THEMES[(idx + 1) % AVAILABLE_THEMES.length];
+          applyDisplayTheme(next);
+          showToast('Display switched to ' + THEME_NAMES[next]);
+        });
+      }
+
       const themeBtn = document.getElementById('zeroblurThemeBtn');
       if (themeBtn) {
         themeBtn.addEventListener('click', () => {
