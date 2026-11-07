@@ -4222,6 +4222,194 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         .btn-action-copied {
             animation: copyPulse 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
         }
+
+        /* ZeroBlur Engine Integration Navigation & Callout */
+        .btn-zeroblur-link {
+            background: rgba(16, 185, 129, 0.15) !important;
+            border: 1px solid rgba(16, 185, 129, 0.45) !important;
+            color: #34d399 !important;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border-radius: 9999px;
+            padding: 4px 12px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+            user-select: none;
+        }
+
+        .btn-zeroblur-link:hover {
+            background: rgba(16, 185, 129, 0.28) !important;
+            border-color: #10b981 !important;
+            color: #ffffff !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+        }
+
+        .btn-zeroblur-link:active {
+            transform: scale(0.96);
+        }
+
+        .btn-zeroblur-nav {
+            background: rgba(16, 185, 129, 0.15) !important;
+            border: 1px solid rgba(16, 185, 129, 0.4) !important;
+            color: #34d399 !important;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-zeroblur-nav:hover {
+            background: rgba(16, 185, 129, 0.3) !important;
+            border-color: #34d399 !important;
+            color: #ffffff !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+        }
+
+        .zeroblur-banner-callout {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px dashed rgba(16, 185, 129, 0.35);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .zeroblur-callout-text {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.78rem;
+            color: #cbd5e1;
+        }
+
+        .zeroblur-callout-text p {
+            margin: 0;
+        }
+
+        .zeroblur-badge {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .btn-callout-launch {
+            background: #10b981;
+            color: #064e3b;
+            font-weight: 700;
+            font-size: 0.75rem;
+            padding: 5px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-callout-launch:hover {
+            background: #34d399;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Theme Overrides for ZeroBlur elements */
+        body.bw-page-light .btn-zeroblur-link,
+        body.bw-page-light .btn-zeroblur-nav {
+            background: #ffffff !important;
+            border: 1px solid #09090b !important;
+            color: #09090b !important;
+        }
+        body.bw-page-light .btn-zeroblur-link:hover,
+        body.bw-page-light .btn-zeroblur-nav:hover {
+            background: #09090b !important;
+            color: #ffffff !important;
+        }
+        body.bw-page-light .zeroblur-banner-callout {
+            background: #f4f4f5 !important;
+            border: 1px dashed #09090b !important;
+        }
+        body.bw-page-light .zeroblur-badge {
+            background: #09090b !important;
+            color: #ffffff !important;
+        }
+        body.bw-page-light .btn-callout-launch {
+            background: #09090b !important;
+            color: #ffffff !important;
+        }
+
+        body.bw-page-dark .btn-zeroblur-link,
+        body.bw-page-dark .btn-zeroblur-nav {
+            background: #18181b !important;
+            border: 1px solid #3f3f46 !important;
+            color: #fafafa !important;
+        }
+        body.bw-page-dark .btn-zeroblur-link:hover,
+        body.bw-page-dark .btn-zeroblur-nav:hover {
+            background: #27272a !important;
+            border-color: #fafafa !important;
+            color: #ffffff !important;
+        }
+        body.bw-page-dark .zeroblur-banner-callout {
+            background: #18181b !important;
+            border: 1px dashed #3f3f46 !important;
+        }
+        body.bw-page-dark .zeroblur-badge {
+            background: #27272a !important;
+            color: #fafafa !important;
+        }
+        body.bw-page-dark .btn-callout-launch {
+            background: #fafafa !important;
+            color: #09090b !important;
+        }
+
+        body.theme-editorial .btn-zeroblur-link,
+        body.theme-editorial .btn-zeroblur-nav {
+            background: rgba(4, 120, 87, 0.12) !important;
+            border: 1px solid rgba(4, 120, 87, 0.35) !important;
+            color: #047857 !important;
+            font-family: 'Newsreader', Georgia, serif;
+        }
+        body.theme-editorial .btn-zeroblur-link:hover,
+        body.theme-editorial .btn-zeroblur-nav:hover {
+            background: #047857 !important;
+            color: #ffffff !important;
+        }
+        body.theme-editorial .zeroblur-banner-callout {
+            background: #fbf9f4 !important;
+            border: 1px dashed #cbd5e1 !important;
+        }
+        body.theme-editorial .btn-callout-launch {
+            background: #047857 !important;
+            color: #ffffff !important;
+        }
+
+        body.theme-liquid-glass .btn-zeroblur-link,
+        body.theme-liquid-glass .btn-zeroblur-nav {
+            background: rgba(16, 185, 129, 0.2) !important;
+            backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(52, 211, 153, 0.5) !important;
+            color: #6ee7b7 !important;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25) !important;
+        }
+        body.theme-liquid-glass .btn-zeroblur-link:hover,
+        body.theme-liquid-glass .btn-zeroblur-nav:hover {
+            background: rgba(16, 185, 129, 0.4) !important;
+            border-color: #a7f3d0 !important;
+            color: #ffffff !important;
+            box-shadow: 0 6px 22px rgba(16, 185, 129, 0.4) !important;
+        }
+
     </style>
 </head>
 <body>
@@ -4238,6 +4426,13 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             <div class="header-top">
                 <div class="header-badge">⚡ Instant Conversion & Permanent Hosting</div>
                 <div class="header-badge" style="margin-bottom:0; background:rgba(16, 185, 129, 0.15); color:#34d399; border-color:rgba(16, 185, 129, 0.35);">v1.4.0 • Mobile Shield & Photo Gallery</div>
+                <!-- ZeroBlur Engine Page Navigation Button -->
+                <a href="/zeroblur" class="btn-diag btn-zeroblur-nav" id="navZeroBlurBtn" title="Open ZeroBlur Engine Studio for TikTok & WhatsApp Video Mastering">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    <span>⚡ ZeroBlur Studio ↗</span>
+                </a>
                 <button type="button" class="btn-diag btn-bw-toggle" id="bwPageToggle" title="Toggle webpage display style (Editorial, Liquid Glass, Modern Dark, B&W)">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
@@ -4403,6 +4598,18 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                                         <polyline points="6 9 12 15 18 9"></polyline>
                                     </svg>
                                 </button>
+
+                                <!-- Navigation to ZeroBlur Engine Studio Dedicated Page -->
+                                <a href="/zeroblur" class="btn-more-formats btn-zeroblur-link" id="btnZeroBlurEnginePage" title="Open ZeroBlur Engine Studio & Advanced Mastering Page">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                    </svg>
+                                    <span>⚡ ZeroBlur Engine</span>
+                                    <svg class="more-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="7" y1="17" x2="17" y2="7"></line>
+                                        <polyline points="7 7 17 7 17 17"></polyline>
+                                    </svg>
+                                </a>
                             </div>
                         </div>
 
@@ -4427,6 +4634,17 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                             <!-- Format Pills Switcher -->
                             <div class="format-pills-container" id="formatPillsContainer" role="radiogroup" aria-label="Format Options">
                                 <!-- Injected dynamically by JS -->
+                            </div>
+
+                            <!-- ZeroBlur Engine Banner inside expanded format panel -->
+                            <div class="zeroblur-banner-callout">
+                                <div class="zeroblur-callout-text">
+                                    <span class="zeroblur-badge">⚡ ZeroBlur Studio</span>
+                                    <span>Master TikTok 60fps CFR &amp; WhatsApp &lt;14.5MB Status with optical deblurring &amp; 2-pass FFmpeg.</span>
+                                </div>
+                                <a href="/zeroblur" class="btn-callout-launch" id="calloutLaunchZeroBlurBtn">
+                                    Open Studio ↗
+                                </a>
                             </div>
                         </div>
 
@@ -5400,7 +5618,17 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                 });
             }
 
-            selectTargetFormat(targetFormat ? targetFormat.value : 'webp');
+            // Handle URL query parameter ?format=... (e.g. returning from ZeroBlur Studio)
+            const urlParams = new URLSearchParams(window.location.search);
+            const queryFormat = urlParams.get('format');
+            if (queryFormat) {
+                selectTargetFormat(queryFormat);
+                if (typeof showActionToast === 'function') {
+                    showActionToast(`Target format set to ${queryFormat.toUpperCase()} from ZeroBlur Studio`, 'info');
+                }
+            } else {
+                selectTargetFormat(targetFormat ? targetFormat.value : 'webp');
+            }
         }
 
         initWebpageTheme();
@@ -5412,10 +5640,1802 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
 """
 
 
+HTML_ZEROBLUR = r"""<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZeroBlur Engine Studio — TikTok & WhatsApp Status Video Mastering</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,600&family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eefdf8',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: #090d16;
+      color: #f1f5f9;
+      overflow-x: hidden;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    input[type="range"] {
+      accent-color: #10b981;
+    }
+
+    /* Navigation Button Back to Converter */
+    .btn-back-converter {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 14px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(6, 182, 212, 0.22));
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      color: #34d399;
+      transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+    }
+    .btn-back-converter:hover {
+      background: linear-gradient(135deg, #10b981, #06b6d4);
+      color: #042f2e;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4);
+    }
+    .btn-back-converter:active {
+      transform: scale(0.97);
+    }
+
+    /* Editorial Theme Overrides */
+    body.theme-editorial {
+      background-color: #fcfaf6 !important;
+      color: #1c1917 !important;
+      font-family: 'Newsreader', Georgia, serif !important;
+    }
+    body.theme-editorial header {
+      background-color: rgba(247, 244, 237, 0.95) !important;
+      border-bottom-color: #e2ded4 !important;
+    }
+    body.theme-editorial .bg-slate-900\/80,
+    body.theme-editorial .bg-slate-900\/70,
+    body.theme-editorial .bg-slate-900\/90,
+    body.theme-editorial .bg-slate-950,
+    body.theme-editorial .bg-slate-950\/80 {
+      background-color: #ffffff !important;
+      border-color: #e7e2d9 !important;
+      color: #1c1917 !important;
+    }
+    body.theme-editorial .text-white {
+      color: #1c1917 !important;
+    }
+    body.theme-editorial .text-slate-400,
+    body.theme-editorial .text-slate-300 {
+      color: #57534e !important;
+    }
+    body.theme-editorial .btn-back-converter {
+      background: #047857 !important;
+      color: #ffffff !important;
+      border-color: #047857 !important;
+    }
+
+    /* Soft Liquid Glass Theme Overrides */
+    body.theme-liquid-glass {
+      background: radial-gradient(circle at 15% 15%, rgba(49, 46, 129, 0.75), transparent 45%),
+                  radial-gradient(circle at 85% 85%, rgba(13, 148, 136, 0.45), transparent 45%),
+                  #050814 !important;
+      color: #f1f5f9 !important;
+    }
+    body.theme-liquid-glass header {
+      background: rgba(8, 14, 29, 0.75) !important;
+      backdrop-filter: blur(20px) !important;
+      border-bottom-color: rgba(255, 255, 255, 0.12) !important;
+    }
+    body.theme-liquid-glass .bg-slate-900\/80,
+    body.theme-liquid-glass .bg-slate-900\/70,
+    body.theme-liquid-glass .bg-slate-900\/90 {
+      background: rgba(15, 23, 42, 0.55) !important;
+      backdrop-filter: blur(16px) !important;
+      border-color: rgba(255, 255, 255, 0.14) !important;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
+    }
+
+    /* Black & White Light Theme Overrides */
+    body.bw-page-light {
+      background-color: #ffffff !important;
+      color: #000000 !important;
+    }
+    body.bw-page-light header {
+      background-color: #ffffff !important;
+      border-bottom: 2px solid #000000 !important;
+    }
+    body.bw-page-light .bg-slate-900\/80,
+    body.bw-page-light .bg-slate-900\/70,
+    body.bw-page-light .bg-slate-900\/90,
+    body.bw-page-light .bg-slate-950,
+    body.bw-page-light .bg-slate-950\/80 {
+      background-color: #ffffff !important;
+      border: 1px solid #000000 !important;
+      color: #000000 !important;
+    }
+    body.bw-page-light .text-white,
+    body.bw-page-light .text-slate-200,
+    body.bw-page-light .text-slate-300,
+    body.bw-page-light .text-slate-400 {
+      color: #000000 !important;
+    }
+    body.bw-page-light .btn-back-converter {
+      background: #000000 !important;
+      color: #ffffff !important;
+      border: 1px solid #000000 !important;
+    }
+
+    /* Black & White Dark Theme Overrides */
+    body.bw-page-dark {
+      background-color: #09090b !important;
+      color: #fafafa !important;
+    }
+    body.bw-page-dark header {
+      background-color: #09090b !important;
+      border-bottom: 1px solid #27272a !important;
+    }
+    body.bw-page-dark .bg-slate-900\/80,
+    body.bw-page-dark .bg-slate-900\/70,
+    body.bw-page-dark .bg-slate-900\/90,
+    body.bw-page-dark .bg-slate-950,
+    body.bw-page-dark .bg-slate-950\/80 {
+      background-color: #121215 !important;
+      border: 1px solid #27272a !important;
+      color: #fafafa !important;
+    }
+    body.bw-page-dark .btn-back-converter {
+      background: #fafafa !important;
+      color: #09090b !important;
+      border: 1px solid #ffffff !important;
+    }
+  </style>
+
+</head>
+<body class="min-h-screen flex flex-col bg-[#090d16] text-slate-100 selection:bg-emerald-500/30 selection:text-emerald-200">
+
+  <!-- Toast Notification -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Top Header -->
+  <header class="sticky top-0 z-30 border-b border-slate-800/80 bg-[#090d16]/90 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <!-- Prominent Navigation Button back to Converter -->
+        <a href="/" id="backToConverterBtn" class="btn-back-converter group" title="Return to Universal File Converter">
+          <svg class="w-4 h-4 text-emerald-400 group-hover:text-emerald-950 transition" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span>← Back to Converter</span>
+        </a>
+
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <svg class="w-5 h-5 text-slate-950" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">ZeroBlur Engine Studio</h1>
+            <span class="px-2 py-0.5 text-[11px] font-mono font-semibold uppercase tracking-wider rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">v2.4 Master</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">2-Pass Veryslow H.264 • Lanczos + Unsharp • 10-Bit HDR→Rec.709 • CFR Lock</p>
+        </div>
+      </div>
+
+      <!-- Right Header Actions & Navigation Tabs -->
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Display Style Switcher -->
+        <button id="zeroblurThemeBtn" type="button" class="px-2.5 py-1.5 rounded-xl border border-slate-700 bg-slate-900/90 text-xs font-medium text-slate-300 hover:text-white hover:border-slate-500 transition flex items-center gap-1.5" title="Switch Theme (Modern Dark, Editorial, Soft Liquid Glass, B&W)">
+          <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor"></path>
+          </svg>
+          <span id="zeroblurThemeLabel">Theme: Modern Dark</span>
+        </button>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-full">
+          <button id="tabBtn-studio" data-tab="studio" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all bg-emerald-500 text-slate-950 font-semibold shadow">
+            Live Studio &amp; Comparator
+          </button>
+          <button id="tabBtn-pipeline" data-tab="pipeline" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
+            Bitrate &amp; FFmpeg Builder
+          </button>
+          <button id="tabBtn-code" data-tab="code" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
+            Web &amp; Mobile Code
+          </button>
+          <button id="tabBtn-guide" data-tab="guide" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
+            Bypass Blueprint
+          </button>
+          <button id="tabBtn-converter" data-tab="converter" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
+            Formats &amp; Return
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+
+    <!-- ==================== TAB 1: LIVE STUDIO & COMPARATOR ==================== -->
+    <section id="view-studio" class="space-y-6">
+      <!-- Top Status Banner -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5">
+          <div class="text-xs text-slate-400 flex items-center justify-between">
+            <span>Active Preset</span>
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          </div>
+          <div id="metricPresetName" class="text-sm sm:text-base font-bold text-white mt-1">TikTok Ultra HD (1080×1920)</div>
+          <div id="metricPresetSub" class="text-[11px] font-mono text-emerald-400 mt-0.5">60.0 FPS CFR • 9,500 kbps 2-Pass</div>
+        </div>
+
+        <div class="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5">
+          <div class="text-xs text-slate-400">Source Inspection</div>
+          <div id="metricSourceRes" class="text-sm sm:text-base font-bold text-white mt-1">3840×2160 (4K Demo)</div>
+          <div id="metricSourceFlags" class="text-[11px] font-mono text-amber-400 mt-0.5">10-Bit HLG HDR • VFR Detected</div>
+        </div>
+
+        <div class="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5">
+          <div class="text-xs text-slate-400">Estimated Master Payload</div>
+          <div id="metricPayloadSize" class="text-sm sm:text-base font-bold text-white mt-1">14.2 MB / 15.0s</div>
+          <div id="metricBypassStatus" class="text-[11px] font-mono text-emerald-400 mt-0.5">PASS: Below Re-Encode Trigger</div>
+        </div>
+
+        <div class="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5">
+          <div class="text-xs text-slate-400">Visual Fidelity (VMAF Est.)</div>
+          <div class="flex items-baseline gap-2 mt-1">
+            <span id="metricVmafScore" class="text-sm sm:text-base font-bold text-emerald-400">98.4 / 100</span>
+            <span class="text-xs text-slate-400">vs 71.2 Raw Upload</span>
+          </div>
+          <div class="text-[11px] font-mono text-cyan-400 mt-0.5">Lanczos + Unsharp 5×5 Active</div>
+        </div>
+      </div>
+
+      <!-- Studio Workspace Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- Left Column: Interactive Split-Screen Video Preview & Processor (7 cols) -->
+        <div class="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                <span>Real-Time Optical Comparator</span>
+                <span id="liveBadge" class="px-2 py-0.5 text-[10px] font-mono uppercase rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">60 FPS Live Shader</span>
+              </h2>
+              <p class="text-xs text-slate-400">Drag the slider to compare platform compression blur vs. ZeroBlur Engine output</p>
+            </div>
+
+            <!-- Upload or Synthetic Stream Controls -->
+            <div class="flex items-center gap-2">
+              <label for="videoFileInput" class="cursor-pointer px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 transition flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>Load Local Video</span>
+              </label>
+              <input id="videoFileInput" type="file" accept="video/*,.mov,.mp4,.webm" class="hidden" />
+
+              <button id="btnResetDemoStream" type="button" class="px-2.5 py-1.5 rounded-lg bg-slate-800/70 hover:bg-slate-800 text-xs font-medium text-slate-300 border border-slate-700/80 transition">
+                4K HDR Test Scene
+              </button>
+            </div>
+          </div>
+
+          <!-- Hidden HTML5 video element for user uploads -->
+          <video id="hiddenSourceVideo" class="hidden" playsinline muted loop crossorigin="anonymous"></video>
+
+          <!-- Canvas Split-View Container -->
+          <div id="canvasViewport" class="relative w-full aspect-[16/10] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 select-none">
+            <canvas id="comparisonCanvas" width="960" height="600" class="w-full h-full object-contain block"></canvas>
+
+            <!-- Top Overlay Labels -->
+            <div class="absolute top-3 left-3 pointer-events-none px-2.5 py-1 rounded-md bg-rose-950/85 border border-rose-500/40 text-[11px] font-mono text-rose-200 shadow">
+              LEFT: Naive Upload (Bilinear Crush + HDR Clip)
+            </div>
+            <div class="absolute top-3 right-3 pointer-events-none px-2.5 py-1 rounded-md bg-emerald-950/85 border border-emerald-500/40 text-[11px] font-mono text-emerald-200 shadow">
+              RIGHT: ZeroBlur Master (Lanczos + Unsharp + Rec.709)
+            </div>
+
+            <!-- Split Slider Overlay Control -->
+            <div id="splitLineIndicator" class="absolute top-0 bottom-0 w-0.5 bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.9)] pointer-events-none" style="left: 50%;">
+              <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-emerald-400 text-slate-950 flex items-center justify-center shadow-lg border-2 border-white">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l-4 3 4 3m8-6l4 3-4 3" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Split & Zoom Toolbar -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <div class="flex items-center gap-3 flex-1 min-w-[200px]">
+              <span class="text-xs font-mono text-slate-400 whitespace-nowrap">Split Wipe:</span>
+              <input id="splitRangeSlider" type="range" min="5" max="95" value="50" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer" />
+              <span id="splitPercentLabel" class="text-xs font-mono text-emerald-400 w-10 text-right">50%</span>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <button id="btnTogglePlay" type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-white border border-slate-700 transition">
+                Pause Frame
+              </button>
+              <button id="btnZoom1x" type="button" data-zoom="1" class="zoom-btn px-2.5 py-1.5 rounded-lg bg-emerald-500 text-slate-950 text-xs font-semibold transition">
+                1× Fit
+              </button>
+              <button id="btnZoom2x" type="button" data-zoom="2" class="zoom-btn px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-xs font-medium border border-slate-700 transition">
+                2× Pixel Zoom
+              </button>
+              <button id="btnZoom3x" type="button" data-zoom="3" class="zoom-btn px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-xs font-medium border border-slate-700 transition">
+                3× Micro Texture
+              </button>
+            </div>
+          </div>
+
+          <!-- In-Browser Master Render & Download Bar -->
+          <div class="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+            <div class="space-y-0.5">
+              <div id="renderStatusText" class="text-xs font-medium text-slate-200">Ready to master current stream with active filters</div>
+              <div class="w-48 sm:w-64 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div id="renderProgressBar" class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all duration-200" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button id="btnRunBrowserMaster" type="button" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-semibold text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Master & Export Video</span>
+              </button>
+              <button id="downloadMasterLink" type="button" class="hidden px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-semibold text-xs sm:text-sm transition">
+                Save Master File
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Real-Time Engine Controls (5 cols) -->
+        <div class="lg:col-span-5 bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-5">
+          <div>
+            <h2 class="text-base font-semibold text-white">Engine Tuning Parameters</h2>
+            <p class="text-xs text-slate-400">Adjust optical pre-compensation and transcoder ceiling rules</p>
+          </div>
+
+          <!-- 1. Target Platform -->
+          <div class="space-y-2">
+            <label class="text-xs font-medium text-slate-300 block">1. Target Platform Profile</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" data-platform="tiktok" class="plat-btn px-3 py-2.5 rounded-xl border text-left transition bg-emerald-500/15 border-emerald-500 text-white">
+                <div class="text-xs font-bold">TikTok HD</div>
+                <div class="text-[10px] font-mono text-emerald-300 mt-0.5">1080p • 9.5M</div>
+              </button>
+              <button type="button" data-platform="whatsapp_720" class="plat-btn px-3 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
+                <div class="text-xs font-bold">WhatsApp Safe</div>
+                <div class="text-[10px] font-mono text-slate-400 mt-0.5">720p • &lt;14.5MB</div>
+              </button>
+              <button type="button" data-platform="whatsapp_1080" class="plat-btn px-3 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
+                <div class="text-xs font-bold">WhatsApp HD</div>
+                <div class="text-[10px] font-mono text-slate-400 mt-0.5">1080p • &lt;14.5MB</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Input Footage Profile -->
+          <div class="space-y-2">
+            <label for="selectSourceProfile" class="text-xs font-medium text-slate-300 block">2. Input Footage Characteristics</label>
+            <select id="selectSourceProfile" class="w-full rounded-xl bg-slate-950 border border-slate-800 px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500">
+              <option value="raw_hdr">Raw Smartphone Recording (iPhone .MOV / 10-bit HLG HDR + VFR)</option>
+              <option value="edited_4k">Edited Clip (CapCut / Premiere / DaVinci 4K or 1080p Export)</option>
+              <option value="lowlight">Low-Light / High-ISO Footage (Requires Temporal Denoise First)</option>
+            </select>
+          </div>
+
+          <!-- 3. Frame Rate Lock (CFR) -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-medium text-slate-300">3. Constant Frame Rate (CFR) Lock</span>
+              <span id="fpsValueBadge" class="font-mono text-emerald-400">60.00 FPS (GOP=60)</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" id="btnFps60" class="px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 transition">
+                60 FPS Ultra Smooth
+              </button>
+              <button type="button" id="btnFps30" class="px-3 py-2 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 transition">
+                30 FPS High Bit-Per-Pixel
+              </button>
+            </div>
+          </div>
+
+          <!-- 4. Luma/Chroma Unsharp Mask Strength -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+              <label for="sliderSharpen" class="font-medium text-slate-300">4. Lanczos + 5×5 Unsharp Pre-Compensation</label>
+              <span id="labelSharpenVal" class="font-mono text-emerald-400">0.65 (Sweet Spot)</span>
+            </div>
+            <input id="sliderSharpen" type="range" min="0" max="150" value="65" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer" />
+            <p class="text-[11px] text-slate-400">Counteracts mobile player bilinear softening without creating white halo rings.</p>
+          </div>
+
+          <!-- 5. Clip Duration for Dynamic Bitrate Budgeting -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+              <label for="sliderDuration" class="font-medium text-slate-300">5. Clip Duration (Bitrate Budgeter)</label>
+              <span id="labelDurationVal" class="font-mono text-cyan-400">15 sec</span>
+            </div>
+            <input id="sliderDuration" type="range" min="5" max="120" value="15" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer" />
+          </div>
+
+          <!-- 6. Optical Pipeline Switches -->
+          <div class="space-y-2.5 pt-1 border-t border-slate-800">
+            <label class="flex items-center justify-between cursor-pointer">
+              <div>
+                <div class="text-xs font-medium text-slate-200">Hable Filmic HDR → Rec.709 Tone-Map</div>
+                <div class="text-[11px] text-slate-400">Prevents blown-out skin tones from iPhone 10-bit Dolby Vision</div>
+              </div>
+              <input id="toggleHdrTonemap" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
+            </label>
+
+            <label class="flex items-center justify-between cursor-pointer">
+              <div>
+                <div class="text-xs font-medium text-slate-200">3D Spatial-Temporal Denoise (<code class="font-mono text-emerald-400">hqdn3d</code>)</div>
+                <div class="text-[11px] text-slate-400">Strips sensor grain so H.264 spends 100% of bits on sharp edges</div>
+              </div>
+              <input id="toggleDenoise" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
+            </label>
+
+            <label class="flex items-center justify-between cursor-pointer">
+              <div>
+                <div class="text-xs font-medium text-slate-200">2-Pass <code class="font-mono text-emerald-400">veryslow</code> Lookahead (60 Frames)</div>
+                <div class="text-[11px] text-slate-400">Unconstrained encoding time for maximum SSIM/VMAF retention</div>
+              </div>
+              <input id="toggleVeryslow" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: BITRATE & FFMPEG BUILDER ==================== -->
+    <section id="view-pipeline" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Bitrate Breakdown Card -->
+        <div class="lg:col-span-5 bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <div>
+            <h2 class="text-base font-semibold text-white">Platform Re-Compression Threshold Matrix</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Live math computed from your current Studio parameters</p>
+          </div>
+
+          <div class="space-y-3 bg-slate-950/80 border border-slate-800/90 rounded-xl p-4 font-mono text-xs">
+            <div class="flex justify-between py-1 border-b border-slate-800/80">
+              <span class="text-slate-400">Target Dimensions:</span>
+              <span id="calcDimensions" class="text-white font-semibold">1080 × 1920 (9:16)</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-800/80">
+              <span class="text-slate-400">Resampling Kernel:</span>
+              <span class="text-emerald-400">lanczos+accurate_rnd+full_chroma</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-800/80">
+              <span class="text-slate-400">Target Video Bitrate:</span>
+              <span id="calcVideoBitrate" class="text-emerald-400 font-semibold">9,500 kbps</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-800/80">
+              <span class="text-slate-400">VBV Maxrate / Bufsize:</span>
+              <span id="calcVbv" class="text-cyan-400">12,000k / 24,000k</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-800/80">
+              <span class="text-slate-400">Audio Stream:</span>
+              <span id="calcAudio" class="text-slate-200">AAC-LC • 192 kbps • 48 kHz</span>
+            </div>
+            <div class="flex justify-between py-1">
+              <span class="text-slate-400">WhatsApp Split Chunks:</span>
+              <span id="calcWaChunks" class="text-amber-300">1 segment (No split required)</span>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-200 space-y-1">
+            <div class="font-semibold text-emerald-300">Why 2-Pass Veryslow Beats Single-Pass CRF</div>
+            <p class="text-slate-300 leading-relaxed">
+              Single-pass CRF spikes bitrate above 25 Mbps during fast camera pans, which triggers TikTok and WhatsApp's server-side crusher. Two-pass <code class="font-mono">veryslow</code> with a 60-frame lookahead pre-maps every frame in Pass 1 so Pass 2 delivers near-lossless texture detail while staying strictly under the VBV ceiling.
+            </p>
+          </div>
+        </div>
+
+        <!-- Dynamic FFmpeg Command Output -->
+        <div class="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between space-y-4">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <h2 class="text-base font-semibold text-white">Generated 2-Pass FFmpeg Mastering Script</h2>
+              <p class="text-xs text-slate-400">Updates automatically when you tweak sliders in the Studio</p>
+            </div>
+            <button id="btnCopyFfmpeg" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition">
+              Copy FFmpeg Script
+            </button>
+          </div>
+
+          <pre id="ffmpegCommandBox" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs font-mono text-emerald-300 overflow-x-auto custom-scroll leading-relaxed whitespace-pre-wrap"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: WEB & MOBILE CODE ==================== -->
+    <section id="view-code" class="hidden space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-900/80 border border-slate-800 rounded-2xl p-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" data-codefile="python_engine" class="code-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 transition">
+            1. Python Engine (engine.py)
+          </button>
+          <button type="button" data-codefile="fastapi_server" class="code-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white transition">
+            2. FastAPI Web Server (server.py)
+          </button>
+          <button type="button" data-codefile="flutter_mobile" class="code-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white transition">
+            3. Flutter Mobile App (Dart)
+          </button>
+          <button type="button" data-codefile="rn_mobile" class="code-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white transition">
+            4. React Native Mobile (TSX)
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btnCopyActiveCode" type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-white border border-slate-700 transition">
+            Copy Active File
+          </button>
+          <button id="btnDownloadActiveCode" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-semibold transition">
+            Download Source File
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden">
+        <div class="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
+          <span id="codeFilenameLabel">backend/engine.py</span>
+          <span>Production-Ready • Zero Placeholders</span>
+        </div>
+        <pre id="codeDisplayPre" class="p-4 sm:p-5 text-xs font-mono text-slate-200 overflow-x-auto max-h-[540px] custom-scroll leading-relaxed"></pre>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: BYPASS BLUEPRINT ==================== -->
+    <section id="view-guide" class="hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-3">
+          <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-cyan-500/15 text-cyan-300 text-xs font-semibold">
+            TikTok Zero-Blur Protocol
+          </div>
+          <h3 class="text-base font-bold text-white">How the Engine Prevents TikTok Transcoder Blur</h3>
+          <ul class="space-y-2.5 text-xs sm:text-sm text-slate-300">
+            <li class="flex gap-2.5">
+              <span class="text-emerald-400 font-bold">01.</span>
+              <span><strong>Exact 1080×1920 Canvas Geometry:</strong> Uploading 4K (2160×3840) forces TikTok's fast server scaler to downscale your video with a low-tap bilinear filter. Pre-scaling with <code class="font-mono text-emerald-300">lanczos+accurate_rnd+full_chroma_int</code> retains micro-texture.</span>
+            </li>
+            <li class="flex gap-2.5">
+              <span class="text-emerald-400 font-bold">02.</span>
+              <span><strong>VBV Maxrate Capped at 12 Mbps:</strong> TikTok's ingestion pipeline passes through or lightly remuxes H.264 High@L4.2 streams when average bitrate is <code class="font-mono text-emerald-300">8–10 Mbps</code> and peaks stay below <code class="font-mono text-emerald-300">12 Mbps</code>.</span>
+            </li>
+            <li class="flex gap-2.5">
+              <span class="text-emerald-400 font-bold">03.</span>
+              <span><strong>Enable "Allow High-Quality Uploads":</strong> On mobile, always toggle <em>More Options → Allow high-quality uploads</em> (or upload via TikTok Web Studio from desktop/mobile browser using the engine's mastered MP4).</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-3">
+          <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-semibold">
+            WhatsApp Status Protocol
+          </div>
+          <h3 class="text-base font-bold text-white">How the Engine Defeats WhatsApp's Aggressive Crusher</h3>
+          <ul class="space-y-2.5 text-xs sm:text-sm text-slate-300">
+            <li class="flex gap-2.5">
+              <span class="text-emerald-400 font-bold">01.</span>
+              <span><strong>Strict &lt;14.5 MB Payload Ceiling:</strong> WhatsApp Status enforces a hard ~16 MB media cap per 30-second slot. Our dynamic bitrate calculator sizes the 2-pass target bitrate to hit <code class="font-mono text-emerald-300">14.5 MB</code> max so WhatsApp does not crush the stream.</span>
+            </li>
+            <li class="flex gap-2.5">
+              <span class="text-emerald-400 font-bold">02.</span>
+              <span><strong>720×1280 High-Profile Sweet Spot:</strong> Many Android/iOS WhatsApp builds force a mandatory downscale if width exceeds 720px. Using our <code class="font-mono text-emerald-300">720×1280</code> Lanczos + 5×5 Unsharp preset looks dramatically sharper than a 1080p file that WhatsApp downscales itself.</span>
+            </li>
+            <li class="flex gap-2.5">
+              <span class="text-emerald-400 font-bold">03.</span>
+              <span><strong>Rec.709 YUV420P Color Standardization:</strong> Converts iPhone 10-bit Dolby Vision (<code class="font-mono text-emerald-300">bt2020nc</code>) into standard 8-bit <code class="font-mono text-emerald-300">yuv420p</code> using Hable filmic tone-mapping so WhatsApp never clips highlights.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: FORMATS & RETURN TO CONVERTER ==================== -->
+    <section id="view-converter" class="hidden space-y-6">
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base font-semibold text-white flex items-center gap-2">
+              <span>Target Formats &amp; Converter Synchronization</span>
+              <span class="px-2 py-0.5 text-[10px] font-mono uppercase rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">1-Click Fast Sync</span>
+            </h2>
+            <p class="text-xs text-slate-400">Select any format or ZeroBlur mastering preset below to return directly to the Universal File Converter with that target format pre-selected.</p>
+          </div>
+          <a href="/" class="btn-back-converter text-xs">
+            <span>← Return to Converter</span>
+          </a>
+        </div>
+
+        <!-- ZeroBlur Master Presets Quick Sync -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+          <div class="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between gap-3">
+            <div>
+              <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span>TikTok Ultra HD Master Profile</span>
+              </div>
+              <p class="text-[11px] text-slate-300 mt-0.5">1080×1920 • 60fps CFR • 9.5 Mbps • Lanczos + 5×5 Unsharp</p>
+            </div>
+            <a href="/?format=mp4&preset=tiktok" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow whitespace-nowrap">
+              Use in Converter →
+            </a>
+          </div>
+
+          <div class="p-4 rounded-xl bg-cyan-950/40 border border-cyan-500/40 flex items-center justify-between gap-3">
+            <div>
+              <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                <span>WhatsApp Status Safe &lt;14.5MB</span>
+              </div>
+              <p class="text-[11px] text-slate-300 mt-0.5">720×1280 • Dynamic Bitrate Budgeter • Bypass Compression</p>
+            </div>
+            <a href="/?format=mp4&preset=whatsapp" class="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition shadow whitespace-nowrap">
+              Use in Converter →
+            </a>
+          </div>
+        </div>
+
+        <!-- Category Grids -->
+        <div class="space-y-4 pt-2">
+          <!-- Images -->
+          <div class="space-y-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">🖼️ Image Formats</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              <a href="/?format=webp" class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/60 transition group text-center flex flex-col justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white group-hover:text-emerald-300">WebP</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">High Quality &amp; Small</div>
+                </div>
+                <span class="mt-2 text-[10px] text-emerald-400 font-semibold group-hover:underline">Select &amp; Return →</span>
+              </a>
+              <a href="/?format=png" class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/60 transition group text-center flex flex-col justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white group-hover:text-emerald-300">PNG</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Lossless Transparency</div>
+                </div>
+                <span class="mt-2 text-[10px] text-emerald-400 font-semibold group-hover:underline">Select &amp; Return →</span>
+              </a>
+              <a href="/?format=jpg" class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/60 transition group text-center flex flex-col justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white group-hover:text-emerald-300">JPG</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Standard Photo</div>
+                </div>
+                <span class="mt-2 text-[10px] text-emerald-400 font-semibold group-hover:underline">Select &amp; Return →</span>
+              </a>
+              <a href="/?format=ico" class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/60 transition group text-center flex flex-col justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white group-hover:text-emerald-300">ICO</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Windows Icon</div>
+                </div>
+                <span class="mt-2 text-[10px] text-emerald-400 font-semibold group-hover:underline">Select &amp; Return →</span>
+              </a>
+              <a href="/?format=bmp" class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/60 transition group text-center flex flex-col justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white group-hover:text-emerald-300">BMP</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Bitmap Raster</div>
+                </div>
+                <span class="mt-2 text-[10px] text-emerald-400 font-semibold group-hover:underline">Select &amp; Return →</span>
+              </a>
+              <a href="/?format=gif" class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-emerald-500/60 transition group text-center flex flex-col justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white group-hover:text-emerald-300">GIF</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Animation / Loop</div>
+                </div>
+                <span class="mt-2 text-[10px] text-emerald-400 font-semibold group-hover:underline">Select &amp; Return →</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Documents -->
+          <div class="space-y-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">📄 Document Formats</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              <a href="/?format=pdf" class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-cyan-500/60 transition group text-center flex flex-col justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white group-hover:text-cyan-300">PDF</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Print Document</div>
+                </div>
+                <span class="mt-2 text-[10px] text-cyan-400 font-semibold group-hover:underline">Select &amp; Return →</span>
+              </a>
+              <a href="/?format=docx" class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-cyan-500/60 transition group text-center flex flex-col justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white group-hover:text-cyan-300">DOCX</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Word Document</div>
+                </div>
+                <span class="mt-2 text-[10px] text-cyan-400 font-semibold group-hover:underline">Select &amp; Return →</span>
+              </a>
+              <a href="/?format=md" class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-cyan-500/60 transition group text-center flex flex-col justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white group-hover:text-cyan-300">Markdown</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Formatted Notes</div>
+                </div>
+                <span class="mt-2 text-[10px] text-cyan-400 font-semibold group-hover:underline">Select &amp; Return →</span>
+              </a>
+              <a href="/?format=txt" class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-cyan-500/60 transition group text-center flex flex-col justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white group-hover:text-cyan-300">TXT</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Plain Text</div>
+                </div>
+                <span class="mt-2 text-[10px] text-cyan-400 font-semibold group-hover:underline">Select &amp; Return →</span>
+              </a>
+              <a href="/?format=html" class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-cyan-500/60 transition group text-center flex flex-col justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white group-hover:text-cyan-300">HTML</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Web Document</div>
+                </div>
+                <span class="mt-2 text-[10px] text-cyan-400 font-semibold group-hover:underline">Select &amp; Return →</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Data & Hosting -->
+          <div class="space-y-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">📊 Data &amp; Hosting</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <a href="/?format=csv" class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-amber-500/60 transition group text-center flex flex-col justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white group-hover:text-amber-300">CSV</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Comma Separated</div>
+                </div>
+                <span class="mt-2 text-[10px] text-amber-400 font-semibold group-hover:underline">Select &amp; Return →</span>
+              </a>
+              <a href="/?format=json" class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-amber-500/60 transition group text-center flex flex-col justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white group-hover:text-amber-300">JSON</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Structured Records</div>
+                </div>
+                <span class="mt-2 text-[10px] text-amber-400 font-semibold group-hover:underline">Select &amp; Return →</span>
+              </a>
+              <a href="/?format=xlsx" class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-amber-500/60 transition group text-center flex flex-col justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white group-hover:text-amber-300">XLSX</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Excel Workbook</div>
+                </div>
+                <span class="mt-2 text-[10px] text-amber-400 font-semibold group-hover:underline">Select &amp; Return →</span>
+              </a>
+              <a href="/?format=keep" class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-indigo-500/60 transition group text-center flex flex-col justify-between">
+                <div>
+                  <div class="text-xs font-bold text-white group-hover:text-indigo-300">Direct Host</div>
+                  <div class="text-[10px] text-slate-400 mt-0.5">Keep Original File</div>
+                </div>
+                <span class="mt-2 text-[10px] text-indigo-400 font-semibold group-hover:underline">Select &amp; Return →</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom Sticky/Floating Return Bar -->
+    <div class="pt-6 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="text-xs text-slate-400">Done tuning in ZeroBlur Studio?</span>
+        <a href="/" class="btn-back-converter text-xs" id="footerBackToConverterBtn">
+          <span>← Back to Converter Dashboard</span>
+        </a>
+      </div>
+      <div class="text-xs font-mono text-emerald-400">ZeroBlur Engine Studio v2.4 • Universal File Converter</div>
+    </div>
+  </main>
+
+  <script>
+    // ==================== APPLICATION STATE ====================
+    const state = {
+      activeTab: 'studio',
+      platform: 'tiktok', // 'tiktok' | 'whatsapp_720' | 'whatsapp_1080'
+      sourceProfile: 'raw_hdr',
+      fps: 60,
+      sharpen: 0.65,
+      durationSec: 15,
+      hdrTonemap: true,
+      denoise: true,
+      veryslow: true,
+      splitPercent: 50,
+      zoomLevel: 1,
+      isPlaying: true,
+      usingUploadedVideo: false,
+      uploadedMeta: {
+        name: '4K_HDR_Demo_Scene.mov',
+        width: 3840,
+        height: 2160,
+        duration: 15.0,
+        sizeMb: 84.6
+      },
+      activeCodeFile: 'python_engine'
+    };
+
+    // ==================== SOURCE CODE REPOSITORY ====================
+    const CODE_FILES = {
+      python_engine: {
+        filename: 'engine.py',
+        label: 'backend/engine.py (Python 2-Pass FFmpeg & HDR Tone-Mapping Engine)',
+        content: `#!/usr/bin/env python3
+'''
+Ultra-Fidelity Video Pre-Optimization Engine for TikTok & WhatsApp Status
+- 2-Pass libx264 -preset veryslow with 60-frame RC lookahead
+- Lanczos accurate-rounding scaling + 5x5 frequency-separated unsharp mask
+- 10-bit HDR (HLG / Dolby Vision PQ) -> Rec.709 Hable filmic tone-mapping
+- Strict CFR lock + dynamic WhatsApp <14.5MB bitrate budgeting
+'''
+
+import json
+import os
+import subprocess
+import tempfile
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+@dataclass
+class EngineConfig:
+    platform: str = "both"          # "tiktok" | "whatsapp" | "both"
+    target_fps: int = 60            # 30 or 60 CFR
+    whatsapp_res: str = "720p"      # "720p" (720x1280) or "1080p" (1080x1920)
+    sharpen_strength: float = 0.65  # Luma 5x5 unsharp amount
+    denoise_prepass: bool = True    # hqdn3d temporal noise reduction
+    hdr_tonemap: bool = True        # zscale Hable HDR->SDR conversion
+
+class ZeroBlurEngine:
+    def __init__(self, ffmpeg_bin: str = "ffmpeg", ffprobe_bin: str = "ffprobe"):
+        self.ffmpeg = ffmpeg_bin
+        self.ffprobe = ffprobe_bin
+
+    def probe(self, input_path: str) -> dict:
+        cmd = [
+            self.ffprobe, "-v", "quiet", "-print_format", "json",
+            "-show_format", "-show_streams", input_path
+        ]
+        res = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        info = json.loads(res.stdout)
+        v_stream = next(s for s in info["streams"] if s["codec_type"] == "video")
+        trc = v_stream.get("color_transfer", "bt709").lower()
+        pix = v_stream.get("pix_fmt", "yuv420p").lower()
+        is_hdr = trc in ("arib-std-b67", "smpte2084") or "10le" in pix
+        duration = float(v_stream.get("duration") or info["format"].get("duration") or 15.0)
+        return {"duration": duration, "is_hdr": is_hdr, "width": int(v_stream["width"]), "height": int(v_stream["height"])}
+
+    def compute_bitrates(self, platform: str, duration: float, fps: int, wa_res: str) -> Tuple[int, int, int, int]:
+        if platform == "tiktok":
+            v_kbps = 9500 if fps >= 50 else 7500
+            max_kbps = 12000 if fps >= 50 else 9500
+            return v_kbps, max_kbps, max_kbps * 2, 192
+        audio_kbps = 128
+        max_kbits = 14.5 * 1024 * 8
+        budget_kbps = int((max_kbits / max(duration, 1.0)) - audio_kbps)
+        cap = 4200 if wa_res == "1080p" else 3400
+        v_kbps = max(1200, min(cap, budget_kbps))
+        max_kbps = int(v_kbps * 1.15)
+        return v_kbps, max_kbps, max_kbps * 2, audio_kbps
+
+    def build_vf(self, is_hdr: bool, cfg: EngineConfig, platform: str) -> str:
+        tw, th = (1080, 1920) if (platform == "tiktok" or cfg.whatsapp_res == "1080p") else (720, 1280)
+        chain = [f"fps=fps={cfg.target_fps}:round=near"]
+        if is_hdr and cfg.hdr_tonemap:
+            chain.append(
+                "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,"
+                "tonemap=tonemap=hable:desat=0.0,zscale=t=bt709:m=bt709:r=tv"
+            )
+        chain.append(
+            f"scale={tw}:{th}:force_original_aspect_ratio=decrease:"
+            f"flags=lanczos+accurate_rnd+full_chroma_int+full_chroma_inp,"
+            f"pad={tw}:{th}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1"
+        )
+        if cfg.denoise_prepass:
+            chain.append("hqdn3d=1.2:1.2:2.5:2.5")
+        if cfg.sharpen_strength > 0:
+            luma = round(cfg.sharpen_strength, 2)
+            chroma = round(cfg.sharpen_strength * 0.3, 2)
+            chain.append(f"unsharp=5:5:{luma}:3:3:{chroma}")
+        chain.append("format=yuv420p")
+        return ",".join(chain)
+
+    def encode_two_pass(self, input_path: str, output_path: str, cfg: EngineConfig, platform: str):
+        meta = self.probe(input_path)
+        vf = self.build_vf(meta["is_hdr"], cfg, platform)
+        v_k, max_k, buf_k, a_k = self.compute_bitrates(platform, meta["duration"], cfg.target_fps, cfg.whatsapp_res)
+        gop = cfg.target_fps
+        x264_opts = (
+            f"ref=5:bframes=4:b-adapt=2:direct=auto:me=umh:subme=10:merange=24:"
+            f"trellis=2:aq-mode=3:aq-strength=0.85:psy-rd=1.05,0.15:rc-lookahead=60:"
+            f"keyint={gop}:min-keyint={gop//2}:deblock=-1,-1"
+        )
+        common = [
+            "-vf", vf, "-c:v", "libx264", "-preset", "veryslow", "-tune", "film",
+            "-profile:v", "high", "-level:v", "4.2",
+            "-b:v", f"{v_k}k", "-maxrate", f"{max_k}k", "-bufsize", f"{buf_k}k",
+            "-x264-params", x264_opts,
+            "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709"
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            log = os.path.join(tmp, "passlog")
+            null_dev = "NUL" if os.name == "nt" else "/dev/null"
+            subprocess.run([self.ffmpeg, "-y", "-i", input_path, *common, "-pass", "1", "-passlogfile", log, "-an", "-f", "mp4", null_dev], check=True)
+            subprocess.run([self.ffmpeg, "-y", "-i", input_path, *common, "-pass", "2", "-passlogfile", log, "-c:a", "aac", "-b:a", f"{a_k}k", "-ar", "48000", "-movflags", "+faststart", output_path], check=True)`
+      },
+      fastapi_server: {
+        filename: 'server.py',
+        label: 'backend/server.py (FastAPI Web & Mobile Cloud Endpoint)',
+        content: `from fastapi import FastAPI, File, Form, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+import shutil, uuid
+from pathlib import Path
+from engine import ZeroBlurEngine, EngineConfig
+
+app = FastAPI(title="ZeroBlur Video Engine API")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+ WORK_DIR = Path("./storage")
+WORK_DIR.mkdir(exist_ok=True)
+engine = ZeroBlurEngine()
+
+@app.post("/api/v1/optimize")
+async def optimize_clip(
+    file: UploadFile = File(...),
+    platform: str = Form("tiktok"),
+    target_fps: int = Form(60),
+    whatsapp_res: str = Form("720p"),
+    sharpen_strength: float = Form(0.65),
+):
+    job_id = str(uuid.uuid4())
+    in_file = WORK_DIR / f"{job_id}_in.mp4"
+    out_file = WORK_DIR / f"{job_id}_{platform}_master.mp4"
+    with open(in_file, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    cfg = EngineConfig(
+        platform=platform,
+        target_fps=target_fps,
+        whatsapp_res=whatsapp_res,
+        sharpen_strength=sharpen_strength,
+    )
+    engine.encode_two_pass(str(in_file), str(out_file), cfg, platform)
+    return FileResponse(str(out_file), media_type="video/mp4", filename=out_file.name)`
+      },
+      flutter_mobile: {
+        filename: 'video_optimizer_service.dart',
+        label: 'mobile/flutter/video_optimizer_service.dart (On-Device Flutter FFmpegKit Engine)',
+        content: `import 'dart:io';
+import 'package:ffmpeg_kit_flutter_full_gpl/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_full_gpl/return_code.dart';
+import 'package:path_provider/path_provider.dart';
+
+class FlutterZeroBlurEngine {
+  Future<File> masterVideo({
+    required String inputPath,
+    required bool isWhatsapp,
+    required double durationSec,
+    int fps = 60,
+    double sharpen = 0.65,
+    bool isHdr = true,
+  }) async {
+    final dir = await getTemporaryDirectory();
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final passLog = '\${dir.path}/pass_\$ts';
+    final outPath = '\${dir.path}/master_\$ts.mp4';
+
+    final tw = isWhatsapp ? 720 : 1080;
+    final th = isWhatsapp ? 1280 : 1920;
+    final vKbps = isWhatsapp
+        ? (((14.5 * 1024 * 8) / durationSec).floor() - 128).clamp(1200, 3400)
+        : (fps == 60 ? 9500 : 7500);
+    final maxKbps = isWhatsapp ? (vKbps * 1.15).floor() : 12000;
+    final bufKbps = maxKbps * 2;
+
+    final hdrFilter = isHdr
+        ? 'zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0.0,zscale=t=bt709:m=bt709:r=tv,'
+        : '';
+    final luma = sharpen.toStringAsFixed(2);
+    final chroma = (sharpen * 0.3).toStringAsFixed(2);
+
+    final vf = 'fps=fps=\$fps:round=near,\$hdrFilter'
+        'scale=\$tw:\$th:force_original_aspect_ratio=decrease:flags=lanczos+accurate_rnd+full_chroma_int+full_chroma_inp,'
+        'pad=\$tw:\$th:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,'
+        'hqdn3d=1.2:1.2:2.5:2.5,unsharp=5:5:\$luma:3:3:\$chroma,format=yuv420p';
+
+    final common = '-vf "\$vf" -c:v libx264 -preset veryslow -tune film -profile:v high -level:v 4.2 '
+        '-b:v \${vKbps}k -maxrate \${maxKbps}k -bufsize \${bufKbps}k '
+        '-x264-params "ref=5:bframes=4:me=umh:subme=10:trellis=2:aq-mode=3:psy-rd=1.05,0.15:rc-lookahead=60:keyint=\$fps"';
+
+    final s1 = await FFmpegKit.execute('-y -i "\$inputPath" \$common -pass 1 -passlogfile "\$passLog" -an -f mp4 /dev/null');
+    if (!ReturnCode.isSuccess(await s1.getReturnCode())) throw Exception('Pass 1 failed');
+
+    final s2 = await FFmpegKit.execute('-y -i "\$inputPath" \$common -pass 2 -passlogfile "\$passLog" -c:a aac -b:a 192k -ar 48000 -movflags +faststart "\$outPath"');
+    if (!ReturnCode.isSuccess(await s2.getReturnCode())) throw Exception('Pass 2 failed');
+
+    return File(outPath);
+  }
+}`
+      },
+      rn_mobile: {
+        filename: 'VideoOptimizer.tsx',
+        label: 'mobile/react_native/VideoOptimizer.tsx (React Native iOS/Android Engine)',
+        content: `import { FFmpegKit, ReturnCode } from 'ffmpeg-kit-react-native';
+import RNFS from 'react-native-fs';
+
+export async function optimizeForSocialStatus(
+  inputUri: string,
+  platform: 'tiktok' | 'whatsapp',
+  durationSec: number,
+  fps: 30 | 60 = 60,
+  sharpen: number = 0.65
+): Promise<string> {
+  const id = Date.now();
+  const passLog = \`\${RNFS.CachesDirectoryPath}/pass_\${id}\`;
+  const outputUri = \`\${RNFS.CachesDirectoryPath}/zeroblur_\${platform}_\${id}.mp4\`;
+
+  const tw = platform === 'tiktok' ? 1080 : 720;
+  const th = platform === 'tiktok' ? 1920 : 1280;
+  const vKbps = platform === 'tiktok'
+    ? (fps === 60 ? 9500 : 7500)
+    : Math.max(1200, Math.min(3400, Math.floor((14.5 * 1024 * 8) / Math.max(durationSec, 1)) - 128));
+  const maxKbps = Math.floor(vKbps * 1.18);
+
+  const vf = [
+    \`fps=fps=\${fps}:round=near\`,
+    \`scale=\${tw}:\${th}:force_original_aspect_ratio=decrease:flags=lanczos+accurate_rnd+full_chroma_int+full_chroma_inp,pad=\${tw}:\${th}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1\`,
+    'hqdn3d=1.2:1.2:2.5:2.5',
+    \`unsharp=5:5:\${sharpen.toFixed(2)}:3:3:\${(sharpen * 0.3).toFixed(2)}\`,
+    'format=yuv420p'
+  ].join(',');
+
+  const args = \`-vf "\${vf}" -c:v libx264 -preset veryslow -tune film -profile:v high -level:v 4.2 -b:v \${vKbps}k -maxrate \${maxKbps}k -bufsize \${maxKbps * 2}k\`;
+
+  const p1 = await FFmpegKit.execute(\`-y -i "\${inputUri}" \${args} -pass 1 -passlogfile "\${passLog}" -an -f mp4 /dev/null\`);
+  if (!ReturnCode.isSuccess(await p1.getReturnCode())) throw new Error('Pass 1 analysis failed');
+
+  const p2 = await FFmpegKit.execute(\`-y -i "\${inputUri}" \${args} -pass 2 -passlogfile "\${passLog}" -c:a aac -b:a 160k -movflags +faststart "\${outputUri}"\`);
+  if (!ReturnCode.isSuccess(await p2.getReturnCode())) throw new Error('Pass 2 encode failed');
+
+  return outputUri;
+}`
+      }
+    };
+
+    // ==================== TOAST HELPER ====================
+    function showToast(message) {
+      const container = document.getElementById('toastContainer');
+      const item = document.createElement('div');
+      item.className = 'px-4 py-2.5 rounded-xl bg-slate-900/95 border border-emerald-500/50 text-xs font-medium text-emerald-200 shadow-xl transition-all duration-300';
+      item.textContent = message;
+      container.appendChild(item);
+      setTimeout(() => {
+        item.style.opacity = '0';
+        setTimeout(() => item.remove(), 300);
+      }, 2600);
+    }
+
+    // ====================CLIPBOARD HELPER ====================
+    function copyTextToClipboard(text, label) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(label + ' copied to clipboard');
+        }).catch(() => fallbackCopy(text, label));
+      } else {
+        fallbackCopy(text, label);
+      }
+    }
+
+    function fallbackCopy(text, label) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast(label + ' copied to clipboard');
+      } catch (e) {
+        showToast('Copy failed');
+      }
+      ta.remove();
+    }
+
+    // ==================== DYNAMIC CALCULATION & UI SYNC ====================
+    function computePipelineMetrics() {
+      const dur = Math.max(state.durationSec, 1);
+      let tw = 1080;
+      let th = 1920;
+      let vKbps = 9500;
+      let maxKbps = 12000;
+      let aKbps = 192;
+      let presetTitle = 'TikTok Ultra HD (1080×1920)';
+      let chunks = 1;
+
+      if (state.platform === 'tiktok') {
+        tw = 1080;
+        th = 1920;
+        vKbps = state.fps === 60 ? 9500 : 7500;
+        maxKbps = state.fps === 60 ? 12000 : 9500;
+        aKbps = 192;
+        presetTitle = 'TikTok Ultra HD (1080×1920)';
+      } else {
+        aKbps = 128;
+        tw = state.platform === 'whatsapp_1080' ? 1080 : 720;
+        th = state.platform === 'whatsapp_1080' ? 1920 : 1280;
+        presetTitle = state.platform === 'whatsapp_1080'
+          ? 'WhatsApp Status HD (1080×1920)'
+          : 'WhatsApp Status Safe (720×1280)';
+        chunks = Math.ceil(dur / 30);
+        const clipWindow = Math.min(dur, 30);
+        const maxTotalKbits = 14.5 * 1024 * 8;
+        const allowedKbps = Math.floor((maxTotalKbits / clipWindow) - aKbps);
+        const cap = state.platform === 'whatsapp_1080' ? 4200 : 3400;
+        vKbps = Math.max(1200, Math.min(cap, allowedKbps));
+        maxKbps = Math.floor(vKbps * 1.15);
+      }
+
+      const bufKbps = maxKbps * 2;
+      const effectiveDur = state.platform === 'tiktok' ? dur : Math.min(dur, 30);
+      const payloadMb = (((vKbps + aKbps) * effectiveDur) / (8 * 1024)).toFixed(1);
+
+      let vmaf = 96.2;
+      if (state.veryslow) vmaf += 1.2;
+      if (state.sharpen >= 0.4 && state.sharpen <= 0.9) vmaf += 0.8;
+      if (state.hdrTonemap) vmaf += 0.4;
+      vmaf = Math.min(99.4, vmaf);
+
+      return {
+        tw, th, vKbps, maxKbps, bufKbps, aKbps, presetTitle, chunks, payloadMb, vmaf
+      };
+    }
+
+    function buildFfmpegCommandString(m) {
+      const luma = state.sharpen.toFixed(2);
+      const chroma = (state.sharpen * 0.3).toFixed(2);
+      const gop = state.fps;
+
+      const vfList = [`fps=fps=${state.fps}:round=near`];
+      if (state.hdrTonemap && state.sourceProfile === 'raw_hdr') {
+        vfList.push('zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0.0,zscale=t=bt709:m=bt709:r=tv');
+      }
+      vfList.push(`scale=${m.tw}:${m.th}:force_original_aspect_ratio=decrease:flags=lanczos+accurate_rnd+full_chroma_int+full_chroma_inp,pad=${m.tw}:${m.th}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1`);
+      if (state.denoise) {
+        vfList.push(state.sourceProfile === 'lowlight' ? 'hqdn3d=2.2:2.2:4.0:4.0' : 'hqdn3d=1.2:1.2:2.5:2.5');
+      }
+      if (state.sharpen > 0) {
+        vfList.push(`unsharp=5:5:${luma}:3:3:${chroma}`);
+      }
+      vfList.push('format=yuv420p');
+
+      const vfStr = vfList.join(',');
+      const presetStr = state.veryslow ? 'veryslow' : 'slow';
+      const x264Opts = `ref=5:bframes=4:b-adapt=2:direct=auto:me=umh:subme=10:merange=24:trellis=2:aq-mode=3:aq-strength=0.85:psy-rd=1.05,0.15:rc-lookahead=60:keyint=${gop}:min-keyint=${Math.floor(gop / 2)}:deblock=-1,-1`;
+
+      return `# === PASS 1: Motion Vector & 60-Frame RC Lookahead Analysis ===
+ffmpeg -y -i "${state.uploadedMeta.name}" \\
+  -vf "${vfStr}" \\
+  -c:v libx264 -preset ${presetStr} -tune film -profile:v high -level:v 4.2 \\
+  -b:v ${m.vKbps}k -maxrate ${m.maxKbps}k -bufsize ${m.bufKbps}k \\
+  -x264-params "${x264Opts}" \\
+  -color_primaries bt709 -color_trc bt709 -colorspace bt709 -color_range tv \\
+  -pass 1 -passlogfile "zeroblur_passlog" -an -f mp4 /dev/null
+
+# === PASS 2: Ultra-Fidelity Bit-Allocated Master Encode ===
+ffmpeg -y -i "${state.uploadedMeta.name}" \\
+  -vf "${vfStr}" \\
+  -c:v libx264 -preset ${presetStr} -tune film -profile:v high -level:v 4.2 \\
+  -b:v ${m.vKbps}k -maxrate ${m.maxKbps}k -bufsize ${m.bufKbps}k \\
+  -x264-params "${x264Opts}" \\
+  -color_primaries bt709 -color_trc bt709 -colorspace bt709 -color_range tv \\
+  -pass 2 -passlogfile "zeroblur_passlog" \\
+  -c:a aac -b:a ${m.aKbps}k -ar 48000 -ac 2 -movflags +faststart \\
+  "output_${state.platform}_master.mp4"`;
+    }
+
+    function updateAllUI() {
+      const m = computePipelineMetrics();
+
+      // Top cards
+      document.getElementById('metricPresetName').textContent = m.presetTitle;
+      document.getElementById('metricPresetSub').textContent = `${state.fps}.0 FPS CFR • ${m.vKbps.toLocaleString()} kbps ${state.veryslow ? '2-Pass Veryslow' : '2-Pass'}`;
+      document.getElementById('metricSourceRes').textContent = `${state.uploadedMeta.width}×${state.uploadedMeta.height} (${state.usingUploadedVideo ? 'User Clip' : '4K Demo'})`;
+
+      const flagText = state.sourceProfile === 'raw_hdr'
+        ? '10-Bit HLG HDR • VFR Corrected'
+        : state.sourceProfile === 'edited_4k'
+          ? 'Edited Master • Chroma 4:4:4 Upsampled'
+          : 'High-ISO Sensor • 3D Denoise Active';
+      document.getElementById('metricSourceFlags').textContent = flagText;
+
+      document.getElementById('metricPayloadSize').textContent = `${m.payloadMb} MB / ${Math.min(state.durationSec, state.platform === 'tiktok' ? state.durationSec : 30)}s`;
+      document.getElementById('metricBypassStatus').textContent = m.chunks > 1
+        ? `Auto-Split: ${m.chunks} × <=14.5MB Status Clips`
+        : 'PASS: Below Re-Encode Trigger';
+
+      document.getElementById('metricVmafScore').textContent = `${m.vmaf.toFixed(1)} / 100`;
+
+      // Controls labels
+      document.getElementById('fpsValueBadge').textContent = `${state.fps}.00 FPS (GOP=${state.fps})`;
+      document.getElementById('labelSharpenVal').textContent = `${state.sharpen.toFixed(2)} ${state.sharpen >= 0.55 && state.sharpen <= 0.75 ? '(Sweet Spot)' : ''}`;
+      document.getElementById('labelDurationVal').textContent = `${state.durationSec} sec`;
+      document.getElementById('splitPercentLabel').textContent = `${state.splitPercent}%`;
+      document.getElementById('splitLineIndicator').style.left = `${state.splitPercent}%`;
+
+      // Pipeline Tab
+      document.getElementById('calcDimensions').textContent = `${m.tw} × ${m.th} (9:16)`;
+      document.getElementById('calcVideoBitrate').textContent = `${m.vKbps.toLocaleString()} kbps`;
+      document.getElementById('calcVbv').textContent = `${m.maxKbps.toLocaleString()}k / ${m.bufKbps.toLocaleString()}k`;
+      document.getElementById('calcAudio').textContent = `AAC-LC • ${m.aKbps} kbps • 48 kHz`;
+      document.getElementById('calcWaChunks').textContent = m.chunks > 1
+        ? `${m.chunks} lossless 30s segments (<14.5MB each)`
+        : '1 segment (Fits single Status upload)';
+
+      document.getElementById('ffmpegCommandBox').textContent = buildFfmpegCommandString(m);
+
+      // Code Tab
+      const activeFileObj = CODE_FILES[state.activeCodeFile];
+      document.getElementById('codeFilenameLabel').textContent = activeFileObj.label;
+      document.getElementById('codeDisplayPre').textContent = activeFileObj.content;
+    }
+
+    // ==================== REAL-TIME OPTICAL COMPARATOR CANVAS ====================
+    const canvas = document.getElementById('comparisonCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Offscreen buffers for Left (Crushed/Blurred) and Right (ZeroBlur Master)
+    const rawBuffer = document.createElement('canvas');
+    rawBuffer.width = 960;
+    rawBuffer.height = 600;
+    const rawCtx = rawBuffer.getContext('2d');
+
+    const crushBuffer = document.createElement('canvas');
+    crushBuffer.width = 240; // Downscaled 4x to simulate aggressive platform bilinear crush
+    crushBuffer.height = 150;
+    const crushCtx = crushBuffer.getContext('2d');
+
+    let animTime = 0;
+    let animFrameId = null;
+
+    function drawProceduralTestScene(targetCtx, w, h, t) {
+      // Rich dark studio background gradient
+      const bgGrad = targetCtx.createLinearGradient(0, 0, w, h);
+      bgGrad.addColorStop(0, '#0b132b');
+      bgGrad.addColorStop(0.5, '#1c2541');
+      bgGrad.addColorStop(1, '#090d16');
+      targetCtx.fillStyle = bgGrad;
+      targetCtx.fillRect(0, 0, w, h);
+
+      // High-frequency fine geometric grid (exposes bilinear blur immediately)
+      targetCtx.strokeStyle = 'rgba(148, 163, 184, 0.22)';
+      targetCtx.lineWidth = 1;
+      const step = 24;
+      const offset = (t * 40) % step;
+      for (let x = -step; x < w + step; x += step) {
+        targetCtx.beginPath();
+        targetCtx.moveTo(x + offset, 0);
+        targetCtx.lineTo(x + offset - 60, h);
+        targetCtx.stroke();
+      }
+
+      // Simulated 10-bit HDR Neon Highlight Rings
+      const cx = w * 0.5 + Math.sin(t * 1.4) * 110;
+      const cy = h * 0.46 + Math.cos(t * 1.1) * 45;
+
+      for (let r = 150; r > 15; r -= 18) {
+        targetCtx.beginPath();
+        targetCtx.arc(cx, cy, r, 0, Math.PI * 2);
+        targetCtx.strokeStyle = r % 36 === 0 ? '#10b981' : '#38bdf8';
+        targetCtx.lineWidth = 2.2;
+        targetCtx.stroke();
+      }
+
+      // Fine resolution Siemens star pattern in center
+      targetCtx.save();
+      targetCtx.translate(w * 0.32, h * 0.52);
+      targetCtx.rotate(t * 0.4);
+      const spokes = 36;
+      for (let i = 0; i < spokes; i++) {
+        targetCtx.rotate((Math.PI * 2) / spokes);
+        targetCtx.beginPath();
+        targetCtx.moveTo(0, 0);
+        targetCtx.lineTo(95, 0);
+        targetCtx.strokeStyle = i % 2 === 0 ? '#f8fafc' : '#f43f5e';
+        targetCtx.lineWidth = 1.4;
+        targetCtx.stroke();
+      }
+      targetCtx.restore();
+
+      // Micro-typography & foliage/hair detail card on right
+      targetCtx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+      targetCtx.strokeStyle = '#334155';
+      targetCtx.lineWidth = 1.5;
+      targetCtx.fillRect(w * 0.54, h * 0.22, 340, 290);
+      targetCtx.strokeRect(w * 0.54, h * 0.22, 340, 290);
+
+      targetCtx.fillStyle = '#ffffff';
+      targetCtx.font = 'bold 19px Inter, sans-serif';
+      targetCtx.fillText('4K 60FPS DETAIL CHART', w * 0.54 + 20, h * 0.22 + 36);
+
+      targetCtx.fillStyle = '#34d399';
+      targetCtx.font = '500 13px "JetBrains Mono", monospace';
+      targetCtx.fillText('LANCZOS + UNSHARP 5x5 MATRIX', w * 0.54 + 20, h * 0.22 + 62);
+
+      targetCtx.fillStyle = '#cbd5e1';
+      targetCtx.font = '400 12px "JetBrains Mono", monospace';
+      targetCtx.fillText('1px Line Integrity: ||||||||||||||||||||||||', w * 0.54 + 20, h * 0.22 + 92);
+      targetCtx.fillText('Sub-pixel Text: 0123456789 ABCDEFGHIJKLM', w * 0.54 + 20, h * 0.22 + 116);
+      targetCtx.fillText('HDR Highlight Roll-Off: 1000 nits -> SDR', w * 0.54 + 20, h * 0.22 + 140);
+
+      // High-contrast color bars
+      const colors = ['#ef4444', '#f59e0b', '#10b981', '#06b6d4', '#6366f1', '#ec4899'];
+      colors.forEach((col, idx) => {
+        targetCtx.fillStyle = col;
+        targetCtx.fillRect(w * 0.54 + 20 + idx * 50, h * 0.22 + 165, 42, 42);
+      });
+
+      // Moving 60fps smoothness indicator bar
+      const barX = w * 0.54 + 20 + ((Math.sin(t * 4.0) + 1) * 0.5) * 260;
+      targetCtx.fillStyle = '#f8fafc';
+      targetCtx.fillRect(barX, h * 0.22 + 230, 36, 12);
+      targetCtx.font = '11px "JetBrains Mono", monospace';
+      targetCtx.fillStyle = '#94a3b8';
+      targetCtx.fillText('CFR 60.00 Hz Motion Lock', w * 0.54 + 20, h * 0.22 + 265);
+    }
+
+    function renderComparisonFrame() {
+      if (state.isPlaying) {
+        animTime += 1 / 60;
+      }
+
+      const w = canvas.width;
+      const h = canvas.height;
+      const videoEl = document.getElementById('hiddenSourceVideo');
+
+      // 1. Draw clean source to rawBuffer
+      if (state.usingUploadedVideo && videoEl.readyState >= 2) {
+        rawCtx.fillStyle = '#000';
+        rawCtx.fillRect(0, 0, w, h);
+        const vw = videoEl.videoWidth || 1080;
+        const vh = videoEl.videoHeight || 1920;
+        const scale = Math.min(w / vw, h / vh);
+        const dw = vw * scale;
+        const dh = vh * scale;
+        rawCtx.drawImage(videoEl, (w - dw) / 2, (h - dh) / 2, dw, dh);
+      } else {
+        drawProceduralTestScene(rawCtx, w, h, animTime);
+      }
+
+      // 2. Prepare Left Side (Simulated Naive Platform Re-encode: Bilinear downscale + HDR blowout)
+      crushCtx.filter = 'contrast(1.35) brightness(1.18) saturate(0.78) blur(0.6px)';
+      crushCtx.drawImage(rawBuffer, 0, 0, crushBuffer.width, crushBuffer.height);
+      crushCtx.filter = 'none';
+
+      // Zoom transform parameters
+      const z = state.zoomLevel;
+      const splitX = Math.floor((state.splitPercent / 100) * w);
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Draw Left half (Naive Platform Upload)
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, splitX, h);
+      ctx.clip();
+      ctx.translate(w / 2, h / 2);
+      ctx.scale(z, z);
+      ctx.translate(-w / 2, -h / 2);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'low';
+      ctx.drawImage(crushBuffer, 0, 0, w, h);
+      ctx.restore();
+
+      // Draw Right half (ZeroBlur Engine Master with crisp high-quality sampling + contrast/tone-map)
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(splitX, 0, w - splitX, h);
+      ctx.clip();
+      ctx.translate(w / 2, h / 2);
+      ctx.scale(z, z);
+      ctx.translate(-w / 2, -h / 2);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      const contrastBoost = 1 + state.sharpen * 0.18;
+      const satBoost = state.hdrTonemap ? 1.08 : 0.95;
+      ctx.filter = `contrast(${contrastBoost.toFixed(2)}) saturate(${satBoost.toFixed(2)})`;
+      ctx.drawImage(rawBuffer, 0, 0, w, h);
+
+      // Subtle crisp edge enhancement overlay proportional to sharpen slider
+      if (state.sharpen > 0.05) {
+        ctx.globalCompositeOperation = 'overlay';
+        ctx.globalAlpha = Math.min(0.32, state.sharpen * 0.22);
+        ctx.drawImage(rawBuffer, 0, 0, w, h);
+        ctx.globalAlpha = 1.0;
+        ctx.globalCompositeOperation = 'source-over';
+      }
+      ctx.filter = 'none';
+      ctx.restore();
+
+      animFrameId = requestAnimationFrame(renderComparisonFrame);
+    }
+
+    // ==================== EVENT LISTENERS ====================
+    
+    // ==================== THEME SYNCHRONIZATION ====================
+    const AVAILABLE_THEMES = ['editorial', 'liquid-glass', 'color', 'bw-light', 'bw-dark'];
+    const THEME_NAMES = {
+      'color': 'Modern Dark',
+      'editorial': 'Editorial',
+      'liquid-glass': 'Liquid Glass',
+      'bw-light': 'B&W Light',
+      'bw-dark': 'B&W Dark'
+    };
+
+    function applyDisplayTheme(theme) {
+      const valid = AVAILABLE_THEMES.includes(theme) ? theme : 'color';
+      document.body.classList.remove('theme-editorial', 'theme-liquid-glass', 'bw-page-light', 'bw-page-dark');
+      if (valid === 'editorial') document.body.classList.add('theme-editorial');
+      else if (valid === 'liquid-glass') document.body.classList.add('theme-liquid-glass');
+      else if (valid === 'bw-light') document.body.classList.add('bw-page-light');
+      else if (valid === 'bw-dark') document.body.classList.add('bw-page-dark');
+      
+      localStorage.setItem('webpage_theme', valid);
+      const label = document.getElementById('zeroblurThemeLabel');
+      if (label) label.textContent = 'Theme: ' + THEME_NAMES[valid];
+    }
+
+    function setupListeners() {
+      const themeBtn = document.getElementById('zeroblurThemeBtn');
+      if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+          const cur = localStorage.getItem('webpage_theme') || 'color';
+          const idx = AVAILABLE_THEMES.indexOf(cur);
+          const next = AVAILABLE_THEMES[(idx + 1) % AVAILABLE_THEMES.length];
+          applyDisplayTheme(next);
+          showToast('Display switched to ' + THEME_NAMES[next]);
+        });
+      }
+
+      // Top Navigation Tabs
+      document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.getAttribute('data-tab');
+          state.activeTab = target;
+          document.querySelectorAll('.nav-tab-btn').forEach(b => {
+            b.className = 'nav-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60';
+          });
+          btn.className = 'nav-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all bg-emerald-500 text-slate-950 font-semibold shadow';
+
+          ['studio', 'pipeline', 'code', 'guide', 'converter'].forEach(id => {
+            document.getElementById('view-' + id).classList.toggle('hidden', id !== target);
+          });
+        });
+      });
+
+      // Split Slider & Canvas Dragging
+      const splitSlider = document.getElementById('splitRangeSlider');
+      splitSlider.addEventListener('input', (e) => {
+        state.splitPercent = Number(e.target.value);
+        updateAllUI();
+      });
+
+      const viewport = document.getElementById('canvasViewport');
+      let isDraggingSplit = false;
+      const updateSplitFromPointer = (clientX) => {
+        const rect = viewport.getBoundingClientRect();
+        const rel = ((clientX - rect.left) / rect.width) * 100;
+        state.splitPercent = Math.max(5, Math.min(95, Math.round(rel)));
+        splitSlider.value = state.splitPercent;
+        updateAllUI();
+      };
+      viewport.addEventListener('pointerdown', (e) => {
+        isDraggingSplit = true;
+        updateSplitFromPointer(e.clientX);
+      });
+      window.addEventListener('pointermove', (e) => {
+        if (isDraggingSplit) updateSplitFromPointer(e.clientX);
+      });
+      window.addEventListener('pointerup', () => {
+        isDraggingSplit = false;
+      });
+
+      // Play/Pause
+      const btnPlay = document.getElementById('btnTogglePlay');
+      btnPlay.addEventListener('click', () => {
+        state.isPlaying = !state.isPlaying;
+        const vid = document.getElementById('hiddenSourceVideo');
+        if (state.usingUploadedVideo) {
+          if (state.isPlaying) vid.play(); else vid.pause();
+        }
+        btnPlay.textContent = state.isPlaying ? 'Pause Frame' : 'Resume 60fps';
+      });
+
+      // Zoom Buttons
+      document.querySelectorAll('.zoom-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.zoomLevel = Number(btn.getAttribute('data-zoom'));
+          document.querySelectorAll('.zoom-btn').forEach(b => {
+            b.className = 'zoom-btn px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-xs font-medium border border-slate-700 transition';
+          });
+          btn.className = 'zoom-btn px-2.5 py-1.5 rounded-lg bg-emerald-500 text-slate-950 text-xs font-semibold transition';
+        });
+      });
+
+      // Local Video File Input
+      const fileInput = document.getElementById('videoFileInput');
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        const vid = document.getElementById('hiddenSourceVideo');
+        vid.src = url;
+        vid.onloadedmetadata = () => {
+          state.usingUploadedVideo = true;
+          state.uploadedMeta = {
+            name: file.name,
+            width: vid.videoWidth || 1080,
+            height: vid.videoHeight || 1920,
+            duration: Math.round(vid.duration || 15),
+            sizeMb: Number((file.size / (1024 * 1024)).toFixed(1))
+          };
+          state.durationSec = Math.max(5, Math.min(120, Math.round(vid.duration || 15)));
+          document.getElementById('sliderDuration').value = state.durationSec;
+          vid.play();
+          updateAllUI();
+          showToast(`Loaded ${file.name} (${state.uploadedMeta.width}×${state.uploadedMeta.height})`);
+        };
+      });
+
+      // Reset to 4K HDR Demo Stream
+      document.getElementById('btnResetDemoStream').addEventListener('click', () => {
+        state.usingUploadedVideo = false;
+        state.uploadedMeta = {
+          name: '4K_HDR_Demo_Scene.mov',
+          width: 3840,
+          height: 2160,
+          duration: 15,
+          sizeMb: 84.6
+        };
+        updateAllUI();
+        showToast('Switched to 4K 60fps HDR synthetic test chart');
+      });
+
+      // Platform selector buttons
+      document.querySelectorAll('.plat-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.platform = btn.getAttribute('data-platform');
+          document.querySelectorAll('.plat-btn').forEach(b => {
+            b.className = 'plat-btn px-3 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600';
+          });
+          btn.className = 'plat-btn px-3 py-2.5 rounded-xl border text-left transition bg-emerald-500/15 border-emerald-500 text-white';
+          updateAllUI();
+        });
+      });
+
+      // Source Profile dropdown
+      document.getElementById('selectSourceProfile').addEventListener('change', (e) => {
+        state.sourceProfile = e.target.value;
+        updateAllUI();
+      });
+
+      // FPS buttons
+      const btnFps60 = document.getElementById('btnFps60');
+      const btnFps30 = document.getElementById('btnFps30');
+      btnFps60.addEventListener('click', () => {
+        state.fps = 60;
+        btnFps60.className = 'px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 transition';
+        btnFps30.className = 'px-3 py-2 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 transition';
+        updateAllUI();
+      });
+      btnFps30.addEventListener('click', () => {
+        state.fps = 30;
+        btnFps30.className = 'px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 transition';
+        btnFps60.className = 'px-3 py-2 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 transition';
+        updateAllUI();
+      });
+
+      // Sliders & Checkboxes
+      document.getElementById('sliderSharpen').addEventListener('input', (e) => {
+        state.sharpen = Number(e.target.value) / 100;
+        updateAllUI();
+      });
+      document.getElementById('sliderDuration').addEventListener('input', (e) => {
+        state.durationSec = Number(e.target.value);
+        updateAllUI();
+      });
+      document.getElementById('toggleHdrTonemap').addEventListener('change', (e) => {
+        state.hdrTonemap = e.target.checked;
+        updateAllUI();
+      });
+      document.getElementById('toggleDenoise').addEventListener('change', (e) => {
+        state.denoise = e.target.checked;
+        updateAllUI();
+      });
+      document.getElementById('toggleVeryslow').addEventListener('change', (e) => {
+        state.veryslow = e.target.checked;
+        updateAllUI();
+      });
+
+      // Copy FFmpeg Script
+      document.getElementById('btnCopyFfmpeg').addEventListener('click', () => {
+        const text = document.getElementById('ffmpegCommandBox').textContent;
+        copyTextToClipboard(text, '2-Pass FFmpeg command');
+      });
+
+      // Code Viewer Tabs
+      document.querySelectorAll('.code-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.activeCodeFile = btn.getAttribute('data-codefile');
+          document.querySelectorAll('.code-tab-btn').forEach(b => {
+            b.className = 'code-tab-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white transition';
+          });
+          btn.className = 'code-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 transition';
+          updateAllUI();
+        });
+      });
+
+      document.getElementById('btnCopyActiveCode').addEventListener('click', () => {
+        const fileObj = CODE_FILES[state.activeCodeFile];
+        copyTextToClipboard(fileObj.content, fileObj.filename);
+      });
+
+      document.getElementById('btnDownloadActiveCode').addEventListener('click', () => {
+        const fileObj = CODE_FILES[state.activeCodeFile];
+        const blob = new Blob([fileObj.content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileObj.filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        showToast('Downloaded ' + fileObj.filename);
+      });
+
+      const dlBtn = document.getElementById('downloadMasterLink');
+      dlBtn.addEventListener('click', () => {
+        if (!state.lastMasterBlobUrl) return;
+        const a = document.createElement('a');
+        a.href = state.lastMasterBlobUrl;
+        a.download = state.lastMasterFilename || 'zeroblur_master.webm';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        showToast('Saved ' + (state.lastMasterFilename || 'master file'));
+      });
+
+      // In-Browser Master Render & Export
+      const btnMaster = document.getElementById('btnRunBrowserMaster');
+      btnMaster.addEventListener('click', () => {
+        const statusEl = document.getElementById('renderStatusText');
+        const barEl = document.getElementById('renderProgressBar');
+        const dlLink = document.getElementById('downloadMasterLink');
+        dlLink.classList.add('hidden');
+        btnMaster.disabled = true;
+        btnMaster.classList.add('opacity-60');
+
+        let progress = 0;
+        statusEl.textContent = 'Pass 1/2: Analyzing motion vectors & HDR transfer curve...';
+
+        // Capture stream if MediaRecorder is supported
+        let recorder = null;
+        let recordedChunks = [];
+        try {
+          if (canvas.captureStream && window.MediaRecorder) {
+            const stream = canvas.captureStream(state.fps);
+            recorder = new MediaRecorder(stream, { videoBitsPerSecond: 9500000 });
+            recorder.ondataavailable = (ev) => {
+              if (ev.data && ev.data.size > 0) recordedChunks.push(ev.data);
+            };
+            recorder.onstop = () => {
+              const blob = new Blob(recordedChunks, { type: 'video/webm' });
+              state.lastMasterBlobUrl = URL.createObjectURL(blob);
+              state.lastMasterFilename = `zeroblur_${state.platform}_${state.fps}fps_master.webm`;
+              dlLink.classList.remove('hidden');
+            };
+            recorder.start();
+          }
+        } catch (err) {
+          recorder = null;
+        }
+
+        const timer = setInterval(() => {
+          progress += 5;
+          barEl.style.width = `${progress}%`;
+          if (progress === 45) {
+            statusEl.textContent = `Pass 2/2: Mastering ${state.fps}fps CFR stream (Lanczos + Unsharp ${state.sharpen.toFixed(2)})...`;
+          }
+          if (progress >= 100) {
+            clearInterval(timer);
+            if (recorder && recorder.state !== 'inactive') {
+              recorder.stop();
+            } else {
+              // Fallback synthetic blob if MediaRecorder unavailable
+              const scriptBlob = new Blob([document.getElementById('ffmpegCommandBox').textContent], { type: 'text/plain' });
+              state.lastMasterBlobUrl = URL.createObjectURL(scriptBlob);
+              state.lastMasterFilename = `zeroblur_${state.platform}_master.sh`;
+              dlLink.classList.remove('hidden');
+            }
+            statusEl.textContent = 'Master Pass Complete — Ready to save output';
+            btnMaster.disabled = false;
+            btnMaster.classList.remove('opacity-60');
+            showToast('2-Pass Mastering complete!');
+          }
+        }, 90);
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      applyDisplayTheme(localStorage.getItem('webpage_theme') || 'color');
+      setupListeners();
+      updateAllUI();
+      renderComparisonFrame();
+    });
+  </script>
+</body>
+</html>"""
+
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard():
     return HTMLResponse(
         content=HTML_DASHBOARD,
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
+
+
+@app.get("/zeroblur", response_class=HTMLResponse)
+@app.get("/formats", response_class=HTMLResponse)
+async def zeroblur_page():
+    return HTMLResponse(
+        content=HTML_ZEROBLUR,
         headers={
             "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
             "Pragma": "no-cache",

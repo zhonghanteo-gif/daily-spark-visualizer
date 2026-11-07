@@ -63,6 +63,33 @@ def test_dashboard_endpoint():
     assert "Mobile Shield" in response.text
     assert "btnPickCamera" in response.text
     assert "btnPickDocs" in response.text
+    assert "navZeroBlurBtn" in response.text
+    assert "btnZeroBlurEnginePage" in response.text
+    assert "calloutLaunchZeroBlurBtn" in response.text
+
+
+def test_zeroblur_page_endpoint():
+    response = client.get("/zeroblur")
+    assert response.status_code == 200
+    assert "ZeroBlur Engine Studio" in response.text
+    assert "backToConverterBtn" in response.text
+    assert "comparisonCanvas" in response.text
+    assert "splitRangeSlider" in response.text
+    assert "btnRunBrowserMaster" in response.text
+    assert "zeroblurThemeBtn" in response.text
+    assert "view-converter" in response.text
+    assert "footerBackToConverterBtn" in response.text
+    assert "Cache-Control" in response.headers
+    assert "no-cache" in response.headers["Cache-Control"]
+
+
+def test_formats_page_alias():
+    response = client.get("/formats")
+    assert response.status_code == 200
+    assert "ZeroBlur Engine Studio" in response.text
+    assert "backToConverterBtn" in response.text
+    assert "view-converter" in response.text
+    assert "Cache-Control" in response.headers
 
 
 def test_diagnostics_endpoint():
