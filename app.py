@@ -6122,6 +6122,15 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
             </div>
           </div>
 
+          <!-- Studio Pro Keyboard Shortcuts Bar -->
+          <div class="text-[11px] font-mono text-slate-400 hidden sm:flex items-center gap-2 pt-0.5 select-none">
+            <span class="text-slate-500">Mastering Shortcuts:</span>
+            <kbd class="px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-300 border border-slate-700/80">Space</kbd> Pause/Play •
+            <kbd class="px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-300 border border-slate-700/80">← / →</kbd> Split Wipe •
+            <kbd class="px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-300 border border-slate-700/80">1 / 2 / 3</kbd> Zoom •
+            <kbd class="px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-300 border border-slate-700/80">T</kbd> Theme
+          </div>
+
           <!-- In-Browser Master Render & Download Bar -->
           <div class="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
             <div class="space-y-0.5">
@@ -7689,6 +7698,43 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
             showToast('2-Pass Mastering complete!');
           }
         }, 90);
+      });
+
+      // Pro Keyboard Shortcuts
+      window.addEventListener('keydown', (e) => {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) {
+          return;
+        }
+
+        if (e.code === 'Space') {
+          e.preventDefault();
+          const btn = document.getElementById('btnTogglePlay');
+          if (btn) btn.click();
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          state.splitPercent = Math.max(5, state.splitPercent - 5);
+          const slider = document.getElementById('splitRangeSlider');
+          if (slider) slider.value = state.splitPercent;
+          updateAllUI();
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          state.splitPercent = Math.min(95, state.splitPercent + 5);
+          const slider = document.getElementById('splitRangeSlider');
+          if (slider) slider.value = state.splitPercent;
+          updateAllUI();
+        } else if (e.key === '1') {
+          const btn = document.getElementById('btnZoom1x');
+          if (btn) btn.click();
+        } else if (e.key === '2') {
+          const btn = document.getElementById('btnZoom2x');
+          if (btn) btn.click();
+        } else if (e.key === '3') {
+          const btn = document.getElementById('btnZoom3x');
+          if (btn) btn.click();
+        } else if (e.key === 't' || e.key === 'T') {
+          const themeBtn = document.getElementById('zeroblurThemeBtn');
+          if (themeBtn) themeBtn.click();
+        }
       });
     }
 
