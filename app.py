@@ -1178,6 +1178,7 @@ async def optimize_video_endpoint(
     target_fps: int = Form(60),
     whatsapp_res: str = Form("720p"),
     sharpen_strength: float = Form(0.65),
+    audio_normalize: bool = Form(True),
 ):
     """ZeroBlur Video Engine Server Endpoint for TikTok and WhatsApp status mastering."""
     if not HAS_FFMPEG:
@@ -1208,9 +1209,15 @@ async def optimize_video_endpoint(
         "ffmpeg", "-y", "-i", str(in_file),
         "-vf", vf,
         "-c:v", "libx264", "-preset", "fast",
-        "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
-        str(out_file)
     ]
+    if audio_normalize:
+        cmd.extend(["-af", "loudnorm=I=-14:TP=-1.0:LRA=11"])
+    cmd.extend([
+        "-c:a", "aac",
+        "-b:a", "192k" if platform in ("tiktok", "reels", "shorts") else "128k",
+        "-movflags", "+faststart",
+        str(out_file)
+    ])
 
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
@@ -6155,20 +6162,24 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
           <!-- 1. Target Platform -->
           <div class="space-y-2">
             <label class="text-xs font-medium text-slate-300 block">1. Target Platform Profile</label>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button type="button" data-platform="tiktok" class="plat-btn px-3 py-2.5 rounded-xl border text-left transition bg-emerald-500/15 border-emerald-500 text-white">
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              <button type="button" data-platform="tiktok" class="plat-btn px-2.5 py-2.5 rounded-xl border text-left transition bg-emerald-500/15 border-emerald-500 text-white">
                 <div class="text-xs font-bold">TikTok HD</div>
                 <div class="text-[10px] font-mono text-emerald-300 mt-0.5">1080p • 9.5M</div>
               </button>
-              <button type="button" data-platform="reels" class="plat-btn px-3 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
+              <button type="button" data-platform="reels" class="plat-btn px-2.5 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
                 <div class="text-xs font-bold">IG Reels</div>
                 <div class="text-[10px] font-mono text-slate-400 mt-0.5">1080p • 8.5M</div>
               </button>
-              <button type="button" data-platform="whatsapp_720" class="plat-btn px-3 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
+              <button type="button" data-platform="shorts" class="plat-btn px-2.5 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
+                <div class="text-xs font-bold">YT Shorts</div>
+                <div class="text-[10px] font-mono text-slate-400 mt-0.5">1080p • 12M</div>
+              </button>
+              <button type="button" data-platform="whatsapp_720" class="plat-btn px-2.5 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
                 <div class="text-xs font-bold">WhatsApp Safe</div>
                 <div class="text-[10px] font-mono text-slate-400 mt-0.5">720p • &lt;14.5MB</div>
               </button>
-              <button type="button" data-platform="whatsapp_1080" class="plat-btn px-3 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
+              <button type="button" data-platform="whatsapp_1080" class="plat-btn px-2.5 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
                 <div class="text-xs font-bold">WhatsApp HD</div>
                 <div class="text-[10px] font-mono text-slate-400 mt-0.5">1080p • &lt;14.5MB</div>
               </button>
@@ -6244,6 +6255,14 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
                 <div class="text-[11px] text-slate-400">Unconstrained encoding time for maximum SSIM/VMAF retention</div>
               </div>
               <input id="toggleVeryslow" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
+            </label>
+
+            <label class="flex items-center justify-between cursor-pointer">
+              <div>
+                <div class="text-xs font-medium text-slate-200">EBU R128 (-14 LUFS) Audio Loudness Normalization</div>
+                <div class="text-[11px] text-slate-400">Standardizes audio volume to -14 LUFS (-1 dBFS true peak) preventing platform audio clipping</div>
+              </div>
+              <input id="toggleLoudnorm" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded cursor-pointer" />
             </label>
           </div>
         </div>
@@ -6413,17 +6432,17 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
         </div>
 
         <!-- ZeroBlur Master Presets Quick Sync -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 pt-2">
           <div class="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between gap-3">
             <div>
               <div class="text-xs font-bold text-white flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
                 <span>TikTok Ultra HD</span>
               </div>
-              <p class="text-[11px] text-slate-300 mt-0.5">1080×1920 • 60fps CFR • 9.5M</p>
+              <p class="text-[11px] text-slate-300 mt-0.5">1080×1920 • 60fps • 9.5M</p>
             </div>
-            <a href="/?format=mp4&preset=tiktok" class="px-2.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow whitespace-nowrap">
-              Use in Converter →
+            <a href="/?format=mp4&preset=tiktok" class="px-2 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow whitespace-nowrap">
+              Use →
             </a>
           </div>
 
@@ -6431,12 +6450,25 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
             <div>
               <div class="text-xs font-bold text-white flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full bg-purple-400"></span>
-                <span>Instagram Reels HD</span>
+                <span>Instagram Reels</span>
               </div>
               <p class="text-[11px] text-slate-300 mt-0.5">1080×1920 • 8.5M • Faststart</p>
             </div>
-            <a href="/?format=mp4&preset=reels" class="px-2.5 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold text-xs transition shadow whitespace-nowrap">
-              Use in Converter →
+            <a href="/?format=mp4&preset=reels" class="px-2 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold text-xs transition shadow whitespace-nowrap">
+              Use →
+            </a>
+          </div>
+
+          <div class="p-4 rounded-xl bg-rose-950/40 border border-rose-500/40 flex items-center justify-between gap-3">
+            <div>
+              <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                <span>YouTube Shorts</span>
+              </div>
+              <p class="text-[11px] text-slate-300 mt-0.5">1080×1920 • 12M • -14 LUFS</p>
+            </div>
+            <a href="/?format=mp4&preset=shorts" class="px-2 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold text-xs transition shadow whitespace-nowrap">
+              Use →
             </a>
           </div>
 
@@ -6444,12 +6476,12 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
             <div>
               <div class="text-xs font-bold text-white flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
-                <span>WhatsApp Status Safe</span>
+                <span>WhatsApp Safe</span>
               </div>
               <p class="text-[11px] text-slate-300 mt-0.5">720×1280 • &lt;14.5MB Budgeter</p>
             </div>
-            <a href="/?format=mp4&preset=whatsapp" class="px-2.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition shadow whitespace-nowrap">
-              Use in Converter →
+            <a href="/?format=mp4&preset=whatsapp" class="px-2 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition shadow whitespace-nowrap">
+              Use →
             </a>
           </div>
         </div>
@@ -6609,6 +6641,7 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
       hdrTonemap: true,
       denoise: true,
       veryslow: true,
+      loudnorm: true,
       splitPercent: 50,
       zoomLevel: 1,
       isPlaying: true,
@@ -6936,6 +6969,13 @@ export async function optimizeForSocialStatus(
         maxKbps = state.fps === 60 ? 10500 : 8500;
         aKbps = 192;
         presetTitle = 'Instagram Reels HD (1080×1920)';
+      } else if (state.platform === 'shorts') {
+        tw = 1080;
+        th = 1920;
+        vKbps = state.fps === 60 ? 12000 : 9000;
+        maxKbps = state.fps === 60 ? 15000 : 12000;
+        aKbps = 256;
+        presetTitle = 'YouTube Shorts Ultra (1080×1920)';
       } else {
         aKbps = 128;
         tw = state.platform === 'whatsapp_1080' ? 1080 : 720;
@@ -7006,7 +7046,7 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
   -x264-params "${x264Opts}" \\
   -color_primaries bt709 -color_trc bt709 -colorspace bt709 -color_range tv \\
   -pass 2 -passlogfile "zeroblur_passlog" \\
-  -c:a aac -b:a ${m.aKbps}k -ar 48000 -ac 2 -movflags +faststart \\
+  ${state.loudnorm ? '-af "loudnorm=I=-14:TP=-1.0:LRA=11" \\\n  ' : ''}-c:a aac -b:a ${m.aKbps}k -ar 48000 -ac 2 -movflags +faststart \\
   "output_${state.platform}_master.mp4"`;
     }
 
@@ -7043,7 +7083,7 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
       document.getElementById('calcDimensions').textContent = `${m.tw} × ${m.th} (9:16)`;
       document.getElementById('calcVideoBitrate').textContent = `${m.vKbps.toLocaleString()} kbps`;
       document.getElementById('calcVbv').textContent = `${m.maxKbps.toLocaleString()}k / ${m.bufKbps.toLocaleString()}k`;
-      document.getElementById('calcAudio').textContent = `AAC-LC • ${m.aKbps} kbps • 48 kHz`;
+      document.getElementById('calcAudio').textContent = `AAC-LC • ${m.aKbps} kbps • 48 kHz` + (state.loudnorm ? ' • EBU R128 (-14 LUFS)' : '');
       document.getElementById('calcWaChunks').textContent = m.chunks > 1
         ? `${m.chunks} lossless 30s segments (<14.5MB each)`
         : '1 segment (Fits single Status upload)';
@@ -7473,6 +7513,10 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
         state.veryslow = e.target.checked;
         updateAllUI();
       });
+      document.getElementById('toggleLoudnorm').addEventListener('change', (e) => {
+        state.loudnorm = e.target.checked;
+        updateAllUI();
+      });
 
       // Copy FFmpeg Script
       document.getElementById('btnCopyFfmpeg').addEventListener('click', () => {
@@ -7546,6 +7590,7 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
           fd.append('target_fps', state.fps);
           fd.append('whatsapp_res', state.platform === 'whatsapp_720' ? '720p' : '1080p');
           fd.append('sharpen_strength', state.sharpen);
+          fd.append('audio_normalize', state.loudnorm ? 'true' : 'false');
 
           try {
             statusEl.textContent = 'Server mastering via FFmpeg Lanczos + 5x5 unsharp...';

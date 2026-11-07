@@ -128,7 +128,7 @@ def test_zeroblur_optimize_endpoint(tmp_path):
             resp = client.post(
                 "/api/v1/optimize",
                 files={"file": ("sample.mp4", f, "video/mp4")},
-                data={"platform": "tiktok", "target_fps": "30", "sharpen_strength": "0.5"}
+                data={"platform": "shorts", "target_fps": "30", "sharpen_strength": "0.5", "audio_normalize": "true"}
             )
         assert resp.status_code == 200
         assert resp.headers["content-type"] == "video/mp4"
