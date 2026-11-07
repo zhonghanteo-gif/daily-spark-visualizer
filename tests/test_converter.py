@@ -1013,6 +1013,47 @@ def test_video_mp4_conversion(tmp_path):
     assert out_file.stat().st_size > 0
 
 
+def test_slide_navigation_drawer_and_gestures():
+    """Verify left slide-out navigation drawer with touch gesture sliding across converter and zeroblur."""
+    # 1. Test Universal File Converter (/)
+    res_dash = client.get("/")
+    assert res_dash.status_code == 200
+    assert "navDrawerHamburgerBtn" in res_dash.text
+    assert "btn-hamburger" in res_dash.text
+    assert "slideNavDrawer" in res_dash.text
+    assert "slideNavBackdrop" in res_dash.text
+    assert "btnCloseNavDrawer" in res_dash.text
+    assert "drawerLinkConverter" in res_dash.text
+    assert "drawerLinkZeroBlur" in res_dash.text
+    assert "drawer-format-cat-trigger" in res_dash.text
+    assert "drawer-theme-pill" in res_dash.text
+    assert "initSlideNavigationDrawer" in res_dash.text
+    assert "EDGE_SWIPE_THRESHOLD" in res_dash.text
+    assert "touchstart" in res_dash.text
+    assert "touchmove" in res_dash.text
+    assert "touchend" in res_dash.text
+
+    # 2. Test ZeroBlur Engine Studio (/zeroblur)
+    res_zb = client.get("/zeroblur")
+    assert res_zb.status_code == 200
+    assert "navDrawerHamburgerBtn" in res_zb.text
+    assert "btn-hamburger" in res_zb.text
+    assert "slideNavDrawer" in res_zb.text
+    assert "slideNavBackdrop" in res_zb.text
+    assert "btnCloseNavDrawer" in res_zb.text
+    assert "drawer-tab-trigger" in res_zb.text
+    assert "drawer-step-trigger" in res_zb.text
+    assert "drawer-theme-pill" in res_zb.text
+    assert "drawerLinkConverter" in res_zb.text
+    assert "drawerLinkZeroBlur" in res_zb.text
+    assert "initSlideNavigationDrawer" in res_zb.text
+    assert "EDGE_SWIPE_THRESHOLD" in res_zb.text
+    assert "touchstart" in res_zb.text
+    assert "touchmove" in res_zb.text
+    assert "touchend" in res_zb.text
+
+
+
 
 
 

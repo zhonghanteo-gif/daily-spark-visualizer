@@ -4510,9 +4510,667 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             box-shadow: 0 6px 22px rgba(16, 185, 129, 0.4) !important;
         }
 
+    
+        /* ==================== SLIDE-OUT NAVIGATION DRAWER & HAMBURGER ==================== */
+        .btn-hamburger {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.42rem 0.8rem;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: #f1f5f9;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            z-index: 40;
+        }
+        .btn-hamburger:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.28);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+        .btn-hamburger:active {
+            transform: translateY(0);
+        }
+        .btn-hamburger svg {
+            flex-shrink: 0;
+            stroke: currentColor;
+        }
+        .btn-hamburger .hamburger-label {
+            font-size: 0.78rem;
+            letter-spacing: 0.02em;
+        }
+
+        /* Backdrop */
+        .slide-nav-backdrop {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(4, 7, 15, 0.72);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            z-index: 9998;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .slide-nav-backdrop.is-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Slide Drawer */
+        .slide-nav-drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: min(340px, 86vw);
+            height: 100%;
+            height: 100dvh;
+            z-index: 9999;
+            background: #0b1120;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 15px 0 40px rgba(0, 0, 0, 0.65);
+            transform: translateX(-100%);
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            will-change: transform;
+            touch-action: pan-y;
+        }
+        .slide-nav-drawer.is-open {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.1rem 1.25rem 0.9rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(15, 23, 42, 0.6);
+            flex-shrink: 0;
+        }
+        .drawer-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .drawer-logo {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        .drawer-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #f8fafc;
+            line-height: 1.2;
+        }
+        .drawer-subtitle {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            font-family: monospace;
+        }
+        .drawer-close-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #94a3b8;
+            font-size: 1.35rem;
+            line-height: 1;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+        .drawer-close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .drawer-content {
+            flex: 1;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            padding: 0.85rem 1rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+        }
+
+        .drawer-gesture-hint {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.72rem;
+            color: #64748b;
+            padding: 0.4rem 0.6rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            border: 1px dashed rgba(255, 255, 255, 0.08);
+        }
+
+        .drawer-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        .drawer-section-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+            padding-left: 0.35rem;
+        }
+
+        .drawer-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: 10px;
+            color: #cbd5e1;
+            text-decoration: none;
+            background: transparent;
+            border: 1px solid transparent;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            width: 100%;
+        }
+        .drawer-link:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: #f8fafc;
+        }
+        .drawer-link.active {
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(16, 185, 129, 0.35);
+            color: #34d399;
+        }
+        .drawer-link-icon {
+            font-size: 1rem;
+            width: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .drawer-link-body {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .drawer-link-name {
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: inherit;
+            line-height: 1.25;
+        }
+        .drawer-link-desc {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .drawer-link:hover .drawer-link-desc {
+            color: #94a3b8;
+        }
+
+        /* Theme Grid in Drawer */
+        .drawer-theme-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.35rem;
+        }
+        .drawer-theme-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #94a3b8;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: left;
+        }
+        .drawer-theme-pill:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #f8fafc;
+        }
+        .drawer-theme-pill.active {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: #10b981;
+            color: #34d399;
+        }
+
+        .drawer-footer {
+            padding: 0.85rem 1.15rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(15, 23, 42, 0.6);
+            flex-shrink: 0;
+        }
+        .drawer-footer-status {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: #34d399;
+        }
+        .status-indicator-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+        .drawer-footer-sub {
+            font-size: 0.68rem;
+            color: #64748b;
+            margin-top: 3px;
+        }
+
+        /* THEME OVERRIDES FOR DRAWER */
+        body.theme-editorial .btn-hamburger {
+            background: #ede8dc;
+            border-color: #dcd7cb;
+            color: #1c1917;
+        }
+        body.theme-editorial .btn-hamburger:hover {
+            background: #e3ded1;
+            border-color: #1c1917;
+        }
+        body.theme-editorial .slide-nav-backdrop {
+            background: rgba(28, 25, 23, 0.55);
+        }
+        body.theme-editorial .slide-nav-drawer {
+            background: #fbf9f4;
+            border-right: 1.5px solid #dcd7cb;
+            box-shadow: 15px 0 35px rgba(28, 25, 23, 0.2);
+        }
+        body.theme-editorial .drawer-header {
+            background: #f2eee3;
+            border-bottom: 1.5px solid #dcd7cb;
+        }
+        body.theme-editorial .drawer-title {
+            color: #1c1917;
+            font-family: 'Newsreader', Georgia, serif;
+        }
+        body.theme-editorial .drawer-subtitle {
+            color: #78716c;
+        }
+        body.theme-editorial .drawer-close-btn {
+            border-color: #dcd7cb;
+            color: #78716c;
+        }
+        body.theme-editorial .drawer-close-btn:hover {
+            background: #e7e2d4;
+            color: #1c1917;
+            border-color: #1c1917;
+        }
+        body.theme-editorial .drawer-gesture-hint {
+            background: #ede8dc;
+            border-color: #dcd7cb;
+            color: #78716c;
+        }
+        body.theme-editorial .drawer-section-title {
+            color: #78716c;
+        }
+        body.theme-editorial .drawer-link {
+            color: #292524;
+        }
+        body.theme-editorial .drawer-link:hover {
+            background: #ede8dc;
+            border-color: #dcd7cb;
+            color: #0c0a09;
+        }
+        body.theme-editorial .drawer-link.active {
+            background: #853b1b;
+            border-color: #1c1917;
+            color: #ffffff;
+        }
+        body.theme-editorial .drawer-link.active .drawer-link-desc {
+            color: #f5f5f4;
+        }
+        body.theme-editorial .drawer-theme-pill {
+            background: #f2eee3;
+            border-color: #dcd7cb;
+            color: #292524;
+        }
+        body.theme-editorial .drawer-theme-pill:hover {
+            background: #ede8dc;
+            border-color: #1c1917;
+        }
+        body.theme-editorial .drawer-theme-pill.active {
+            background: #853b1b;
+            border-color: #1c1917;
+            color: #ffffff;
+        }
+        body.theme-editorial .drawer-footer {
+            background: #f2eee3;
+            border-top: 1.5px solid #dcd7cb;
+        }
+
+        body.theme-liquid-glass .btn-hamburger {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+            color: #e0f2fe;
+        }
+        body.theme-liquid-glass .slide-nav-drawer {
+            background: rgba(13, 17, 34, 0.78);
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 18px 0 50px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+        }
+        body.theme-liquid-glass .drawer-header {
+            background: rgba(255, 255, 255, 0.04);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        body.theme-liquid-glass .drawer-link:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+        body.theme-liquid-glass .drawer-link.active {
+            background: rgba(56, 189, 248, 0.18);
+            border-color: rgba(56, 189, 248, 0.45);
+            color: #38bdf8;
+        }
+        body.theme-liquid-glass .drawer-theme-pill.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: rgba(56, 189, 248, 0.6);
+            color: #38bdf8;
+        }
+
+        body.bw-page-light .btn-hamburger, body.bw-mode.bw-page-light .btn-hamburger {
+            background: #ffffff;
+            border: 1.5px solid #000000;
+            color: #000000;
+        }
+        body.bw-page-light .slide-nav-drawer, body.bw-mode.bw-page-light .slide-nav-drawer {
+            background: #ffffff;
+            border-right: 2px solid #000000;
+            box-shadow: 15px 0 35px rgba(0, 0, 0, 0.3);
+        }
+        body.bw-page-light .drawer-header, body.bw-mode.bw-page-light .drawer-header {
+            background: #f4f4f5;
+            border-bottom: 2px solid #000000;
+        }
+        body.bw-page-light .drawer-title, body.bw-mode.bw-page-light .drawer-title {
+            color: #000000;
+        }
+        body.bw-page-light .drawer-subtitle, body.bw-mode.bw-page-light .drawer-subtitle {
+            color: #52525b;
+        }
+        body.bw-page-light .drawer-close-btn, body.bw-mode.bw-page-light .drawer-close-btn {
+            border-color: #000000;
+            color: #000000;
+        }
+        body.bw-page-light .drawer-link, body.bw-mode.bw-page-light .drawer-link {
+            color: #000000;
+        }
+        body.bw-page-light .drawer-link:hover, body.bw-mode.bw-page-light .drawer-link:hover {
+            background: #f4f4f5;
+            border-color: #000000;
+        }
+        body.bw-page-light .drawer-link.active, body.bw-mode.bw-page-light .drawer-link.active {
+            background: #000000;
+            color: #ffffff;
+            border-color: #000000;
+        }
+        body.bw-page-light .drawer-link.active .drawer-link-desc, body.bw-mode.bw-page-light .drawer-link.active .drawer-link-desc {
+            color: #d4d4d8;
+        }
+        body.bw-page-light .drawer-theme-pill, body.bw-mode.bw-page-light .drawer-theme-pill {
+            background: #ffffff;
+            border: 1.5px solid #000000;
+            color: #000000;
+        }
+        body.bw-page-light .drawer-theme-pill.active, body.bw-mode.bw-page-light .drawer-theme-pill.active {
+            background: #000000;
+            color: #ffffff;
+        }
+        body.bw-page-light .drawer-footer, body.bw-mode.bw-page-light .drawer-footer {
+            background: #f4f4f5;
+            border-top: 2px solid #000000;
+        }
+        body.bw-page-light .drawer-footer-status, body.bw-mode.bw-page-light .drawer-footer-status {
+            color: #000000;
+        }
+
+        body.bw-page-dark .btn-hamburger, body.bw-mode.bw-page-dark .btn-hamburger {
+            background: #000000;
+            border: 1.5px solid #ffffff;
+            color: #ffffff;
+        }
+        body.bw-page-dark .slide-nav-drawer, body.bw-mode.bw-page-dark .slide-nav-drawer {
+            background: #000000;
+            border-right: 2px solid #ffffff;
+            box-shadow: 15px 0 35px rgba(255, 255, 255, 0.15);
+        }
+        body.bw-page-dark .drawer-header, body.bw-mode.bw-page-dark .drawer-header {
+            background: #09090b;
+            border-bottom: 2px solid #ffffff;
+        }
+        body.bw-page-dark .drawer-title, body.bw-mode.bw-page-dark .drawer-title {
+            color: #ffffff;
+        }
+        body.bw-page-dark .drawer-close-btn, body.bw-mode.bw-page-dark .drawer-close-btn {
+            border-color: #ffffff;
+            color: #ffffff;
+        }
+        body.bw-page-dark .drawer-link, body.bw-mode.bw-page-dark .drawer-link {
+            color: #ffffff;
+        }
+        body.bw-page-dark .drawer-link:hover, body.bw-mode.bw-page-dark .drawer-link:hover {
+            background: #18181b;
+            border-color: #ffffff;
+        }
+        body.bw-page-dark .drawer-link.active, body.bw-mode.bw-page-dark .drawer-link.active {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+        }
+        body.bw-page-dark .drawer-link.active .drawer-link-desc, body.bw-mode.bw-page-dark .drawer-link.active .drawer-link-desc {
+            color: #27272a;
+        }
+        body.bw-page-dark .drawer-theme-pill, body.bw-mode.bw-page-dark .drawer-theme-pill {
+            background: #000000;
+            border: 1.5px solid #ffffff;
+            color: #ffffff;
+        }
+        body.bw-page-dark .drawer-theme-pill.active, body.bw-mode.bw-page-dark .drawer-theme-pill.active {
+            background: #ffffff;
+            color: #000000;
+        }
+        body.bw-page-dark .drawer-footer, body.bw-mode.bw-page-dark .drawer-footer {
+            background: #09090b;
+            border-top: 2px solid #ffffff;
+        }
+        body.bw-page-dark .drawer-footer-status, body.bw-mode.bw-page-dark .drawer-footer-status {
+            color: #ffffff;
+        }
+
     </style>
 </head>
 <body>
+
+    <!-- Slide Navigation Backdrop -->
+    <div id="slideNavBackdrop" class="slide-nav-backdrop" aria-hidden="true"></div>
+
+    <!-- Slide Navigation Drawer -->
+    <aside id="slideNavDrawer" class="slide-nav-drawer" role="dialog" aria-modal="true" aria-label="Navigation Menu">
+        <div class="drawer-header">
+            <div class="drawer-brand">
+                <div class="drawer-logo">⚡</div>
+                <div>
+                    <div class="drawer-title">Universal File Studio</div>
+                    <div class="drawer-subtitle">v1.4.0 • Master Edition</div>
+                </div>
+            </div>
+            <button type="button" id="btnCloseNavDrawer" class="drawer-close-btn" aria-label="Close navigation drawer" title="Close drawer">&times;</button>
+        </div>
+
+        <div class="drawer-content">
+            <!-- Slide Gesture Hint -->
+            <div class="drawer-gesture-hint">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>Swipe left or tap outside to slide close</span>
+            </div>
+
+            <!-- Pages & Workspaces -->
+            <div class="drawer-section">
+                <div class="drawer-section-title">Pages & Workspaces</div>
+                <a href="/" class="drawer-link active" id="drawerLinkConverter">
+                    <span class="drawer-link-icon">⚡</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Universal File Converter</span>
+                        <span class="drawer-link-desc">All-in-one instant conversion engine</span>
+                    </div>
+                </a>
+                <a href="/zeroblur" class="drawer-link" id="drawerLinkZeroBlur">
+                    <span class="drawer-link-icon">🎬</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">ZeroBlur Engine Studio</span>
+                        <span class="drawer-link-desc">TikTok & WhatsApp Status video mastering</span>
+                    </div>
+                </a>
+                <a href="/formats" class="drawer-link" id="drawerLinkFormats">
+                    <span class="drawer-link-icon">📚</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Formats Catalog</span>
+                        <span class="drawer-link-desc">Supported extensions and compatibility</span>
+                    </div>
+                </a>
+                <a href="/api/diagnostics" target="_blank" class="drawer-link" id="drawerLinkDiagnostics">
+                    <span class="drawer-link-icon">📊</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">System Diagnostics</span>
+                        <span class="drawer-link-desc">Cloud health, FFmpeg & library report</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Format Category Shortcuts -->
+            <div class="drawer-section">
+                <div class="drawer-section-title">Format Categories</div>
+                <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="image">
+                    <span class="drawer-link-icon">🖼️</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Image Formats</span>
+                        <span class="drawer-link-desc">PNG, JPG, WEBP, AVIF, GIF, BMP, TIFF</span>
+                    </div>
+                </button>
+                <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="document">
+                    <span class="drawer-link-icon">📄</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Document Formats</span>
+                        <span class="drawer-link-desc">PDF, DOCX, TXT, HTML, MD</span>
+                    </div>
+                </button>
+                <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="audio">
+                    <span class="drawer-link-icon">🎵</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Audio Formats</span>
+                        <span class="drawer-link-desc">MP3, WAV, AAC, FLAC, OGG, M4A</span>
+                    </div>
+                </button>
+                <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="video">
+                    <span class="drawer-link-icon">🎥</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Video Formats</span>
+                        <span class="drawer-link-desc">MP4, MKV, WEBM, MOV, AVI</span>
+                    </div>
+                </button>
+                <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="archive">
+                    <span class="drawer-link-icon">📦</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Archive Formats</span>
+                        <span class="drawer-link-desc">ZIP, TAR, GZ, 7Z, BZ2</span>
+                    </div>
+                </button>
+                <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="data">
+                    <span class="drawer-link-icon">🗄️</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Data & Spreadsheets</span>
+                        <span class="drawer-link-desc">CSV, JSON, XML, YAML, XLSX</span>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Display Theme Switcher -->
+            <div class="drawer-section">
+                <div class="drawer-section-title">Display Theme</div>
+                <div class="drawer-theme-grid">
+                    <button type="button" class="drawer-theme-pill" data-theme="color" title="Modern Dark">
+                        <span class="theme-dot" style="background:#10b981;"></span>
+                        <span>Modern Dark</span>
+                    </button>
+                    <button type="button" class="drawer-theme-pill" data-theme="editorial" title="Editorial Magazine">
+                        <span class="theme-dot" style="background:#853b1b; border:1px solid #1c1917;"></span>
+                        <span>Editorial</span>
+                    </button>
+                    <button type="button" class="drawer-theme-pill" data-theme="liquid-glass" title="Soft Liquid Glass">
+                        <span class="theme-dot" style="background:linear-gradient(135deg, #38bdf8, #c084fc); box-shadow:0 0 6px rgba(192,132,252,0.8);"></span>
+                        <span>Liquid Glass</span>
+                    </button>
+                    <button type="button" class="drawer-theme-pill" data-theme="bw-light" title="B&W Light">
+                        <span class="theme-dot" style="background:#ffffff; border:1px solid #71717a;"></span>
+                        <span>B&W Light</span>
+                    </button>
+                    <button type="button" class="drawer-theme-pill" data-theme="bw-dark" title="B&W Dark">
+                        <span class="theme-dot" style="background:#000000; border:1px solid #a1a1aa;"></span>
+                        <span>B&W Dark</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="drawer-footer">
+            <div class="drawer-footer-status">
+                <span class="status-indicator-dot"></span>
+                <span>Cloud Engine: Online & Ready</span>
+            </div>
+            <div class="drawer-footer-sub">Swipe left to close • Slide from edge to open</div>
+        </div>
+    </aside>
     <!-- Ambient Floating Orbs for Soft Liquid Glass Display -->
     <div class="liquid-bg-orbs" aria-hidden="true">
         <div class="liquid-orb orb-1"></div>
@@ -4524,6 +5182,14 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         <!-- Header -->
         <div class="header">
             <div class="header-top">
+                <!-- Slide Navigation Drawer Hamburger Button -->
+                <button type="button" id="navDrawerHamburgerBtn" class="btn-hamburger" aria-label="Open Navigation Menu" title="Open Navigation Drawer" aria-expanded="false">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="8" x2="21" y2="8"></line>
+                        <line x1="3" y1="16" x2="21" y2="16"></line>
+                    </svg>
+                    <span class="hamburger-label">Menu</span>
+                </button>
                 <div class="header-badge">⚡ Instant Conversion & Permanent Hosting</div>
                 <div class="header-badge" style="margin-bottom:0; background:rgba(16, 185, 129, 0.15); color:#34d399; border-color:rgba(16, 185, 129, 0.35);">v1.4.0 • Mobile Shield & Photo Gallery</div>
                 <!-- ZeroBlur Engine Page Navigation Button -->
@@ -5746,6 +6412,243 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         initWebpageTheme();
         initFormatSwitcher();
         loadHostedFiles();
+    
+    // ==================== SLIDE-OUT NAVIGATION DRAWER & TOUCH SLIDING PHYSICS ====================
+    function initSlideNavigationDrawer() {
+        const drawer = document.getElementById('slideNavDrawer');
+        const backdrop = document.getElementById('slideNavBackdrop');
+        const openBtn = document.getElementById('navDrawerHamburgerBtn');
+        const closeBtn = document.getElementById('btnCloseNavDrawer');
+        if (!drawer || !backdrop) return;
+
+        let isOpen = false;
+        let isDragging = false;
+        let startX = 0;
+        let currentX = 0;
+        let startY = 0;
+        let isHorizontalGesture = null;
+
+        const getDrawerWidth = () => drawer.offsetWidth || Math.min(340, window.innerWidth * 0.86);
+
+        function setDrawerTransform(x, animate) {
+            drawer.style.transition = animate ? 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)' : 'none';
+            drawer.style.transform = `translateX(${x}px)`;
+        }
+
+        function setBackdropOpacity(ratio, animate) {
+            backdrop.style.transition = animate ? 'opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1)' : 'none';
+            backdrop.style.opacity = Math.max(0, Math.min(1, ratio));
+            backdrop.style.pointerEvents = ratio > 0.05 ? 'auto' : 'none';
+        }
+
+        function openDrawer() {
+            isOpen = true;
+            drawer.classList.add('is-open');
+            backdrop.classList.add('is-open');
+            drawer.style.transform = '';
+            drawer.style.transition = '';
+            backdrop.style.opacity = '';
+            backdrop.style.pointerEvents = '';
+            backdrop.style.transition = '';
+            document.body.style.overflow = 'hidden';
+            if (openBtn) openBtn.setAttribute('aria-expanded', 'true');
+            
+            // Sync active theme in drawer
+            const currentTheme = localStorage.getItem('webpage_theme') || 'color';
+            document.querySelectorAll('.drawer-theme-pill').forEach(pill => {
+                pill.classList.toggle('active', pill.getAttribute('data-theme') === currentTheme);
+            });
+        }
+
+        function closeDrawer() {
+            isOpen = false;
+            drawer.classList.remove('is-open');
+            backdrop.classList.remove('is-open');
+            drawer.style.transform = '';
+            drawer.style.transition = '';
+            backdrop.style.opacity = '';
+            backdrop.style.pointerEvents = '';
+            backdrop.style.transition = '';
+            document.body.style.overflow = '';
+            if (openBtn) openBtn.setAttribute('aria-expanded', 'false');
+        }
+
+        function toggleDrawer() {
+            if (isOpen) closeDrawer();
+            else openDrawer();
+        }
+
+        if (openBtn) {
+            openBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleDrawer();
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeDrawer();
+            });
+        }
+
+        backdrop.addEventListener('click', () => {
+            closeDrawer();
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isOpen) {
+                closeDrawer();
+            }
+        });
+
+        // Touch Swipe & Edge Sliding Physics
+        const EDGE_SWIPE_THRESHOLD = 40; // px from screen left edge
+
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches.length !== 1) return;
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            currentX = startX;
+            isHorizontalGesture = null;
+
+            if (!isOpen && startX <= EDGE_SWIPE_THRESHOLD) {
+                isDragging = true;
+                const width = getDrawerWidth();
+                setDrawerTransform(-width, false);
+                setBackdropOpacity(0, false);
+            } else if (isOpen) {
+                if (e.target.closest('#slideNavDrawer') || e.target.closest('#slideNavBackdrop')) {
+                    isDragging = true;
+                }
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isDragging || e.touches.length !== 1) return;
+            const touch = e.touches[0];
+            currentX = touch.clientX;
+            const deltaX = currentX - startX;
+            const deltaY = touch.clientY - startY;
+
+            if (isHorizontalGesture === null) {
+                if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
+                    isHorizontalGesture = Math.abs(deltaX) > Math.abs(deltaY);
+                    if (!isHorizontalGesture) {
+                        isDragging = false;
+                        return;
+                    }
+                }
+            }
+
+            if (!isHorizontalGesture) return;
+
+            const width = getDrawerWidth();
+            if (!isOpen) {
+                const targetX = Math.min(0, -width + Math.max(0, deltaX));
+                setDrawerTransform(targetX, false);
+                const ratio = (width + targetX) / width;
+                setBackdropOpacity(ratio, false);
+            } else {
+                if (deltaX < 0) {
+                    const targetX = Math.max(-width, Math.min(0, deltaX));
+                    setDrawerTransform(targetX, false);
+                    const ratio = (width + targetX) / width;
+                    setBackdropOpacity(ratio, false);
+                }
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchend', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            const deltaX = currentX - startX;
+
+            if (!isOpen) {
+                if (deltaX > 55) {
+                    openDrawer();
+                } else {
+                    closeDrawer();
+                }
+            } else {
+                if (deltaX < -50) {
+                    closeDrawer();
+                } else {
+                    openDrawer();
+                }
+            }
+            isHorizontalGesture = null;
+        }, { passive: true });
+
+        window.addEventListener('touchcancel', () => {
+            if (isDragging) {
+                isDragging = false;
+                if (isOpen) openDrawer();
+                else closeDrawer();
+            }
+        }, { passive: true });
+
+        // Drawer Theme Switcher Buttons
+        document.querySelectorAll('.drawer-theme-pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                const theme = pill.getAttribute('data-theme');
+                if (theme) {
+                    if (typeof setWebpageTheme === 'function') setWebpageTheme(theme);
+                    else if (typeof applyDisplayTheme === 'function') applyDisplayTheme(theme);
+                    document.querySelectorAll('.drawer-theme-pill').forEach(p => {
+                        p.classList.toggle('active', p.getAttribute('data-theme') === theme);
+                    });
+                }
+            });
+        });
+
+        // Close drawer when any internal navigation link or trigger is clicked
+        drawer.querySelectorAll('a, .drawer-link').forEach(el => {
+            el.addEventListener('click', () => {
+                setTimeout(closeDrawer, 120);
+            });
+        });
+
+        // Studio Tab Triggers (for ZeroBlur Studio)
+        document.querySelectorAll('.drawer-tab-trigger').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.getAttribute('data-tab-target');
+                if (tabId && typeof switchStudioTab === 'function') {
+                    switchStudioTab(tabId);
+                }
+            });
+        });
+
+        // Step Navigation Triggers (for ZeroBlur Studio)
+        document.querySelectorAll('.drawer-step-trigger').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const stepId = btn.getAttribute('data-step-target');
+                if (stepId && typeof setActiveStep === 'function') {
+                    setActiveStep(stepId, true);
+                }
+            });
+        });
+
+        // Format Category Shortcuts (for File Converter)
+        document.querySelectorAll('.drawer-format-cat-trigger').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const cat = btn.getAttribute('data-cat');
+                if (cat) {
+                    const targetBtn = document.querySelector(`.format-cat-btn[data-cat="${cat}"]`);
+                    if (targetBtn) targetBtn.click();
+                }
+            });
+        });
+    }
+
+    // Initialize slide navigation drawer on DOM load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSlideNavigationDrawer);
+    } else {
+        initSlideNavigationDrawer();
+    }
+
     </script>
 </body>
 </html>
@@ -6396,6 +7299,521 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
       background: #ffffff !important;
       color: #000000 !important;
     }
+  
+        /* ==================== SLIDE-OUT NAVIGATION DRAWER & HAMBURGER ==================== */
+        .btn-hamburger {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.42rem 0.8rem;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: #f1f5f9;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            z-index: 40;
+        }
+        .btn-hamburger:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.28);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+        .btn-hamburger:active {
+            transform: translateY(0);
+        }
+        .btn-hamburger svg {
+            flex-shrink: 0;
+            stroke: currentColor;
+        }
+        .btn-hamburger .hamburger-label {
+            font-size: 0.78rem;
+            letter-spacing: 0.02em;
+        }
+
+        /* Backdrop */
+        .slide-nav-backdrop {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(4, 7, 15, 0.72);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            z-index: 9998;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .slide-nav-backdrop.is-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Slide Drawer */
+        .slide-nav-drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: min(340px, 86vw);
+            height: 100%;
+            height: 100dvh;
+            z-index: 9999;
+            background: #0b1120;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 15px 0 40px rgba(0, 0, 0, 0.65);
+            transform: translateX(-100%);
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            will-change: transform;
+            touch-action: pan-y;
+        }
+        .slide-nav-drawer.is-open {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.1rem 1.25rem 0.9rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(15, 23, 42, 0.6);
+            flex-shrink: 0;
+        }
+        .drawer-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .drawer-logo {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        .drawer-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #f8fafc;
+            line-height: 1.2;
+        }
+        .drawer-subtitle {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            font-family: monospace;
+        }
+        .drawer-close-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #94a3b8;
+            font-size: 1.35rem;
+            line-height: 1;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+        .drawer-close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .drawer-content {
+            flex: 1;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            padding: 0.85rem 1rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+        }
+
+        .drawer-gesture-hint {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.72rem;
+            color: #64748b;
+            padding: 0.4rem 0.6rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            border: 1px dashed rgba(255, 255, 255, 0.08);
+        }
+
+        .drawer-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        .drawer-section-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+            padding-left: 0.35rem;
+        }
+
+        .drawer-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: 10px;
+            color: #cbd5e1;
+            text-decoration: none;
+            background: transparent;
+            border: 1px solid transparent;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            width: 100%;
+        }
+        .drawer-link:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: #f8fafc;
+        }
+        .drawer-link.active {
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(16, 185, 129, 0.35);
+            color: #34d399;
+        }
+        .drawer-link-icon {
+            font-size: 1rem;
+            width: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .drawer-link-body {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .drawer-link-name {
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: inherit;
+            line-height: 1.25;
+        }
+        .drawer-link-desc {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .drawer-link:hover .drawer-link-desc {
+            color: #94a3b8;
+        }
+
+        /* Theme Grid in Drawer */
+        .drawer-theme-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.35rem;
+        }
+        .drawer-theme-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #94a3b8;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: left;
+        }
+        .drawer-theme-pill:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #f8fafc;
+        }
+        .drawer-theme-pill.active {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: #10b981;
+            color: #34d399;
+        }
+
+        .drawer-footer {
+            padding: 0.85rem 1.15rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(15, 23, 42, 0.6);
+            flex-shrink: 0;
+        }
+        .drawer-footer-status {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: #34d399;
+        }
+        .status-indicator-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+        .drawer-footer-sub {
+            font-size: 0.68rem;
+            color: #64748b;
+            margin-top: 3px;
+        }
+
+        /* THEME OVERRIDES FOR DRAWER */
+        body.theme-editorial .btn-hamburger {
+            background: #ede8dc;
+            border-color: #dcd7cb;
+            color: #1c1917;
+        }
+        body.theme-editorial .btn-hamburger:hover {
+            background: #e3ded1;
+            border-color: #1c1917;
+        }
+        body.theme-editorial .slide-nav-backdrop {
+            background: rgba(28, 25, 23, 0.55);
+        }
+        body.theme-editorial .slide-nav-drawer {
+            background: #fbf9f4;
+            border-right: 1.5px solid #dcd7cb;
+            box-shadow: 15px 0 35px rgba(28, 25, 23, 0.2);
+        }
+        body.theme-editorial .drawer-header {
+            background: #f2eee3;
+            border-bottom: 1.5px solid #dcd7cb;
+        }
+        body.theme-editorial .drawer-title {
+            color: #1c1917;
+            font-family: 'Newsreader', Georgia, serif;
+        }
+        body.theme-editorial .drawer-subtitle {
+            color: #78716c;
+        }
+        body.theme-editorial .drawer-close-btn {
+            border-color: #dcd7cb;
+            color: #78716c;
+        }
+        body.theme-editorial .drawer-close-btn:hover {
+            background: #e7e2d4;
+            color: #1c1917;
+            border-color: #1c1917;
+        }
+        body.theme-editorial .drawer-gesture-hint {
+            background: #ede8dc;
+            border-color: #dcd7cb;
+            color: #78716c;
+        }
+        body.theme-editorial .drawer-section-title {
+            color: #78716c;
+        }
+        body.theme-editorial .drawer-link {
+            color: #292524;
+        }
+        body.theme-editorial .drawer-link:hover {
+            background: #ede8dc;
+            border-color: #dcd7cb;
+            color: #0c0a09;
+        }
+        body.theme-editorial .drawer-link.active {
+            background: #853b1b;
+            border-color: #1c1917;
+            color: #ffffff;
+        }
+        body.theme-editorial .drawer-link.active .drawer-link-desc {
+            color: #f5f5f4;
+        }
+        body.theme-editorial .drawer-theme-pill {
+            background: #f2eee3;
+            border-color: #dcd7cb;
+            color: #292524;
+        }
+        body.theme-editorial .drawer-theme-pill:hover {
+            background: #ede8dc;
+            border-color: #1c1917;
+        }
+        body.theme-editorial .drawer-theme-pill.active {
+            background: #853b1b;
+            border-color: #1c1917;
+            color: #ffffff;
+        }
+        body.theme-editorial .drawer-footer {
+            background: #f2eee3;
+            border-top: 1.5px solid #dcd7cb;
+        }
+
+        body.theme-liquid-glass .btn-hamburger {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+            color: #e0f2fe;
+        }
+        body.theme-liquid-glass .slide-nav-drawer {
+            background: rgba(13, 17, 34, 0.78);
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 18px 0 50px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+        }
+        body.theme-liquid-glass .drawer-header {
+            background: rgba(255, 255, 255, 0.04);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        body.theme-liquid-glass .drawer-link:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+        body.theme-liquid-glass .drawer-link.active {
+            background: rgba(56, 189, 248, 0.18);
+            border-color: rgba(56, 189, 248, 0.45);
+            color: #38bdf8;
+        }
+        body.theme-liquid-glass .drawer-theme-pill.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: rgba(56, 189, 248, 0.6);
+            color: #38bdf8;
+        }
+
+        body.bw-page-light .btn-hamburger, body.bw-mode.bw-page-light .btn-hamburger {
+            background: #ffffff;
+            border: 1.5px solid #000000;
+            color: #000000;
+        }
+        body.bw-page-light .slide-nav-drawer, body.bw-mode.bw-page-light .slide-nav-drawer {
+            background: #ffffff;
+            border-right: 2px solid #000000;
+            box-shadow: 15px 0 35px rgba(0, 0, 0, 0.3);
+        }
+        body.bw-page-light .drawer-header, body.bw-mode.bw-page-light .drawer-header {
+            background: #f4f4f5;
+            border-bottom: 2px solid #000000;
+        }
+        body.bw-page-light .drawer-title, body.bw-mode.bw-page-light .drawer-title {
+            color: #000000;
+        }
+        body.bw-page-light .drawer-subtitle, body.bw-mode.bw-page-light .drawer-subtitle {
+            color: #52525b;
+        }
+        body.bw-page-light .drawer-close-btn, body.bw-mode.bw-page-light .drawer-close-btn {
+            border-color: #000000;
+            color: #000000;
+        }
+        body.bw-page-light .drawer-link, body.bw-mode.bw-page-light .drawer-link {
+            color: #000000;
+        }
+        body.bw-page-light .drawer-link:hover, body.bw-mode.bw-page-light .drawer-link:hover {
+            background: #f4f4f5;
+            border-color: #000000;
+        }
+        body.bw-page-light .drawer-link.active, body.bw-mode.bw-page-light .drawer-link.active {
+            background: #000000;
+            color: #ffffff;
+            border-color: #000000;
+        }
+        body.bw-page-light .drawer-link.active .drawer-link-desc, body.bw-mode.bw-page-light .drawer-link.active .drawer-link-desc {
+            color: #d4d4d8;
+        }
+        body.bw-page-light .drawer-theme-pill, body.bw-mode.bw-page-light .drawer-theme-pill {
+            background: #ffffff;
+            border: 1.5px solid #000000;
+            color: #000000;
+        }
+        body.bw-page-light .drawer-theme-pill.active, body.bw-mode.bw-page-light .drawer-theme-pill.active {
+            background: #000000;
+            color: #ffffff;
+        }
+        body.bw-page-light .drawer-footer, body.bw-mode.bw-page-light .drawer-footer {
+            background: #f4f4f5;
+            border-top: 2px solid #000000;
+        }
+        body.bw-page-light .drawer-footer-status, body.bw-mode.bw-page-light .drawer-footer-status {
+            color: #000000;
+        }
+
+        body.bw-page-dark .btn-hamburger, body.bw-mode.bw-page-dark .btn-hamburger {
+            background: #000000;
+            border: 1.5px solid #ffffff;
+            color: #ffffff;
+        }
+        body.bw-page-dark .slide-nav-drawer, body.bw-mode.bw-page-dark .slide-nav-drawer {
+            background: #000000;
+            border-right: 2px solid #ffffff;
+            box-shadow: 15px 0 35px rgba(255, 255, 255, 0.15);
+        }
+        body.bw-page-dark .drawer-header, body.bw-mode.bw-page-dark .drawer-header {
+            background: #09090b;
+            border-bottom: 2px solid #ffffff;
+        }
+        body.bw-page-dark .drawer-title, body.bw-mode.bw-page-dark .drawer-title {
+            color: #ffffff;
+        }
+        body.bw-page-dark .drawer-close-btn, body.bw-mode.bw-page-dark .drawer-close-btn {
+            border-color: #ffffff;
+            color: #ffffff;
+        }
+        body.bw-page-dark .drawer-link, body.bw-mode.bw-page-dark .drawer-link {
+            color: #ffffff;
+        }
+        body.bw-page-dark .drawer-link:hover, body.bw-mode.bw-page-dark .drawer-link:hover {
+            background: #18181b;
+            border-color: #ffffff;
+        }
+        body.bw-page-dark .drawer-link.active, body.bw-mode.bw-page-dark .drawer-link.active {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+        }
+        body.bw-page-dark .drawer-link.active .drawer-link-desc, body.bw-mode.bw-page-dark .drawer-link.active .drawer-link-desc {
+            color: #27272a;
+        }
+        body.bw-page-dark .drawer-theme-pill, body.bw-mode.bw-page-dark .drawer-theme-pill {
+            background: #000000;
+            border: 1.5px solid #ffffff;
+            color: #ffffff;
+        }
+        body.bw-page-dark .drawer-theme-pill.active, body.bw-mode.bw-page-dark .drawer-theme-pill.active {
+            background: #ffffff;
+            color: #000000;
+        }
+        body.bw-page-dark .drawer-footer, body.bw-mode.bw-page-dark .drawer-footer {
+            background: #09090b;
+            border-top: 2px solid #ffffff;
+        }
+        body.bw-page-dark .drawer-footer-status, body.bw-mode.bw-page-dark .drawer-footer-status {
+            color: #ffffff;
+        }
+
   </style>
 
 </head>
@@ -6412,10 +7830,203 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
   <!-- Toast Notification -->
   <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
+  
+    <!-- Slide Navigation Backdrop -->
+    <div id="slideNavBackdrop" class="slide-nav-backdrop" aria-hidden="true"></div>
+
+    <!-- Slide Navigation Drawer -->
+    <aside id="slideNavDrawer" class="slide-nav-drawer" role="dialog" aria-modal="true" aria-label="Navigation Menu">
+        <div class="drawer-header">
+            <div class="drawer-brand">
+                <div class="drawer-logo" style="background:linear-gradient(135deg, #0ea5e9, #6366f1); box-shadow:0 4px 12px rgba(14,165,233,0.35);">🎬</div>
+                <div>
+                    <div class="drawer-title">ZeroBlur Engine Studio</div>
+                    <div class="drawer-subtitle">v1.4.0 • Video Mastering</div>
+                </div>
+            </div>
+            <button type="button" id="btnCloseNavDrawer" class="drawer-close-btn" aria-label="Close navigation drawer" title="Close drawer">&times;</button>
+        </div>
+
+        <div class="drawer-content">
+            <!-- Slide Gesture Hint -->
+            <div class="drawer-gesture-hint">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>Swipe left or tap outside to slide close</span>
+            </div>
+
+            <!-- Main Workspaces -->
+            <div class="drawer-section">
+                <div class="drawer-section-title">Pages & Workspaces</div>
+                <a href="/" class="drawer-link" id="drawerLinkConverter">
+                    <span class="drawer-link-icon">⚡</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Universal File Converter</span>
+                        <span class="drawer-link-desc">All-in-one instant conversion engine</span>
+                    </div>
+                </a>
+                <a href="/zeroblur" class="drawer-link active" id="drawerLinkZeroBlur">
+                    <span class="drawer-link-icon">🎬</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">ZeroBlur Engine Studio</span>
+                        <span class="drawer-link-desc">TikTok & WhatsApp Status video mastering</span>
+                    </div>
+                </a>
+                <a href="/formats" class="drawer-link" id="drawerLinkFormats">
+                    <span class="drawer-link-icon">📚</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Formats Catalog</span>
+                        <span class="drawer-link-desc">Supported extensions and compatibility</span>
+                    </div>
+                </a>
+                <a href="/api/diagnostics" target="_blank" class="drawer-link" id="drawerLinkDiagnostics">
+                    <span class="drawer-link-icon">📊</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">System Diagnostics</span>
+                        <span class="drawer-link-desc">Cloud health, FFmpeg & library report</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Studio Workspace Tabs -->
+            <div class="drawer-section">
+                <div class="drawer-section-title">Studio Workspaces</div>
+                <button type="button" class="drawer-link drawer-tab-trigger active" data-tab-target="view-studio">
+                    <span class="drawer-link-icon">🎛️</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Live Studio</span>
+                        <span class="drawer-link-desc">Visual comparison slider & preset mastering</span>
+                    </div>
+                </button>
+                <button type="button" class="drawer-link drawer-tab-trigger" data-tab-target="view-builder">
+                    <span class="drawer-link-icon">💻</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">FFmpeg Command Builder</span>
+                        <span class="drawer-link-desc">CLI parameters & bitrate tuning</span>
+                    </div>
+                </button>
+                <button type="button" class="drawer-link drawer-tab-trigger" data-tab-target="view-code">
+                    <span class="drawer-link-icon">📱</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Web & Mobile Implementation</span>
+                        <span class="drawer-link-desc">React, Vue, iOS & Android code</span>
+                    </div>
+                </button>
+                <button type="button" class="drawer-link drawer-tab-trigger" data-tab-target="view-blueprint">
+                    <span class="drawer-link-icon">🛡️</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Compression Bypass Blueprint</span>
+                        <span class="drawer-link-desc">Reverse-engineered platform algorithms</span>
+                    </div>
+                </button>
+                <button type="button" class="drawer-link drawer-tab-trigger" data-tab-target="view-converter">
+                    <span class="drawer-link-icon">🔄</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Formats & Converter</span>
+                        <span class="drawer-link-desc">Return to file converter workspace</span>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Tuning Workflow Steps -->
+            <div class="drawer-section">
+                <div class="drawer-section-title">Tuning Workflow Steps</div>
+                <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-platform">
+                    <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">1</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Target Platform</span>
+                        <span class="drawer-link-desc">TikTok vs WhatsApp Status algorithms</span>
+                    </div>
+                </button>
+                <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-footage">
+                    <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">2</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Source Footage Profile</span>
+                        <span class="drawer-link-desc">Talking head, screen recording, gaming</span>
+                    </div>
+                </button>
+                <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-fps">
+                    <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">3</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">FPS & Temporal Cadence</span>
+                        <span class="drawer-link-desc">Frame rate lock and pacing</span>
+                    </div>
+                </button>
+                <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-unsharp">
+                    <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">4</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Detail & Unsharp Mask</span>
+                        <span class="drawer-link-desc">Pre-sharpening compensation</span>
+                    </div>
+                </button>
+                <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-switches">
+                    <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">5</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Duration & Master Switches</span>
+                        <span class="drawer-link-desc">Max duration & strict GOP 1-sec lock</span>
+                    </div>
+                </button>
+                <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-output">
+                    <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">6</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Master Output & Deploy</span>
+                        <span class="drawer-link-desc">Run cloud master or browser canvas test</span>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Display Theme Switcher -->
+            <div class="drawer-section">
+                <div class="drawer-section-title">Display Theme</div>
+                <div class="drawer-theme-grid">
+                    <button type="button" class="drawer-theme-pill" data-theme="color" title="Modern Dark">
+                        <span class="theme-dot" style="background:#10b981;"></span>
+                        <span>Modern Dark</span>
+                    </button>
+                    <button type="button" class="drawer-theme-pill" data-theme="editorial" title="Editorial Magazine">
+                        <span class="theme-dot" style="background:#853b1b; border:1px solid #1c1917;"></span>
+                        <span>Editorial</span>
+                    </button>
+                    <button type="button" class="drawer-theme-pill" data-theme="liquid-glass" title="Soft Liquid Glass">
+                        <span class="theme-dot" style="background:linear-gradient(135deg, #38bdf8, #c084fc); box-shadow:0 0 6px rgba(192,132,252,0.8);"></span>
+                        <span>Liquid Glass</span>
+                    </button>
+                    <button type="button" class="drawer-theme-pill" data-theme="bw-light" title="B&W Light">
+                        <span class="theme-dot" style="background:#ffffff; border:1px solid #71717a;"></span>
+                        <span>B&W Light</span>
+                    </button>
+                    <button type="button" class="drawer-theme-pill" data-theme="bw-dark" title="B&W Dark">
+                        <span class="theme-dot" style="background:#000000; border:1px solid #a1a1aa;"></span>
+                        <span>B&W Dark</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="drawer-footer">
+            <div class="drawer-footer-status">
+                <span class="status-indicator-dot" style="background:#38bdf8; box-shadow:0 0 8px #38bdf8;"></span>
+                <span>ZeroBlur Mastering Engine: Ready</span>
+            </div>
+            <div class="drawer-footer-sub">Swipe left to close • Slide from edge to open</div>
+        </div>
+    </aside>
+
+
   <!-- Top Header Matching Universal File Converter -->
   <header class="sticky top-0 z-30 border-b border-slate-800/80 bg-[#0b0f19]/90 backdrop-blur-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-start gap-3">
       <div class="flex items-center gap-3">
+        <!-- Slide Navigation Drawer Hamburger Button -->
+                <button type="button" id="navDrawerHamburgerBtn" class="btn-hamburger" aria-label="Open Navigation Menu" title="Open Navigation Drawer" aria-expanded="false">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="8" x2="21" y2="8"></line>
+                        <line x1="3" y1="16" x2="21" y2="16"></line>
+                    </svg>
+                    <span class="hamburger-label">Menu</span>
+                </button>
         <!-- Navigation Button Back to Universal File Converter -->
         <a href="/" id="backToConverterBtn" class="btn-diag btn-converter-nav" title="Return to Universal File Converter">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -8695,6 +10306,243 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
       updateAllUI();
       renderComparisonFrame();
     });
+  
+    // ==================== SLIDE-OUT NAVIGATION DRAWER & TOUCH SLIDING PHYSICS ====================
+    function initSlideNavigationDrawer() {
+        const drawer = document.getElementById('slideNavDrawer');
+        const backdrop = document.getElementById('slideNavBackdrop');
+        const openBtn = document.getElementById('navDrawerHamburgerBtn');
+        const closeBtn = document.getElementById('btnCloseNavDrawer');
+        if (!drawer || !backdrop) return;
+
+        let isOpen = false;
+        let isDragging = false;
+        let startX = 0;
+        let currentX = 0;
+        let startY = 0;
+        let isHorizontalGesture = null;
+
+        const getDrawerWidth = () => drawer.offsetWidth || Math.min(340, window.innerWidth * 0.86);
+
+        function setDrawerTransform(x, animate) {
+            drawer.style.transition = animate ? 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)' : 'none';
+            drawer.style.transform = `translateX(${x}px)`;
+        }
+
+        function setBackdropOpacity(ratio, animate) {
+            backdrop.style.transition = animate ? 'opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1)' : 'none';
+            backdrop.style.opacity = Math.max(0, Math.min(1, ratio));
+            backdrop.style.pointerEvents = ratio > 0.05 ? 'auto' : 'none';
+        }
+
+        function openDrawer() {
+            isOpen = true;
+            drawer.classList.add('is-open');
+            backdrop.classList.add('is-open');
+            drawer.style.transform = '';
+            drawer.style.transition = '';
+            backdrop.style.opacity = '';
+            backdrop.style.pointerEvents = '';
+            backdrop.style.transition = '';
+            document.body.style.overflow = 'hidden';
+            if (openBtn) openBtn.setAttribute('aria-expanded', 'true');
+            
+            // Sync active theme in drawer
+            const currentTheme = localStorage.getItem('webpage_theme') || 'color';
+            document.querySelectorAll('.drawer-theme-pill').forEach(pill => {
+                pill.classList.toggle('active', pill.getAttribute('data-theme') === currentTheme);
+            });
+        }
+
+        function closeDrawer() {
+            isOpen = false;
+            drawer.classList.remove('is-open');
+            backdrop.classList.remove('is-open');
+            drawer.style.transform = '';
+            drawer.style.transition = '';
+            backdrop.style.opacity = '';
+            backdrop.style.pointerEvents = '';
+            backdrop.style.transition = '';
+            document.body.style.overflow = '';
+            if (openBtn) openBtn.setAttribute('aria-expanded', 'false');
+        }
+
+        function toggleDrawer() {
+            if (isOpen) closeDrawer();
+            else openDrawer();
+        }
+
+        if (openBtn) {
+            openBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleDrawer();
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeDrawer();
+            });
+        }
+
+        backdrop.addEventListener('click', () => {
+            closeDrawer();
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isOpen) {
+                closeDrawer();
+            }
+        });
+
+        // Touch Swipe & Edge Sliding Physics
+        const EDGE_SWIPE_THRESHOLD = 40; // px from screen left edge
+
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches.length !== 1) return;
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            currentX = startX;
+            isHorizontalGesture = null;
+
+            if (!isOpen && startX <= EDGE_SWIPE_THRESHOLD) {
+                isDragging = true;
+                const width = getDrawerWidth();
+                setDrawerTransform(-width, false);
+                setBackdropOpacity(0, false);
+            } else if (isOpen) {
+                if (e.target.closest('#slideNavDrawer') || e.target.closest('#slideNavBackdrop')) {
+                    isDragging = true;
+                }
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isDragging || e.touches.length !== 1) return;
+            const touch = e.touches[0];
+            currentX = touch.clientX;
+            const deltaX = currentX - startX;
+            const deltaY = touch.clientY - startY;
+
+            if (isHorizontalGesture === null) {
+                if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
+                    isHorizontalGesture = Math.abs(deltaX) > Math.abs(deltaY);
+                    if (!isHorizontalGesture) {
+                        isDragging = false;
+                        return;
+                    }
+                }
+            }
+
+            if (!isHorizontalGesture) return;
+
+            const width = getDrawerWidth();
+            if (!isOpen) {
+                const targetX = Math.min(0, -width + Math.max(0, deltaX));
+                setDrawerTransform(targetX, false);
+                const ratio = (width + targetX) / width;
+                setBackdropOpacity(ratio, false);
+            } else {
+                if (deltaX < 0) {
+                    const targetX = Math.max(-width, Math.min(0, deltaX));
+                    setDrawerTransform(targetX, false);
+                    const ratio = (width + targetX) / width;
+                    setBackdropOpacity(ratio, false);
+                }
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchend', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            const deltaX = currentX - startX;
+
+            if (!isOpen) {
+                if (deltaX > 55) {
+                    openDrawer();
+                } else {
+                    closeDrawer();
+                }
+            } else {
+                if (deltaX < -50) {
+                    closeDrawer();
+                } else {
+                    openDrawer();
+                }
+            }
+            isHorizontalGesture = null;
+        }, { passive: true });
+
+        window.addEventListener('touchcancel', () => {
+            if (isDragging) {
+                isDragging = false;
+                if (isOpen) openDrawer();
+                else closeDrawer();
+            }
+        }, { passive: true });
+
+        // Drawer Theme Switcher Buttons
+        document.querySelectorAll('.drawer-theme-pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                const theme = pill.getAttribute('data-theme');
+                if (theme) {
+                    if (typeof setWebpageTheme === 'function') setWebpageTheme(theme);
+                    else if (typeof applyDisplayTheme === 'function') applyDisplayTheme(theme);
+                    document.querySelectorAll('.drawer-theme-pill').forEach(p => {
+                        p.classList.toggle('active', p.getAttribute('data-theme') === theme);
+                    });
+                }
+            });
+        });
+
+        // Close drawer when any internal navigation link or trigger is clicked
+        drawer.querySelectorAll('a, .drawer-link').forEach(el => {
+            el.addEventListener('click', () => {
+                setTimeout(closeDrawer, 120);
+            });
+        });
+
+        // Studio Tab Triggers (for ZeroBlur Studio)
+        document.querySelectorAll('.drawer-tab-trigger').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.getAttribute('data-tab-target');
+                if (tabId && typeof switchStudioTab === 'function') {
+                    switchStudioTab(tabId);
+                }
+            });
+        });
+
+        // Step Navigation Triggers (for ZeroBlur Studio)
+        document.querySelectorAll('.drawer-step-trigger').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const stepId = btn.getAttribute('data-step-target');
+                if (stepId && typeof setActiveStep === 'function') {
+                    setActiveStep(stepId, true);
+                }
+            });
+        });
+
+        // Format Category Shortcuts (for File Converter)
+        document.querySelectorAll('.drawer-format-cat-trigger').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const cat = btn.getAttribute('data-cat');
+                if (cat) {
+                    const targetBtn = document.querySelector(`.format-cat-btn[data-cat="${cat}"]`);
+                    if (targetBtn) targetBtn.click();
+                }
+            });
+        });
+    }
+
+    // Initialize slide navigation drawer on DOM load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSlideNavigationDrawer);
+    } else {
+        initSlideNavigationDrawer();
+    }
+
   </script>
 </body>
 </html>"""
