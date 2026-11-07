@@ -6155,10 +6155,14 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
           <!-- 1. Target Platform -->
           <div class="space-y-2">
             <label class="text-xs font-medium text-slate-300 block">1. Target Platform Profile</label>
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button type="button" data-platform="tiktok" class="plat-btn px-3 py-2.5 rounded-xl border text-left transition bg-emerald-500/15 border-emerald-500 text-white">
                 <div class="text-xs font-bold">TikTok HD</div>
                 <div class="text-[10px] font-mono text-emerald-300 mt-0.5">1080p • 9.5M</div>
+              </button>
+              <button type="button" data-platform="reels" class="plat-btn px-3 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
+                <div class="text-xs font-bold">IG Reels</div>
+                <div class="text-[10px] font-mono text-slate-400 mt-0.5">1080p • 8.5M</div>
               </button>
               <button type="button" data-platform="whatsapp_720" class="plat-btn px-3 py-2.5 rounded-xl border text-left transition bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600">
                 <div class="text-xs font-bold">WhatsApp Safe</div>
@@ -6409,16 +6413,29 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
         </div>
 
         <!-- ZeroBlur Master Presets Quick Sync -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
           <div class="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between gap-3">
             <div>
               <div class="text-xs font-bold text-white flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                <span>TikTok Ultra HD Master Profile</span>
+                <span>TikTok Ultra HD</span>
               </div>
-              <p class="text-[11px] text-slate-300 mt-0.5">1080×1920 • 60fps CFR • 9.5 Mbps • Lanczos + 5×5 Unsharp</p>
+              <p class="text-[11px] text-slate-300 mt-0.5">1080×1920 • 60fps CFR • 9.5M</p>
             </div>
-            <a href="/?format=mp4&preset=tiktok" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow whitespace-nowrap">
+            <a href="/?format=mp4&preset=tiktok" class="px-2.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow whitespace-nowrap">
+              Use in Converter →
+            </a>
+          </div>
+
+          <div class="p-4 rounded-xl bg-purple-950/40 border border-purple-500/40 flex items-center justify-between gap-3">
+            <div>
+              <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                <span>Instagram Reels HD</span>
+              </div>
+              <p class="text-[11px] text-slate-300 mt-0.5">1080×1920 • 8.5M • Faststart</p>
+            </div>
+            <a href="/?format=mp4&preset=reels" class="px-2.5 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold text-xs transition shadow whitespace-nowrap">
               Use in Converter →
             </a>
           </div>
@@ -6427,11 +6444,11 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
             <div>
               <div class="text-xs font-bold text-white flex items-center gap-1.5">
                 <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
-                <span>WhatsApp Status Safe &lt;14.5MB</span>
+                <span>WhatsApp Status Safe</span>
               </div>
-              <p class="text-[11px] text-slate-300 mt-0.5">720×1280 • Dynamic Bitrate Budgeter • Bypass Compression</p>
+              <p class="text-[11px] text-slate-300 mt-0.5">720×1280 • &lt;14.5MB Budgeter</p>
             </div>
-            <a href="/?format=mp4&preset=whatsapp" class="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition shadow whitespace-nowrap">
+            <a href="/?format=mp4&preset=whatsapp" class="px-2.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition shadow whitespace-nowrap">
               Use in Converter →
             </a>
           </div>
@@ -6912,6 +6929,13 @@ export async function optimizeForSocialStatus(
         maxKbps = state.fps === 60 ? 12000 : 9500;
         aKbps = 192;
         presetTitle = 'TikTok Ultra HD (1080×1920)';
+      } else if (state.platform === 'reels') {
+        tw = 1080;
+        th = 1920;
+        vKbps = state.fps === 60 ? 8500 : 6500;
+        maxKbps = state.fps === 60 ? 10500 : 8500;
+        aKbps = 192;
+        presetTitle = 'Instagram Reels HD (1080×1920)';
       } else {
         aKbps = 128;
         tw = state.platform === 'whatsapp_1080' ? 1080 : 720;
