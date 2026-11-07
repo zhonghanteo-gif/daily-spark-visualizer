@@ -147,6 +147,13 @@ def test_converter_navigation_options_left_aligned():
     assert "justify-content: flex-start;" in response.text
     assert "format-switcher-header" in response.text
     assert "btn-more-formats" in response.text
+    # Verify top header is clean: only hamburger menu button at top-left, cluttered buttons removed
+    start_pos = response.text.find('class="header-top"')
+    end_pos = response.text.find('<h1>', start_pos)
+    header_top = response.text[start_pos:end_pos]
+    assert "navDrawerHamburgerBtn" in header_top
+    assert "btn-zeroblur-nav" not in header_top
+    assert "btn-bw-toggle" not in header_top
 
 
 def test_formats_page_alias():
@@ -1027,6 +1034,8 @@ def test_slide_navigation_drawer_and_gestures():
     assert "drawerLinkZeroBlur" in res_dash.text
     assert "drawer-format-cat-trigger" in res_dash.text
     assert "drawer-theme-pill" in res_dash.text
+    assert "drawer-nav-tabs" in res_dash.text
+    assert "drawer-theme-carousel" in res_dash.text
     assert "initSlideNavigationDrawer" in res_dash.text
     assert "EDGE_SWIPE_THRESHOLD" in res_dash.text
     assert "touchstart" in res_dash.text

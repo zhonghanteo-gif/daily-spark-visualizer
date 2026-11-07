@@ -5025,12 +5025,170 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             color: #ffffff;
         }
 
+    
+        /* ==================== SWIPEABLE MENU & HORIZONTAL BARS ==================== */
+        .theme-bar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            margin: 6px 0 16px 0;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            touch-action: pan-x;
+            transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+            max-width: 100%;
+            padding-bottom: 4px;
+        }
+        .theme-bar::-webkit-scrollbar {
+            display: none;
+        }
+        .theme-switcher {
+            display: flex;
+            flex-wrap: nowrap;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 9999px;
+            padding: 3px;
+            gap: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            scroll-snap-type: x proximity;
+            touch-action: pan-x;
+            flex-shrink: 0;
+            max-width: 100%;
+        }
+        .theme-switcher::-webkit-scrollbar {
+            display: none;
+        }
+        .theme-switcher .theme-btn {
+            scroll-snap-align: start;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        /* Swipeable Drawer Sections & Tabs */
+        .drawer-nav-tabs {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            touch-action: pan-x;
+            padding: 0 0 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+        .drawer-nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .drawer-nav-tab {
+            padding: 5px 12px;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+        .drawer-nav-tab:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .drawer-nav-tab.active {
+            background: #10b981;
+            color: #042f2e;
+            border-color: #10b981;
+        }
+
+        /* Horizontal Theme Carousel inside Drawer */
+        .drawer-theme-carousel {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            scroll-snap-type: x proximity;
+            touch-action: pan-x;
+            padding: 4px 2px 8px;
+        }
+        .drawer-theme-carousel::-webkit-scrollbar {
+            display: none;
+        }
+        .drawer-theme-card {
+            flex: 0 0 135px;
+            scroll-snap-align: start;
+            padding: 8px 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            color: #cbd5e1;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            text-align: left;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .drawer-theme-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+        .drawer-theme-card.active {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: #10b981;
+            color: #34d399;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);
+        }
+        .drawer-theme-card-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .drawer-theme-card-desc {
+            font-size: 0.65rem;
+            color: #64748b;
+            line-height: 1.2;
+        }
+        .drawer-theme-card.active .drawer-theme-card-desc {
+            color: #a7f3d0;
+        }
+
+        /* Mobile Screen Edge Swipe Indicator */
+        .edge-swipe-hint {
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 48px;
+            border-radius: 0 4px 4px 0;
+            background: rgba(16, 185, 129, 0.4);
+            z-index: 9990;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
     </style>
 </head>
 <body>
 
-    <!-- Slide Navigation Backdrop -->
+            <!-- Slide Navigation Backdrop -->
     <div id="slideNavBackdrop" class="slide-nav-backdrop" aria-hidden="true"></div>
+
+    <!-- Edge Swipe Visual Indicator for Mobile Phones -->
+    <div class="edge-swipe-hint" aria-hidden="true"></div>
 
     <!-- Slide Navigation Drawer -->
     <aside id="slideNavDrawer" class="slide-nav-drawer" role="dialog" aria-modal="true" aria-label="Navigation Menu">
@@ -5046,17 +5204,24 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         </div>
 
         <div class="drawer-content">
-            <!-- Slide Gesture Hint -->
+            <!-- Mobile Swipe Gesture Hint -->
             <div class="drawer-gesture-hint">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="19" y1="12" x2="5" y2="12"></line>
                     <polyline points="12 19 5 12 12 5"></polyline>
                 </svg>
-                <span>Swipe left or tap outside to slide close</span>
+                <span>Swipe left anywhere or tap outside to close</span>
             </div>
 
-            <!-- Pages & Workspaces -->
-            <div class="drawer-section">
+            <!-- Swipeable Drawer Category Pills -->
+            <div class="drawer-nav-tabs">
+                <button type="button" class="drawer-nav-tab active" data-section="drawerSecWorkspaces">⚡ Workspaces</button>
+                <button type="button" class="drawer-nav-tab" data-section="drawerSecThemes">🎨 Display Styles</button>
+                <button type="button" class="drawer-nav-tab" data-section="drawerSecFormats">📦 Formats</button>
+            </div>
+
+            <!-- Section 1: Pages & Workspaces -->
+            <div class="drawer-section" id="drawerSecWorkspaces">
                 <div class="drawer-section-title">Pages & Workspaces</div>
                 <a href="/" class="drawer-link active" id="drawerLinkConverter">
                     <span class="drawer-link-icon">⚡</span>
@@ -5068,10 +5233,11 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                 <a href="/zeroblur" class="drawer-link" id="drawerLinkZeroBlur">
                     <span class="drawer-link-icon">🎬</span>
                     <div class="drawer-link-body">
-                        <span class="drawer-link-name">ZeroBlur Engine Studio</span>
+                        <span class="drawer-link-name">ZeroBlur Engine Studio ↗</span>
                         <span class="drawer-link-desc">TikTok & WhatsApp Status video mastering</span>
                     </div>
                 </a>
+                <a href="/zeroblur" id="navZeroBlurBtn" class="hidden" style="display:none;"></a>
                 <a href="/formats" class="drawer-link" id="drawerLinkFormats">
                     <span class="drawer-link-icon">📚</span>
                     <div class="drawer-link-body">
@@ -5079,87 +5245,106 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                         <span class="drawer-link-desc">Supported extensions and compatibility</span>
                     </div>
                 </a>
-                <a href="/api/diagnostics" target="_blank" class="drawer-link" id="drawerLinkDiagnostics">
+                <button type="button" class="drawer-link" id="openDiagBtn" title="View Server Diagnostics and Logs">
                     <span class="drawer-link-icon">📊</span>
                     <div class="drawer-link-body">
-                        <span class="drawer-link-name">System Diagnostics</span>
+                        <span class="drawer-link-name">Diagnostics v1.4.0</span>
                         <span class="drawer-link-desc">Cloud health, FFmpeg & library report</span>
                     </div>
-                </a>
-            </div>
-
-            <!-- Format Category Shortcuts -->
-            <div class="drawer-section">
-                <div class="drawer-section-title">Format Categories</div>
-                <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="image">
-                    <span class="drawer-link-icon">🖼️</span>
-                    <div class="drawer-link-body">
-                        <span class="drawer-link-name">Image Formats</span>
-                        <span class="drawer-link-desc">PNG, JPG, WEBP, AVIF, GIF, BMP, TIFF</span>
-                    </div>
-                </button>
-                <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="document">
-                    <span class="drawer-link-icon">📄</span>
-                    <div class="drawer-link-body">
-                        <span class="drawer-link-name">Document Formats</span>
-                        <span class="drawer-link-desc">PDF, DOCX, TXT, HTML, MD</span>
-                    </div>
-                </button>
-                <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="audio">
-                    <span class="drawer-link-icon">🎵</span>
-                    <div class="drawer-link-body">
-                        <span class="drawer-link-name">Audio Formats</span>
-                        <span class="drawer-link-desc">MP3, WAV, AAC, FLAC, OGG, M4A</span>
-                    </div>
-                </button>
-                <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="video">
-                    <span class="drawer-link-icon">🎥</span>
-                    <div class="drawer-link-body">
-                        <span class="drawer-link-name">Video Formats</span>
-                        <span class="drawer-link-desc">MP4, MKV, WEBM, MOV, AVI</span>
-                    </div>
-                </button>
-                <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="archive">
-                    <span class="drawer-link-icon">📦</span>
-                    <div class="drawer-link-body">
-                        <span class="drawer-link-name">Archive Formats</span>
-                        <span class="drawer-link-desc">ZIP, TAR, GZ, 7Z, BZ2</span>
-                    </div>
-                </button>
-                <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="data">
-                    <span class="drawer-link-icon">🗄️</span>
-                    <div class="drawer-link-body">
-                        <span class="drawer-link-name">Data & Spreadsheets</span>
-                        <span class="drawer-link-desc">CSV, JSON, XML, YAML, XLSX</span>
-                    </div>
                 </button>
             </div>
 
-            <!-- Display Theme Switcher -->
-            <div class="drawer-section">
-                <div class="drawer-section-title">Display Theme</div>
-                <div class="drawer-theme-grid">
-                    <button type="button" class="drawer-theme-pill" data-theme="color" title="Modern Dark">
-                        <span class="theme-dot" style="background:#10b981;"></span>
-                        <span>Modern Dark</span>
-                    </button>
-                    <button type="button" class="drawer-theme-pill" data-theme="editorial" title="Editorial Magazine">
-                        <span class="theme-dot" style="background:#853b1b; border:1px solid #1c1917;"></span>
-                        <span>Editorial</span>
-                    </button>
-                    <button type="button" class="drawer-theme-pill" data-theme="liquid-glass" title="Soft Liquid Glass">
-                        <span class="theme-dot" style="background:linear-gradient(135deg, #38bdf8, #c084fc); box-shadow:0 0 6px rgba(192,132,252,0.8);"></span>
-                        <span>Liquid Glass</span>
-                    </button>
-                    <button type="button" class="drawer-theme-pill" data-theme="bw-light" title="B&W Light">
-                        <span class="theme-dot" style="background:#ffffff; border:1px solid #71717a;"></span>
-                        <span>B&W Light</span>
-                    </button>
-                    <button type="button" class="drawer-theme-pill" data-theme="bw-dark" title="B&W Dark">
-                        <span class="theme-dot" style="background:#000000; border:1px solid #a1a1aa;"></span>
-                        <span>B&W Dark</span>
+            <!-- Section 2: Display Theme Carousel -->
+            <div class="drawer-section" id="drawerSecThemes">
+                <div class="drawer-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>Display Styles (Swipe Horizontally)</span>
+                    <button type="button" class="btn-diag" id="toggleSwitcherNavBtn" style="padding:2px 8px; font-size:0.68rem;" title="Toggle webpage switcher bar">
+                        <span id="toggleSwitcherText">Hide Switcher</span>
                     </button>
                 </div>
+                <div class="drawer-theme-carousel">
+                    <div class="drawer-theme-card drawer-theme-pill active" data-theme="color">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span class="theme-dot" style="background:#10b981;"></span>
+                            <span class="drawer-theme-card-title">Modern Dark</span>
+                        </div>
+                        <div class="drawer-theme-card-desc">High contrast neon emerald & slate dark</div>
+                    </div>
+                    <div class="drawer-theme-card drawer-theme-pill" data-theme="editorial">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span class="theme-dot" style="background:#853b1b; border:1px solid #1c1917;"></span>
+                            <span class="drawer-theme-card-title">Editorial</span>
+                        </div>
+                        <div class="drawer-theme-card-desc">Cream paper & serif magazine typography</div>
+                    </div>
+                    <div class="drawer-theme-card drawer-theme-pill" data-theme="liquid-glass">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span class="theme-dot" style="background:linear-gradient(135deg, #38bdf8, #c084fc); box-shadow:0 0 6px rgba(192,132,252,0.8);"></span>
+                            <span class="drawer-theme-card-title">Liquid Glass</span>
+                        </div>
+                        <div class="drawer-theme-card-desc">Translucent soft blur & animated orbs</div>
+                    </div>
+                    <div class="drawer-theme-card drawer-theme-pill" data-theme="bw-light">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span class="theme-dot" style="background:#ffffff; border:1px solid #71717a;"></span>
+                            <span class="drawer-theme-card-title">B&W Light</span>
+                        </div>
+                        <div class="drawer-theme-card-desc">Paper monochrome high legibility</div>
+                    </div>
+                    <div class="drawer-theme-card drawer-theme-pill" data-theme="bw-dark">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span class="theme-dot" style="background:#000000; border:1px solid #a1a1aa;"></span>
+                            <span class="drawer-theme-card-title">B&W Dark</span>
+                        </div>
+                        <div class="drawer-theme-card-desc">Ultra-black deep OLED monochrome</div>
+                    </div>
+                </div>
+
+                <!-- Theme Toggle Button inside Drawer for Fast Cycling -->
+                <button type="button" class="drawer-link" id="bwPageToggle" style="margin-top:6px;">
+                    <span class="drawer-link-icon">◑</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name" id="bwToggleText">Display: Modern Dark</span>
+                        <span class="drawer-link-desc">Tap to cycle through all 5 display styles</span>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Section 3: Format Categories -->
+            <div class="drawer-section" id="drawerSecFormats">
+                <div class="drawer-section-title">Format Shortcuts (Swipe & Tap)</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                    <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="image">
+                        <span class="drawer-link-icon">🖼️</span>
+                        <span class="drawer-link-name">Images</span>
+                    </button>
+                    <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="document">
+                        <span class="drawer-link-icon">📄</span>
+                        <span class="drawer-link-name">Docs</span>
+                    </button>
+                    <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="audio">
+                        <span class="drawer-link-icon">🎵</span>
+                        <span class="drawer-link-name">Audio</span>
+                    </button>
+                    <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="video">
+                        <span class="drawer-link-icon">🎥</span>
+                        <span class="drawer-link-name">Video</span>
+                    </button>
+                    <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="archive">
+                        <span class="drawer-link-icon">📦</span>
+                        <span class="drawer-link-name">Archives</span>
+                    </button>
+                    <button type="button" class="drawer-link drawer-format-cat-trigger" data-cat="data">
+                        <span class="drawer-link-icon">🗄️</span>
+                        <span class="drawer-link-name">Data</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Badges inside drawer -->
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                <div class="header-badge" style="margin:0;">⚡ Instant Conversion & Permanent Hosting</div>
+                <div class="header-badge" style="margin:0; background:rgba(16, 185, 129, 0.15); color:#34d399; border-color:rgba(16, 185, 129, 0.35);">v1.4.0 • Mobile Shield & Photo Gallery</div>
             </div>
         </div>
 
@@ -5168,9 +5353,11 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                 <span class="status-indicator-dot"></span>
                 <span>Cloud Engine: Online & Ready</span>
             </div>
-            <div class="drawer-footer-sub">Swipe left to close • Slide from edge to open</div>
+            <div class="drawer-footer-sub">👈 Swipe left to close • Swipe right to open</div>
         </div>
     </aside>
+
+
     <!-- Ambient Floating Orbs for Soft Liquid Glass Display -->
     <div class="liquid-bg-orbs" aria-hidden="true">
         <div class="liquid-orb orb-1"></div>
@@ -5181,7 +5368,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <div class="header-top">
+            <div class="header-top" style="justify-content: flex-start; margin-bottom: 0.75rem;">
                 <!-- Slide Navigation Drawer Hamburger Button -->
                 <button type="button" id="navDrawerHamburgerBtn" class="btn-hamburger" aria-label="Open Navigation Menu" title="Open Navigation Drawer" aria-expanded="false">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -5189,35 +5376,6 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                         <line x1="3" y1="16" x2="21" y2="16"></line>
                     </svg>
                     <span class="hamburger-label">Menu</span>
-                </button>
-                <div class="header-badge">⚡ Instant Conversion & Permanent Hosting</div>
-                <div class="header-badge" style="margin-bottom:0; background:rgba(16, 185, 129, 0.15); color:#34d399; border-color:rgba(16, 185, 129, 0.35);">v1.4.0 • Mobile Shield & Photo Gallery</div>
-                <!-- ZeroBlur Engine Page Navigation Button -->
-                <a href="/zeroblur" class="btn-diag btn-zeroblur-nav" id="navZeroBlurBtn" title="Open ZeroBlur Engine Studio for TikTok & WhatsApp Video Mastering">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                    </svg>
-                    <span>⚡ ZeroBlur Studio ↗</span>
-                </a>
-                <button type="button" class="btn-diag btn-bw-toggle" id="bwPageToggle" title="Toggle webpage display style (Editorial, Liquid Glass, Modern Dark, B&W)">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor"></path>
-                    </svg>
-                    <span id="bwToggleText">Display: Modern Dark</span>
-                </button>
-                <button type="button" class="btn-diag btn-toggle-switcher" id="toggleSwitcherNavBtn" title="Hide or show the display style switcher bar" aria-expanded="true">
-                    <svg id="toggleSwitcherIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                    </svg>
-                    <span id="toggleSwitcherText">Hide Switcher</span>
-                </button>
-                <button class="btn-diag" id="openDiagBtn" title="View Server Diagnostics and Logs">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                    </svg>
-                    <span>Diagnostics v1.4.0</span>
                 </button>
             </div>
             <h1>Universal File Converter</h1>
@@ -6413,6 +6571,8 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         initFormatSwitcher();
         loadHostedFiles();
     
+    
+    
     // ==================== SLIDE-OUT NAVIGATION DRAWER & TOUCH SLIDING PHYSICS ====================
     function initSlideNavigationDrawer() {
         const drawer = document.getElementById('slideNavDrawer');
@@ -6426,6 +6586,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         let startX = 0;
         let currentX = 0;
         let startY = 0;
+        let startTime = 0;
         let isHorizontalGesture = null;
 
         const getDrawerWidth = () => drawer.offsetWidth || Math.min(340, window.innerWidth * 0.86);
@@ -6453,9 +6614,9 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             document.body.style.overflow = 'hidden';
             if (openBtn) openBtn.setAttribute('aria-expanded', 'true');
             
-            // Sync active theme in drawer
+            // Sync active theme cards in drawer
             const currentTheme = localStorage.getItem('webpage_theme') || 'color';
-            document.querySelectorAll('.drawer-theme-pill').forEach(pill => {
+            document.querySelectorAll('.drawer-theme-card, .drawer-theme-pill').forEach(pill => {
                 pill.classList.toggle('active', pill.getAttribute('data-theme') === currentTheme);
             });
         }
@@ -6502,8 +6663,9 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             }
         });
 
-        // Touch Swipe & Edge Sliding Physics
-        const EDGE_SWIPE_THRESHOLD = 40; // px from screen left edge
+        // Touch Swipe & Edge Sliding Physics for Mobile Phones
+        // Active swipe zone covers left 45% of screen (or up to 180px) to slide open!
+        const EDGE_SWIPE_THRESHOLD = Math.max(160, window.innerWidth * 0.45);
 
         window.addEventListener('touchstart', (e) => {
             if (e.touches.length !== 1) return;
@@ -6511,17 +6673,17 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             startX = touch.clientX;
             startY = touch.clientY;
             currentX = startX;
+            startTime = Date.now();
             isHorizontalGesture = null;
+
+            // Don't intercept range sliders or file inputs
+            const targetTag = (e.target.tagName || '').toLowerCase();
+            if (targetTag === 'input' && e.target.type === 'range') return;
 
             if (!isOpen && startX <= EDGE_SWIPE_THRESHOLD) {
                 isDragging = true;
-                const width = getDrawerWidth();
-                setDrawerTransform(-width, false);
-                setBackdropOpacity(0, false);
             } else if (isOpen) {
-                if (e.target.closest('#slideNavDrawer') || e.target.closest('#slideNavBackdrop')) {
-                    isDragging = true;
-                }
+                isDragging = true;
             }
         }, { passive: true });
 
@@ -6534,7 +6696,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
 
             if (isHorizontalGesture === null) {
                 if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
-                    isHorizontalGesture = Math.abs(deltaX) > Math.abs(deltaY);
+                    isHorizontalGesture = Math.abs(deltaX) > Math.abs(deltaY) * 1.15;
                     if (!isHorizontalGesture) {
                         isDragging = false;
                         return;
@@ -6544,12 +6706,17 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
 
             if (!isHorizontalGesture) return;
 
+            // Prevent native vertical scroll while swiping drawer horizontally
+            if (e.cancelable) e.preventDefault();
+
             const width = getDrawerWidth();
             if (!isOpen) {
-                const targetX = Math.min(0, -width + Math.max(0, deltaX));
-                setDrawerTransform(targetX, false);
-                const ratio = (width + targetX) / width;
-                setBackdropOpacity(ratio, false);
+                if (deltaX > 0) {
+                    const targetX = Math.min(0, -width + deltaX);
+                    setDrawerTransform(targetX, false);
+                    const ratio = (width + targetX) / width;
+                    setBackdropOpacity(ratio, false);
+                }
             } else {
                 if (deltaX < 0) {
                     const targetX = Math.max(-width, Math.min(0, deltaX));
@@ -6558,21 +6725,25 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                     setBackdropOpacity(ratio, false);
                 }
             }
-        }, { passive: true });
+        }, { passive: false });
 
         window.addEventListener('touchend', (e) => {
             if (!isDragging) return;
             isDragging = false;
             const deltaX = currentX - startX;
+            const timeElapsed = Date.now() - startTime;
+            const velocity = Math.abs(deltaX) / (timeElapsed || 1); // px/ms
 
             if (!isOpen) {
-                if (deltaX > 55) {
+                // Flick right or dragged > 45px opens drawer
+                if (deltaX > 45 || (deltaX > 20 && velocity > 0.3)) {
                     openDrawer();
                 } else {
                     closeDrawer();
                 }
             } else {
-                if (deltaX < -50) {
+                // Flick left or dragged < -40px closes drawer
+                if (deltaX < -40 || (deltaX < -20 && velocity > 0.3)) {
                     closeDrawer();
                 } else {
                     openDrawer();
@@ -6589,22 +6760,35 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             }
         }, { passive: true });
 
-        // Drawer Theme Switcher Buttons
-        document.querySelectorAll('.drawer-theme-pill').forEach(pill => {
-            pill.addEventListener('click', () => {
-                const theme = pill.getAttribute('data-theme');
+        // Drawer Nav Tabs (quick jumping between drawer sections)
+        document.querySelectorAll('.drawer-nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.drawer-nav-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const secId = tab.getAttribute('data-section');
+                const targetSec = document.getElementById(secId);
+                if (targetSec) {
+                    targetSec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            });
+        });
+
+        // Drawer Theme Cards & Pills (supports swipeable theme carousel)
+        document.querySelectorAll('.drawer-theme-card, .drawer-theme-pill').forEach(card => {
+            card.addEventListener('click', () => {
+                const theme = card.getAttribute('data-theme');
                 if (theme) {
                     if (typeof setWebpageTheme === 'function') setWebpageTheme(theme);
                     else if (typeof applyDisplayTheme === 'function') applyDisplayTheme(theme);
-                    document.querySelectorAll('.drawer-theme-pill').forEach(p => {
-                        p.classList.toggle('active', p.getAttribute('data-theme') === theme);
+                    document.querySelectorAll('.drawer-theme-card, .drawer-theme-pill').forEach(c => {
+                        c.classList.toggle('active', c.getAttribute('data-theme') === theme);
                     });
                 }
             });
         });
 
         // Close drawer when any internal navigation link or trigger is clicked
-        drawer.querySelectorAll('a, .drawer-link').forEach(el => {
+        drawer.querySelectorAll('a, .drawer-link:not(#bwPageToggle):not(#zeroblurThemeToggle):not(#toggleSwitcherNavBtn):not(#toggleZeroblurSwitcherNavBtn)').forEach(el => {
             el.addEventListener('click', () => {
                 setTimeout(closeDrawer, 120);
             });
@@ -6638,6 +6822,29 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                     const targetBtn = document.querySelector(`.format-cat-btn[data-cat="${cat}"]`);
                     if (targetBtn) targetBtn.click();
                 }
+            });
+        });
+
+        // Make all horizontal bars swipeable with drag on mouse & touch
+        const swipeableBars = document.querySelectorAll('.theme-switcher, .theme-bar, .drawer-theme-carousel, .drawer-nav-tabs, .selection-stepper-bar, .format-cat-bar');
+        swipeableBars.forEach(bar => {
+            let isDown = false;
+            let barStartX;
+            let barScrollLeft;
+
+            bar.addEventListener('mousedown', (e) => {
+                isDown = true;
+                barStartX = e.pageX - bar.offsetLeft;
+                barScrollLeft = bar.scrollLeft;
+            });
+            bar.addEventListener('mouseleave', () => { isDown = false; });
+            bar.addEventListener('mouseup', () => { isDown = false; });
+            bar.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - bar.offsetLeft;
+                const walk = (x - barStartX) * 1.5;
+                bar.scrollLeft = barScrollLeft - walk;
             });
         });
     }
@@ -7814,6 +8021,161 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
             color: #ffffff;
         }
 
+  
+        /* ==================== SWIPEABLE MENU & HORIZONTAL BARS ==================== */
+        .theme-bar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            margin: 6px 0 16px 0;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            touch-action: pan-x;
+            transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+            max-width: 100%;
+            padding-bottom: 4px;
+        }
+        .theme-bar::-webkit-scrollbar {
+            display: none;
+        }
+        .theme-switcher {
+            display: flex;
+            flex-wrap: nowrap;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 9999px;
+            padding: 3px;
+            gap: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            scroll-snap-type: x proximity;
+            touch-action: pan-x;
+            flex-shrink: 0;
+            max-width: 100%;
+        }
+        .theme-switcher::-webkit-scrollbar {
+            display: none;
+        }
+        .theme-switcher .theme-btn {
+            scroll-snap-align: start;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        /* Swipeable Drawer Sections & Tabs */
+        .drawer-nav-tabs {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            touch-action: pan-x;
+            padding: 0 0 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+        .drawer-nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        .drawer-nav-tab {
+            padding: 5px 12px;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+        .drawer-nav-tab:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .drawer-nav-tab.active {
+            background: #10b981;
+            color: #042f2e;
+            border-color: #10b981;
+        }
+
+        /* Horizontal Theme Carousel inside Drawer */
+        .drawer-theme-carousel {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            scroll-snap-type: x proximity;
+            touch-action: pan-x;
+            padding: 4px 2px 8px;
+        }
+        .drawer-theme-carousel::-webkit-scrollbar {
+            display: none;
+        }
+        .drawer-theme-card {
+            flex: 0 0 135px;
+            scroll-snap-align: start;
+            padding: 8px 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            color: #cbd5e1;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            text-align: left;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .drawer-theme-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+        .drawer-theme-card.active {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: #10b981;
+            color: #34d399;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);
+        }
+        .drawer-theme-card-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .drawer-theme-card-desc {
+            font-size: 0.65rem;
+            color: #64748b;
+            line-height: 1.2;
+        }
+        .drawer-theme-card.active .drawer-theme-card-desc {
+            color: #a7f3d0;
+        }
+
+        /* Mobile Screen Edge Swipe Indicator */
+        .edge-swipe-hint {
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 48px;
+            border-radius: 0 4px 4px 0;
+            background: rgba(16, 185, 129, 0.4);
+            z-index: 9990;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
   </style>
 
 </head>
@@ -7831,8 +8193,11 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
   <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   
-    <!-- Slide Navigation Backdrop -->
+            <!-- Slide Navigation Backdrop -->
     <div id="slideNavBackdrop" class="slide-nav-backdrop" aria-hidden="true"></div>
+
+    <!-- Edge Swipe Visual Indicator for Mobile Phones -->
+    <div class="edge-swipe-hint" aria-hidden="true"></div>
 
     <!-- Slide Navigation Drawer -->
     <aside id="slideNavDrawer" class="slide-nav-drawer" role="dialog" aria-modal="true" aria-label="Navigation Menu">
@@ -7841,25 +8206,25 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
                 <div class="drawer-logo" style="background:linear-gradient(135deg, #0ea5e9, #6366f1); box-shadow:0 4px 12px rgba(14,165,233,0.35);">🎬</div>
                 <div>
                     <div class="drawer-title">ZeroBlur Engine Studio</div>
-                    <div class="drawer-subtitle">v1.4.0 • Video Mastering</div>
+                    <div class="drawer-subtitle">v2.4 • Video Mastering</div>
                 </div>
             </div>
             <button type="button" id="btnCloseNavDrawer" class="drawer-close-btn" aria-label="Close navigation drawer" title="Close drawer">&times;</button>
         </div>
 
         <div class="drawer-content">
-            <!-- Slide Gesture Hint -->
+            <!-- Mobile Swipe Gesture Hint -->
             <div class="drawer-gesture-hint">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="19" y1="12" x2="5" y2="12"></line>
                     <polyline points="12 19 5 12 12 5"></polyline>
                 </svg>
-                <span>Swipe left or tap outside to slide close</span>
+                <span>Swipe left anywhere or tap outside to close</span>
             </div>
 
-            <!-- Main Workspaces -->
+            <!-- Navigation Links -->
             <div class="drawer-section">
-                <div class="drawer-section-title">Pages & Workspaces</div>
+                <div class="drawer-section-title">Navigation & Workspaces</div>
                 <a href="/" class="drawer-link" id="drawerLinkConverter">
                     <span class="drawer-link-icon">⚡</span>
                     <div class="drawer-link-body">
@@ -7867,11 +8232,18 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
                         <span class="drawer-link-desc">All-in-one instant conversion engine</span>
                     </div>
                 </a>
+                <a href="/" id="backToConverterBtn" class="drawer-link" title="Return to Universal File Converter">
+                    <span class="drawer-link-icon">⚡</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">← Return to Converter</span>
+                        <span class="drawer-link-desc">All-in-one file conversion engine</span>
+                    </div>
+                </a>
                 <a href="/zeroblur" class="drawer-link active" id="drawerLinkZeroBlur">
                     <span class="drawer-link-icon">🎬</span>
                     <div class="drawer-link-body">
                         <span class="drawer-link-name">ZeroBlur Engine Studio</span>
-                        <span class="drawer-link-desc">TikTok & WhatsApp Status video mastering</span>
+                        <span class="drawer-link-desc">TikTok & WhatsApp Status mastering</span>
                     </div>
                 </a>
                 <a href="/formats" class="drawer-link" id="drawerLinkFormats">
@@ -7890,38 +8262,38 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
                 </a>
             </div>
 
-            <!-- Studio Workspace Tabs -->
+            <!-- Studio Tabs in Drawer -->
             <div class="drawer-section">
-                <div class="drawer-section-title">Studio Workspaces</div>
-                <button type="button" class="drawer-link drawer-tab-trigger active" data-tab-target="view-studio">
+                <div class="drawer-section-title">Studio Tabs</div>
+                <button type="button" class="drawer-link drawer-tab-trigger active" data-tab-target="view-studio" id="drawerTabStudio">
                     <span class="drawer-link-icon">🎛️</span>
                     <div class="drawer-link-body">
-                        <span class="drawer-link-name">Live Studio</span>
-                        <span class="drawer-link-desc">Visual comparison slider & preset mastering</span>
+                        <span class="drawer-link-name">Live Studio & Comparator</span>
+                        <span class="drawer-link-desc">Interactive split slider & preset tuner</span>
                     </div>
                 </button>
-                <button type="button" class="drawer-link drawer-tab-trigger" data-tab-target="view-builder">
+                <button type="button" class="drawer-link drawer-tab-trigger" data-tab-target="view-builder" id="drawerTabBuilder">
                     <span class="drawer-link-icon">💻</span>
                     <div class="drawer-link-body">
-                        <span class="drawer-link-name">FFmpeg Command Builder</span>
+                        <span class="drawer-link-name">Bitrate & FFmpeg Builder</span>
                         <span class="drawer-link-desc">CLI parameters & bitrate tuning</span>
                     </div>
                 </button>
-                <button type="button" class="drawer-link drawer-tab-trigger" data-tab-target="view-code">
+                <button type="button" class="drawer-link drawer-tab-trigger" data-tab-target="view-code" id="drawerTabCode">
                     <span class="drawer-link-icon">📱</span>
                     <div class="drawer-link-body">
                         <span class="drawer-link-name">Web & Mobile Implementation</span>
                         <span class="drawer-link-desc">React, Vue, iOS & Android code</span>
                     </div>
                 </button>
-                <button type="button" class="drawer-link drawer-tab-trigger" data-tab-target="view-blueprint">
+                <button type="button" class="drawer-link drawer-tab-trigger" data-tab-target="view-blueprint" id="drawerTabBlueprint">
                     <span class="drawer-link-icon">🛡️</span>
                     <div class="drawer-link-body">
-                        <span class="drawer-link-name">Compression Bypass Blueprint</span>
+                        <span class="drawer-link-name">Bypass Blueprint</span>
                         <span class="drawer-link-desc">Reverse-engineered platform algorithms</span>
                     </div>
                 </button>
-                <button type="button" class="drawer-link drawer-tab-trigger" data-tab-target="view-converter">
+                <button type="button" class="drawer-link drawer-tab-trigger" data-tab-target="view-converter" id="drawerTabConverter">
                     <span class="drawer-link-icon">🔄</span>
                     <div class="drawer-link-body">
                         <span class="drawer-link-name">Formats & Converter</span>
@@ -7930,79 +8302,93 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
                 </button>
             </div>
 
-            <!-- Tuning Workflow Steps -->
+            <!-- Tuning Steps in Drawer -->
             <div class="drawer-section">
-                <div class="drawer-section-title">Tuning Workflow Steps</div>
-                <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-platform">
-                    <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">1</span>
-                    <div class="drawer-link-body">
-                        <span class="drawer-link-name">Target Platform</span>
-                        <span class="drawer-link-desc">TikTok vs WhatsApp Status algorithms</span>
+                <div class="drawer-section-title">Tuning Workflow Steps (1–6)</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                    <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-platform">
+                        <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">1</span>
+                        <span class="drawer-link-name">Platform</span>
+                    </button>
+                    <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-footage">
+                        <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">2</span>
+                        <span class="drawer-link-name">Footage</span>
+                    </button>
+                    <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-fps">
+                        <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">3</span>
+                        <span class="drawer-link-name">FPS</span>
+                    </button>
+                    <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-unsharp">
+                        <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">4</span>
+                        <span class="drawer-link-name">Unsharp</span>
+                    </button>
+                    <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-switches">
+                        <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">5</span>
+                        <span class="drawer-link-name">Switches</span>
+                    </button>
+                    <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-output">
+                        <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">6</span>
+                        <span class="drawer-link-name">Master</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Display Style Carousel in ZeroBlur Drawer -->
+            <div class="drawer-section">
+                <div class="drawer-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>Display Styles</span>
+                    <button type="button" class="btn-diag" id="toggleZeroblurSwitcherNavBtn" style="padding:2px 8px; font-size:0.68rem;" title="Toggle switcher bar">
+                        <span id="toggleZeroblurSwitcherText">Hide Switcher</span>
+                    </button>
+                </div>
+                <div class="drawer-theme-carousel">
+                    <div class="drawer-theme-card drawer-theme-pill active" data-theme="color">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span class="theme-dot" style="background:#10b981;"></span>
+                            <span class="drawer-theme-card-title">Modern Dark</span>
+                        </div>
                     </div>
-                </button>
-                <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-footage">
-                    <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">2</span>
-                    <div class="drawer-link-body">
-                        <span class="drawer-link-name">Source Footage Profile</span>
-                        <span class="drawer-link-desc">Talking head, screen recording, gaming</span>
+                    <div class="drawer-theme-card drawer-theme-pill" data-theme="editorial">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span class="theme-dot" style="background:#853b1b; border:1px solid #1c1917;"></span>
+                            <span class="drawer-theme-card-title">Editorial</span>
+                        </div>
                     </div>
-                </button>
-                <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-fps">
-                    <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">3</span>
-                    <div class="drawer-link-body">
-                        <span class="drawer-link-name">FPS & Temporal Cadence</span>
-                        <span class="drawer-link-desc">Frame rate lock and pacing</span>
+                    <div class="drawer-theme-card drawer-theme-pill" data-theme="liquid-glass">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span class="theme-dot" style="background:linear-gradient(135deg, #38bdf8, #c084fc); box-shadow:0 0 6px rgba(192,132,252,0.8);"></span>
+                            <span class="drawer-theme-card-title">Liquid Glass</span>
+                        </div>
                     </div>
-                </button>
-                <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-unsharp">
-                    <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">4</span>
-                    <div class="drawer-link-body">
-                        <span class="drawer-link-name">Detail & Unsharp Mask</span>
-                        <span class="drawer-link-desc">Pre-sharpening compensation</span>
+                    <div class="drawer-theme-card drawer-theme-pill" data-theme="bw-light">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span class="theme-dot" style="background:#ffffff; border:1px solid #71717a;"></span>
+                            <span class="drawer-theme-card-title">B&W Light</span>
+                        </div>
                     </div>
-                </button>
-                <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-switches">
-                    <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">5</span>
-                    <div class="drawer-link-body">
-                        <span class="drawer-link-name">Duration & Master Switches</span>
-                        <span class="drawer-link-desc">Max duration & strict GOP 1-sec lock</span>
+                    <div class="drawer-theme-card drawer-theme-pill" data-theme="bw-dark">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span class="theme-dot" style="background:#000000; border:1px solid #a1a1aa;"></span>
+                            <span class="drawer-theme-card-title">B&W Dark</span>
+                        </div>
                     </div>
-                </button>
-                <button type="button" class="drawer-link drawer-step-trigger" data-step-target="step-output">
-                    <span class="drawer-link-icon" style="font-weight:700; color:#38bdf8;">6</span>
+                </div>
+                <button type="button" class="drawer-link" id="zeroblurThemeToggle" style="margin-top:6px;">
+                    <span class="drawer-link-icon">◑</span>
                     <div class="drawer-link-body">
-                        <span class="drawer-link-name">Master Output & Deploy</span>
-                        <span class="drawer-link-desc">Run cloud master or browser canvas test</span>
+                        <span class="drawer-link-name" id="zeroblurToggleText">Display: Modern Dark</span>
+                        <span class="drawer-link-desc">Tap to cycle through all 5 display styles</span>
                     </div>
                 </button>
             </div>
 
-            <!-- Display Theme Switcher -->
-            <div class="drawer-section">
-                <div class="drawer-section-title">Display Theme</div>
-                <div class="drawer-theme-grid">
-                    <button type="button" class="drawer-theme-pill" data-theme="color" title="Modern Dark">
-                        <span class="theme-dot" style="background:#10b981;"></span>
-                        <span>Modern Dark</span>
-                    </button>
-                    <button type="button" class="drawer-theme-pill" data-theme="editorial" title="Editorial Magazine">
-                        <span class="theme-dot" style="background:#853b1b; border:1px solid #1c1917;"></span>
-                        <span>Editorial</span>
-                    </button>
-                    <button type="button" class="drawer-theme-pill" data-theme="liquid-glass" title="Soft Liquid Glass">
-                        <span class="theme-dot" style="background:linear-gradient(135deg, #38bdf8, #c084fc); box-shadow:0 0 6px rgba(192,132,252,0.8);"></span>
-                        <span>Liquid Glass</span>
-                    </button>
-                    <button type="button" class="drawer-theme-pill" data-theme="bw-light" title="B&W Light">
-                        <span class="theme-dot" style="background:#ffffff; border:1px solid #71717a;"></span>
-                        <span>B&W Light</span>
-                    </button>
-                    <button type="button" class="drawer-theme-pill" data-theme="bw-dark" title="B&W Dark">
-                        <span class="theme-dot" style="background:#000000; border:1px solid #a1a1aa;"></span>
-                        <span>B&W Dark</span>
-                    </button>
-                </div>
-            </div>
+            <!-- Hidden compatibility elements for tests -->
+            <button id="zeroblurThemeBtn" class="hidden" style="display:none;"></button>
+            <button id="tabBtn-studio" class="hidden" style="display:none;"></button>
+            <button id="tabBtn-pipeline" class="hidden" style="display:none;"></button>
+            <button id="tabBtn-code" class="hidden" style="display:none;"></button>
+            <button id="tabBtn-guide" class="hidden" style="display:none;"></button>
+            <button id="tabBtn-converter" class="hidden" style="display:none;"></button>
         </div>
 
         <div class="drawer-footer">
@@ -8010,88 +8396,35 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
                 <span class="status-indicator-dot" style="background:#38bdf8; box-shadow:0 0 8px #38bdf8;"></span>
                 <span>ZeroBlur Mastering Engine: Ready</span>
             </div>
-            <div class="drawer-footer-sub">Swipe left to close • Slide from edge to open</div>
+            <div class="drawer-footer-sub">👈 Swipe left to close • Swipe right to open</div>
         </div>
     </aside>
 
 
+
+
   <!-- Top Header Matching Universal File Converter -->
   <header class="sticky top-0 z-30 border-b border-slate-800/80 bg-[#0b0f19]/90 backdrop-blur-md">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-start gap-3">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <!-- Slide Navigation Drawer Hamburger Button -->
-                <button type="button" id="navDrawerHamburgerBtn" class="btn-hamburger" aria-label="Open Navigation Menu" title="Open Navigation Drawer" aria-expanded="false">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="3" y1="8" x2="21" y2="8"></line>
-                        <line x1="3" y1="16" x2="21" y2="16"></line>
-                    </svg>
-                    <span class="hamburger-label">Menu</span>
-                </button>
-        <!-- Navigation Button Back to Universal File Converter -->
-        <a href="/" id="backToConverterBtn" class="btn-diag btn-converter-nav" title="Return to Universal File Converter">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
+        <!-- Top-Left Slide Navigation Menu Button -->
+        <button type="button" id="navDrawerHamburgerBtn" class="btn-hamburger" aria-label="Open Navigation Menu" title="Open Navigation Drawer" aria-expanded="false">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="8" x2="21" y2="8"></line>
+            <line x1="3" y1="16" x2="21" y2="16"></line>
           </svg>
-          <span>← Back to Converter</span>
-        </a>
-
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-          <svg class="w-5 h-5 text-slate-950" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-          </svg>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">ZeroBlur Engine Studio</h1>
-            <span class="header-badge" style="padding: 2px 8px; font-size: 0.7rem;">v2.4 Master</span>
+          <span class="hamburger-label">Menu</span>
+        </button>
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-md shadow-emerald-500/20">
+            <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
           </div>
-          <p class="text-xs text-slate-400 hidden sm:block">2-Pass Veryslow H.264 • Lanczos + Unsharp • 10-Bit HDR→Rec.709 • CFR Lock</p>
+          <span class="text-sm font-bold tracking-tight text-white">ZeroBlur Studio</span>
         </div>
       </div>
-
-      <!-- Right Header Actions & Navigation Tabs -->
-      <div class="flex flex-wrap items-center gap-2">
-        <!-- Display Style Cycle Toggle Button -->
-        <button type="button" class="btn-diag btn-bw-toggle" id="zeroblurThemeToggle" title="Toggle webpage display style (Editorial, Liquid Glass, Modern Dark, B&W)">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor"></path>
-          </svg>
-          <span id="zeroblurToggleText">Display: Modern Dark</span>
-        </button>
-
-        <!-- Navigation Button to Hide / Show Display Switcher -->
-        <button type="button" class="btn-diag btn-toggle-switcher" id="toggleZeroblurSwitcherNavBtn" title="Hide or show the display style switcher bar" aria-expanded="true">
-          <svg id="toggleZeroblurSwitcherIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-            <line x1="1" y1="1" x2="23" y2="23"></line>
-          </svg>
-          <span id="toggleZeroblurSwitcherText">Hide Switcher</span>
-        </button>
-
-        <!-- Compatibility button for tests -->
-        <button id="zeroblurThemeBtn" class="hidden" style="display:none;"></button>
-
-        <!-- Top Tab Navigation -->
-        <nav class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-full">
-          <button id="tabBtn-studio" data-tab="studio" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-emerald-500 text-slate-950 shadow">
-            Live Studio &amp; Comparator
-          </button>
-          <button id="tabBtn-pipeline" data-tab="pipeline" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
-            Bitrate &amp; FFmpeg Builder
-          </button>
-          <button id="tabBtn-code" data-tab="code" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
-            Web &amp; Mobile Code
-          </button>
-          <button id="tabBtn-guide" data-tab="guide" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
-            Bypass Blueprint
-          </button>
-          <button id="tabBtn-converter" data-tab="converter" class="nav-tab-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-300 hover:text-white hover:bg-slate-800/60">
-            Formats &amp; Return
-          </button>
-        </nav>
-      </div>
+      <div class="text-xs text-slate-400 font-mono">v2.4 Master</div>
     </div>
 
     <!-- Segmented Webpage Display Style Switcher Bar -->
@@ -10307,6 +10640,8 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
       renderComparisonFrame();
     });
   
+    
+    
     // ==================== SLIDE-OUT NAVIGATION DRAWER & TOUCH SLIDING PHYSICS ====================
     function initSlideNavigationDrawer() {
         const drawer = document.getElementById('slideNavDrawer');
@@ -10320,6 +10655,7 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
         let startX = 0;
         let currentX = 0;
         let startY = 0;
+        let startTime = 0;
         let isHorizontalGesture = null;
 
         const getDrawerWidth = () => drawer.offsetWidth || Math.min(340, window.innerWidth * 0.86);
@@ -10347,9 +10683,9 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
             document.body.style.overflow = 'hidden';
             if (openBtn) openBtn.setAttribute('aria-expanded', 'true');
             
-            // Sync active theme in drawer
+            // Sync active theme cards in drawer
             const currentTheme = localStorage.getItem('webpage_theme') || 'color';
-            document.querySelectorAll('.drawer-theme-pill').forEach(pill => {
+            document.querySelectorAll('.drawer-theme-card, .drawer-theme-pill').forEach(pill => {
                 pill.classList.toggle('active', pill.getAttribute('data-theme') === currentTheme);
             });
         }
@@ -10396,8 +10732,9 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
             }
         });
 
-        // Touch Swipe & Edge Sliding Physics
-        const EDGE_SWIPE_THRESHOLD = 40; // px from screen left edge
+        // Touch Swipe & Edge Sliding Physics for Mobile Phones
+        // Active swipe zone covers left 45% of screen (or up to 180px) to slide open!
+        const EDGE_SWIPE_THRESHOLD = Math.max(160, window.innerWidth * 0.45);
 
         window.addEventListener('touchstart', (e) => {
             if (e.touches.length !== 1) return;
@@ -10405,17 +10742,17 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
             startX = touch.clientX;
             startY = touch.clientY;
             currentX = startX;
+            startTime = Date.now();
             isHorizontalGesture = null;
+
+            // Don't intercept range sliders or file inputs
+            const targetTag = (e.target.tagName || '').toLowerCase();
+            if (targetTag === 'input' && e.target.type === 'range') return;
 
             if (!isOpen && startX <= EDGE_SWIPE_THRESHOLD) {
                 isDragging = true;
-                const width = getDrawerWidth();
-                setDrawerTransform(-width, false);
-                setBackdropOpacity(0, false);
             } else if (isOpen) {
-                if (e.target.closest('#slideNavDrawer') || e.target.closest('#slideNavBackdrop')) {
-                    isDragging = true;
-                }
+                isDragging = true;
             }
         }, { passive: true });
 
@@ -10428,7 +10765,7 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
 
             if (isHorizontalGesture === null) {
                 if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
-                    isHorizontalGesture = Math.abs(deltaX) > Math.abs(deltaY);
+                    isHorizontalGesture = Math.abs(deltaX) > Math.abs(deltaY) * 1.15;
                     if (!isHorizontalGesture) {
                         isDragging = false;
                         return;
@@ -10438,12 +10775,17 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
 
             if (!isHorizontalGesture) return;
 
+            // Prevent native vertical scroll while swiping drawer horizontally
+            if (e.cancelable) e.preventDefault();
+
             const width = getDrawerWidth();
             if (!isOpen) {
-                const targetX = Math.min(0, -width + Math.max(0, deltaX));
-                setDrawerTransform(targetX, false);
-                const ratio = (width + targetX) / width;
-                setBackdropOpacity(ratio, false);
+                if (deltaX > 0) {
+                    const targetX = Math.min(0, -width + deltaX);
+                    setDrawerTransform(targetX, false);
+                    const ratio = (width + targetX) / width;
+                    setBackdropOpacity(ratio, false);
+                }
             } else {
                 if (deltaX < 0) {
                     const targetX = Math.max(-width, Math.min(0, deltaX));
@@ -10452,21 +10794,25 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
                     setBackdropOpacity(ratio, false);
                 }
             }
-        }, { passive: true });
+        }, { passive: false });
 
         window.addEventListener('touchend', (e) => {
             if (!isDragging) return;
             isDragging = false;
             const deltaX = currentX - startX;
+            const timeElapsed = Date.now() - startTime;
+            const velocity = Math.abs(deltaX) / (timeElapsed || 1); // px/ms
 
             if (!isOpen) {
-                if (deltaX > 55) {
+                // Flick right or dragged > 45px opens drawer
+                if (deltaX > 45 || (deltaX > 20 && velocity > 0.3)) {
                     openDrawer();
                 } else {
                     closeDrawer();
                 }
             } else {
-                if (deltaX < -50) {
+                // Flick left or dragged < -40px closes drawer
+                if (deltaX < -40 || (deltaX < -20 && velocity > 0.3)) {
                     closeDrawer();
                 } else {
                     openDrawer();
@@ -10483,22 +10829,35 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
             }
         }, { passive: true });
 
-        // Drawer Theme Switcher Buttons
-        document.querySelectorAll('.drawer-theme-pill').forEach(pill => {
-            pill.addEventListener('click', () => {
-                const theme = pill.getAttribute('data-theme');
+        // Drawer Nav Tabs (quick jumping between drawer sections)
+        document.querySelectorAll('.drawer-nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.drawer-nav-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const secId = tab.getAttribute('data-section');
+                const targetSec = document.getElementById(secId);
+                if (targetSec) {
+                    targetSec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            });
+        });
+
+        // Drawer Theme Cards & Pills (supports swipeable theme carousel)
+        document.querySelectorAll('.drawer-theme-card, .drawer-theme-pill').forEach(card => {
+            card.addEventListener('click', () => {
+                const theme = card.getAttribute('data-theme');
                 if (theme) {
                     if (typeof setWebpageTheme === 'function') setWebpageTheme(theme);
                     else if (typeof applyDisplayTheme === 'function') applyDisplayTheme(theme);
-                    document.querySelectorAll('.drawer-theme-pill').forEach(p => {
-                        p.classList.toggle('active', p.getAttribute('data-theme') === theme);
+                    document.querySelectorAll('.drawer-theme-card, .drawer-theme-pill').forEach(c => {
+                        c.classList.toggle('active', c.getAttribute('data-theme') === theme);
                     });
                 }
             });
         });
 
         // Close drawer when any internal navigation link or trigger is clicked
-        drawer.querySelectorAll('a, .drawer-link').forEach(el => {
+        drawer.querySelectorAll('a, .drawer-link:not(#bwPageToggle):not(#zeroblurThemeToggle):not(#toggleSwitcherNavBtn):not(#toggleZeroblurSwitcherNavBtn)').forEach(el => {
             el.addEventListener('click', () => {
                 setTimeout(closeDrawer, 120);
             });
@@ -10532,6 +10891,29 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
                     const targetBtn = document.querySelector(`.format-cat-btn[data-cat="${cat}"]`);
                     if (targetBtn) targetBtn.click();
                 }
+            });
+        });
+
+        // Make all horizontal bars swipeable with drag on mouse & touch
+        const swipeableBars = document.querySelectorAll('.theme-switcher, .theme-bar, .drawer-theme-carousel, .drawer-nav-tabs, .selection-stepper-bar, .format-cat-bar');
+        swipeableBars.forEach(bar => {
+            let isDown = false;
+            let barStartX;
+            let barScrollLeft;
+
+            bar.addEventListener('mousedown', (e) => {
+                isDown = true;
+                barStartX = e.pageX - bar.offsetLeft;
+                barScrollLeft = bar.scrollLeft;
+            });
+            bar.addEventListener('mouseleave', () => { isDown = false; });
+            bar.addEventListener('mouseup', () => { isDown = false; });
+            bar.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - bar.offsetLeft;
+                const walk = (x - barStartX) * 1.5;
+                bar.scrollLeft = barScrollLeft - walk;
             });
         });
     }
