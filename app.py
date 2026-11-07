@@ -1328,7 +1328,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         .header-top {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             gap: 10px;
             margin-bottom: 12px;
             flex-wrap: wrap;
@@ -1417,7 +1417,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         .theme-bar {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             gap: 10px;
             margin: 6px 0 16px 0;
             flex-wrap: wrap;
@@ -3344,7 +3344,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         .format-switcher-header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
             flex-wrap: wrap;
             gap: 10px;
         }
@@ -5934,9 +5934,9 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
 
     /* Webpage Display Style Switcher Bar */
     .theme-bar {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
       gap: 10px;
       margin-top: 10px;
       margin-bottom: 4px;
@@ -6414,7 +6414,7 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
 
   <!-- Top Header Matching Universal File Converter -->
   <header class="sticky top-0 z-30 border-b border-slate-800/80 bg-[#0b0f19]/90 backdrop-blur-md">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-start gap-3">
       <div class="flex items-center gap-3">
         <!-- Navigation Button Back to Universal File Converter -->
         <a href="/" id="backToConverterBtn" class="btn-diag btn-converter-nav" title="Return to Universal File Converter">
@@ -6484,7 +6484,7 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
     </div>
 
     <!-- Segmented Webpage Display Style Switcher Bar -->
-    <div class="theme-bar px-4 pb-2" id="themeBar">
+    <div class="theme-bar px-4 pb-2 justify-start" id="themeBar">
       <span class="theme-bar-label">Display Style:</span>
       <div class="theme-switcher" id="themeSwitcher" role="group" aria-label="Webpage Display Styles">
         <button type="button" class="theme-btn" data-theme="editorial" id="themeBtnEditorial" title="Editorial Magazine Layout">
@@ -6740,7 +6740,7 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
                   <div class="text-[10px] font-mono text-slate-400 mt-0.5">1080p • &lt;14.5MB</div>
                 </button>
               </div>
-              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex justify-end">
+              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-start gap-2">
                 <button type="button" class="btn-step-nav btn-step-next px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition flex items-center gap-1 shadow" data-next-step="step-footage">
                   <span>Next: Input Footage Characteristics</span>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
@@ -6767,7 +6767,7 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
                 <option value="edited_4k">Edited Clip (CapCut / Premiere / DaVinci 4K or 1080p Export)</option>
                 <option value="lowlight">Low-Light / High-ISO Footage (Requires Temporal Denoise First)</option>
               </select>
-              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-between">
+              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-start gap-2">
                 <button type="button" class="btn-step-nav btn-step-prev px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition flex items-center gap-1" data-prev-step="step-platform">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                   <span>Prev: Platform</span>
@@ -6801,7 +6801,7 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
                   30 FPS High Bit-Per-Pixel
                 </button>
               </div>
-              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-between">
+              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-start gap-2">
                 <button type="button" class="btn-step-nav btn-step-prev px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition flex items-center gap-1" data-prev-step="step-footage">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                   <span>Prev: Footage</span>
@@ -6829,7 +6829,7 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
             <div class="selection-block-body hidden mt-3 space-y-3">
               <input id="sliderSharpen" type="range" min="0" max="150" value="65" class="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer" />
               <p class="text-[11px] text-slate-400">Counteracts mobile player bilinear softening without creating white halo rings.</p>
-              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-between">
+              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-start gap-2">
                 <button type="button" class="btn-step-nav btn-step-prev px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition flex items-center gap-1" data-prev-step="step-fps">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                   <span>Prev: FPS Lock</span>
@@ -6890,7 +6890,7 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
                 </label>
               </div>
 
-              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-between">
+              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-start gap-2">
                 <button type="button" class="btn-step-nav btn-step-prev px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition flex items-center gap-1" data-prev-step="step-unsharp">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                   <span>Prev: Unsharp</span>
@@ -6919,7 +6919,7 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
               <p class="text-xs text-slate-300 leading-relaxed">
                 Your pre-compensation parameters are locked. You can render via in-browser canvas shader, execute a high-speed cloud master, or jump straight to the exact generated 2-pass FFmpeg command.
               </p>
-              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-between">
+              <div class="selection-nav-footer pt-2 border-t border-slate-800/70 flex items-center justify-start gap-2">
                 <button type="button" class="btn-step-nav btn-step-prev px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition flex items-center gap-1" data-prev-step="step-switches">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                   <span>Prev: Switches</span>
@@ -6934,7 +6934,7 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
       </div>
 
       <!-- Bottom Page Navigation Row for Studio -->
-      <div class="page-nav-row flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-slate-800/80 mt-6">
+      <div class="page-nav-row flex flex-wrap items-center justify-start gap-3 pt-6 border-t border-slate-800/80 mt-6">
         <a href="/" class="btn-diag btn-converter-nav" title="Return to Universal File Converter">
           <span>← Back to Universal File Converter</span>
         </a>
@@ -7007,7 +7007,7 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
       </div>
 
       <!-- Bottom Navigation for Tab -->
-      <div class="page-nav-row flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-slate-800/80 mt-6">
+      <div class="page-nav-row flex flex-wrap items-center justify-start gap-3 pt-6 border-t border-slate-800/80 mt-6">
         <button type="button" class="btn-diag btn-nav-prev-tab" data-navtab="studio">
           <span>← Back to Live Studio & Comparator</span>
         </button>
@@ -7054,7 +7054,7 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
       </div>
 
       <!-- Bottom Navigation for Tab -->
-      <div class="page-nav-row flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-slate-800/80 mt-6">
+      <div class="page-nav-row flex flex-wrap items-center justify-start gap-3 pt-6 border-t border-slate-800/80 mt-6">
         <button type="button" class="btn-diag btn-nav-prev-tab" data-navtab="pipeline">
           <span>← Back to Bitrate & FFmpeg Builder</span>
         </button>
@@ -7111,7 +7111,7 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
       </div>
 
       <!-- Bottom Navigation for Tab -->
-      <div class="page-nav-row flex flex-wrap items-center justify-between gap-3 pt-6 border-t border-slate-800/80 mt-6">
+      <div class="page-nav-row flex flex-wrap items-center justify-start gap-3 pt-6 border-t border-slate-800/80 mt-6">
         <button type="button" class="btn-diag btn-nav-prev-tab" data-navtab="code">
           <span>← Back to Web & Mobile Code</span>
         </button>

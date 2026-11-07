@@ -134,10 +134,19 @@ def test_zeroblur_themes_and_selection_navigation():
     assert "labelSharpenVal" in response.text
     assert "labelDurationVal" in response.text
 
-    # Tab navigation rows
+    # Tab navigation rows & Left-side alignment
     assert "page-nav-row" in response.text
     assert "btn-nav-next-tab" in response.text
     assert "btn-nav-prev-tab" in response.text
+    assert "justify-start" in response.text
+
+
+def test_converter_navigation_options_left_aligned():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "justify-content: flex-start;" in response.text
+    assert "format-switcher-header" in response.text
+    assert "btn-more-formats" in response.text
 
 
 def test_formats_page_alias():
