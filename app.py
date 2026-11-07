@@ -1212,16 +1212,39 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             padding: 4px 12px;
             font-size: 0.78rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        box-shadow 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        background 0.2s ease,
+                        color 0.2s ease,
+                        border-color 0.2s ease;
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-diag svg {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
         }
 
         .btn-diag:hover {
-            color: #e2e8f0;
-            border-color: #475569;
-            background: #27354a;
+            color: #f1f5f9;
+            border-color: #38bdf8;
+            background: #223249;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
+        }
+
+        .btn-diag:hover svg {
+            transform: scale(1.18);
+            color: #38bdf8;
+        }
+
+        .btn-diag:active {
+            transform: translateY(1px) scale(0.96);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
 
         .header h1 {
@@ -1291,20 +1314,60 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             align-items: center;
             justify-content: center;
             gap: 8px;
-            transition: all 0.2s ease;
+            transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        box-shadow 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        background 0.2s ease,
+                        border-color 0.2s ease;
             box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-picker svg {
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .btn-picker:hover svg {
+            transform: translateY(-2px) scale(1.15);
+        }
+
+        .btn-picker:active {
+            transform: translateY(1px) scale(0.96);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
         }
 
         .btn-picker.btn-gallery {
-            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #1d4ed8 100%);
+            background-size: 200% 200%;
             color: white;
             border: 1px solid #3b82f6;
+            box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-picker.btn-gallery::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 35%;
+            height: 200%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+            transform: rotate(25deg);
+            transition: left 0.65s ease;
+            pointer-events: none;
         }
 
         .btn-picker.btn-gallery:hover {
-            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+            background-position: 100% 100%;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+            border-color: #60a5fa;
+        }
+
+        .btn-picker.btn-gallery:hover::after {
+            left: 130%;
         }
 
         .btn-picker.btn-camera {
@@ -1315,8 +1378,14 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
 
         .btn-picker.btn-camera:hover {
             background: #1f2937;
-            border-color: #4b5563;
-            transform: translateY(-1px);
+            border-color: #38bdf8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 16px rgba(0,0,0,0.45), 0 0 10px rgba(56, 189, 248, 0.2);
+            color: #ffffff;
+        }
+
+        .btn-picker.btn-camera:hover svg {
+            color: #38bdf8;
         }
 
         .btn-picker.btn-docs {
@@ -1327,8 +1396,14 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
 
         .btn-picker.btn-docs:hover {
             background: #1f2937;
-            border-color: #4b5563;
-            transform: translateY(-1px);
+            border-color: #a855f7;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 16px rgba(0,0,0,0.45), 0 0 10px rgba(168, 85, 247, 0.2);
+            color: #ffffff;
+        }
+
+        .btn-picker.btn-docs:hover svg {
+            color: #c084fc;
         }
 
         /* Drag and Drop Zone */
@@ -1408,10 +1483,23 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             font-weight: bold;
             font-size: 1rem;
             line-height: 1;
+            padding: 0 4px;
+            border-radius: 4px;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        color 0.2s ease,
+                        background 0.2s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .file-chip-remove:hover {
             color: var(--danger);
+            background: rgba(239, 68, 68, 0.15);
+            transform: scale(1.25);
+        }
+
+        .file-chip-remove:active {
+            transform: scale(0.9);
         }
 
         .mobile-opt-row {
@@ -1521,31 +1609,63 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         .btn-submit {
             width: 100%;
             padding: 14px;
-            background: var(--accent-primary);
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #1d4ed8 100%);
+            background-size: 200% auto;
             color: white;
             border: none;
             border-radius: var(--radius-md);
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        box-shadow 0.24s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        background 0.3s ease,
+                        opacity 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.45);
             margin-top: 6px;
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-submit::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -70%;
+            width: 45%;
+            height: 200%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transform: rotate(25deg);
+            transition: left 0.75s ease;
+            pointer-events: none;
         }
 
         .btn-submit:hover:not(:disabled) {
-            background: var(--accent-hover);
-            transform: translateY(-1px);
+            background-position: right center;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 26px rgba(59, 130, 246, 0.6), 0 0 16px rgba(96, 165, 250, 0.4);
+        }
+
+        .btn-submit:hover:not(:disabled)::after {
+            left: 140%;
+        }
+
+        .btn-submit:active:not(:disabled) {
+            transform: translateY(1px) scale(0.98);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
         }
 
         .btn-submit:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
+            transform: none !important;
+            box-shadow: none;
         }
 
         /* Results / Status alert */
@@ -1632,17 +1752,33 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             background: transparent;
             border: none;
             color: var(--text-muted);
-            padding: 4px 10px;
+            padding: 5px 11px;
             border-radius: 6px;
             font-size: 0.78rem;
             cursor: pointer;
-            transition: all 0.15s;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        background 0.2s ease,
+                        color 0.2s ease,
+                        box-shadow 0.2s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-filter:hover:not(.active) {
+            color: #f1f5f9;
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .btn-filter:active {
+            transform: scale(0.95);
         }
 
         .btn-filter.active {
             background: var(--accent-primary);
             color: white;
             font-weight: 600;
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4);
         }
 
         .view-toggle {
@@ -1662,11 +1798,27 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             cursor: pointer;
             display: flex;
             align-items: center;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        background 0.2s ease,
+                        color 0.2s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-view:hover:not(.active) {
+            color: #f1f5f9;
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.1);
+        }
+
+        .btn-view:active {
+            transform: scale(0.94);
         }
 
         .btn-view.active {
             background: #1e293b;
             color: #38bdf8;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
         }
 
         .btn-refresh {
@@ -1677,15 +1829,41 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             border-radius: 8px;
             font-size: 0.8rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        box-shadow 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        background 0.2s ease,
+                        border-color 0.2s ease,
+                        color 0.2s ease;
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-refresh svg {
+            transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .btn-refresh:hover {
             color: var(--text-main);
             background: #334155;
+            border-color: #64748b;
+            transform: translateY(-1.5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .btn-refresh:hover svg {
+            transform: rotate(180deg);
+        }
+
+        .btn-refresh:active {
+            transform: translateY(1px) scale(0.95);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+        }
+
+        .btn-refresh:active svg {
+            transform: rotate(360deg);
         }
 
         .files-list {
@@ -1768,15 +1946,38 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             font-weight: 500;
             text-decoration: none;
             cursor: pointer;
-            transition: all 0.15s ease;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        box-shadow 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        background 0.2s ease,
+                        border-color 0.2s ease,
+                        color 0.2s ease;
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-action svg {
+            transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .btn-action:hover {
             background: #334155;
+            border-color: #475569;
             color: var(--text-main);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .btn-action:hover svg {
+            transform: scale(1.18);
+        }
+
+        .btn-action:active {
+            transform: translateY(1px) scale(0.95);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
         .btn-action.download {
@@ -1787,7 +1988,13 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
 
         .btn-action.download:hover {
             background: var(--accent-primary);
+            border-color: var(--accent-primary);
             color: white;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.45);
+        }
+
+        .btn-action.download:hover svg {
+            transform: translateY(1px) scale(1.15);
         }
 
         .btn-action.delete {
@@ -1798,7 +2005,13 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
 
         .btn-action.delete:hover {
             background: var(--danger);
+            border-color: var(--danger);
             color: white;
+            box-shadow: 0 4px 14px rgba(239, 68, 68, 0.45);
+        }
+
+        .btn-action.delete:hover svg {
+            transform: scale(1.18) rotate(6deg);
         }
 
         /* Grid View */
@@ -1941,6 +2154,27 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             font-size: 1.4rem;
             cursor: pointer;
             line-height: 1;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        background 0.2s ease,
+                        color 0.2s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .modal-close:hover {
+            color: #ffffff;
+            background: rgba(239, 68, 68, 0.2);
+            transform: scale(1.15) rotate(90deg);
+        }
+
+        .modal-close:active {
+            transform: scale(0.92) rotate(90deg);
         }
 
         .modal-body {
@@ -2020,6 +2254,22 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
 
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        /* Accessible Focus Outlines */
+        button:focus-visible, a.btn-action:focus-visible, select:focus-visible, input:focus-visible {
+            outline: 2px solid #38bdf8 !important;
+            outline-offset: 2px !important;
+        }
+
+        @keyframes copyPulse {
+            0% { transform: scale(0.95); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+
+        .btn-action-copied {
+            animation: copyPulse 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
         }
     </style>
 </head>
@@ -2643,11 +2893,13 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                 else btn.textContent = 'Copied!';
                 btn.style.borderColor = '#10b981';
                 btn.style.color = '#10b981';
+                btn.classList.add('btn-action-copied');
                 setTimeout(() => {
                     if (span) span.textContent = orig;
                     else btn.textContent = orig;
                     btn.style.borderColor = '';
                     btn.style.color = '';
+                    btn.classList.remove('btn-action-copied');
                 }, 2000);
             }).catch(() => {
                 alert('Copied URL: ' + url);
