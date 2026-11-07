@@ -863,6 +863,12 @@ def test_bw_diagnostics_and_dashboard():
     assert "formatPillsContainer" in html_text
     assert "formatActiveTag" in html_text
     assert "initFormatSwitcher" in html_text
+    assert "toggleMoreFormatsBtn" in html_text
+    assert "moreFormatsBtnText" in html_text
+    assert "formatExpandedPanel" in html_text
+    assert "quickFormatsPills" in html_text
+    assert "toggleMoreFormats" in html_text
+
 
 
 

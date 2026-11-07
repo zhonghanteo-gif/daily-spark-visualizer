@@ -1624,6 +1624,40 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             color: #ffffff;
         }
 
+        body.bw-page-light .quick-format-pill {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #09090b;
+        }
+
+        body.bw-page-light .quick-format-pill:hover:not(.active) {
+            background: #f4f4f5;
+            border-color: #09090b;
+        }
+
+        body.bw-page-light .quick-format-pill.active {
+            background: #09090b;
+            color: #ffffff;
+            border-color: #09090b;
+        }
+
+        body.bw-page-light .btn-more-formats {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #09090b;
+        }
+
+        body.bw-page-light .btn-more-formats:hover {
+            background: #f4f4f5;
+            border-color: #09090b;
+        }
+
+        body.bw-page-light .btn-more-formats.expanded {
+            background: #09090b;
+            color: #ffffff;
+            border-color: #09090b;
+        }
+
         body.bw-page-light .btn-submit {
             background: #09090b !important;
             color: #ffffff !important;
@@ -1829,6 +1863,40 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         body.bw-page-dark .format-pill-btn.active .format-pill-ext,
         body.bw-page-dark .format-pill-btn.active .format-pill-hint {
             color: #000000;
+        }
+
+        body.bw-page-dark .quick-format-pill {
+            background: #171717;
+            border: 1px solid #262626;
+            color: #ffffff;
+        }
+
+        body.bw-page-dark .quick-format-pill:hover:not(.active) {
+            background: #262626;
+            border-color: #ffffff;
+        }
+
+        body.bw-page-dark .quick-format-pill.active {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+        }
+
+        body.bw-page-dark .btn-more-formats {
+            background: #171717;
+            border: 1px solid #262626;
+            color: #ffffff;
+        }
+
+        body.bw-page-dark .btn-more-formats:hover {
+            border-color: #ffffff;
+            background: #262626;
+        }
+
+        body.bw-page-dark .btn-more-formats.expanded {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
         }
 
         body.bw-page-dark .btn-submit {
@@ -2185,6 +2253,49 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
 
         body.theme-editorial .format-pill-btn.active .format-pill-hint {
             color: #d6cfbf;
+        }
+
+        body.theme-editorial .quick-format-pill {
+            background: #fffefb;
+            border: 1.5px solid #1c1917;
+            color: #1c1917;
+            font-family: 'Newsreader', serif;
+            border-radius: 2px;
+            box-shadow: 1px 1px 0px #1c1917;
+        }
+
+        body.theme-editorial .quick-format-pill:hover:not(.active) {
+            background: #ede8dc;
+            transform: translate(-1px, -1px);
+            box-shadow: 2px 2px 0px #1c1917;
+        }
+
+        body.theme-editorial .quick-format-pill.active {
+            background: #1c1917;
+            color: #fffefb;
+            box-shadow: 2px 2px 0px #853b1b;
+        }
+
+        body.theme-editorial .btn-more-formats {
+            background: #ede8dc;
+            border: 1.5px solid #1c1917;
+            color: #1c1917;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            border-radius: 2px;
+            box-shadow: 2px 2px 0px #1c1917;
+        }
+
+        body.theme-editorial .btn-more-formats:hover {
+            background: #fffefb;
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0px #1c1917;
+        }
+
+        body.theme-editorial .btn-more-formats.expanded {
+            background: #1c1917;
+            color: #fffefb;
+            box-shadow: 2px 2px 0px #853b1b;
         }
 
         body.theme-editorial .btn-submit {
@@ -2652,6 +2763,51 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             box-shadow: 0 0 20px rgba(168, 85, 247, 0.4), inset 0 1px 1.5px rgba(255, 255, 255, 0.5);
         }
 
+        body.theme-liquid-glass .quick-format-pill {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: #cbd5e1;
+            backdrop-filter: blur(14px);
+            border-radius: 9999px;
+        }
+
+        body.theme-liquid-glass .quick-format-pill:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(56, 189, 248, 0.5);
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+
+        body.theme-liquid-glass .quick-format-pill.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.85), rgba(168, 85, 247, 0.85));
+            border-color: rgba(255, 255, 255, 0.4);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.45);
+        }
+
+        body.theme-liquid-glass .btn-more-formats {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #38bdf8;
+            backdrop-filter: blur(14px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.35);
+        }
+
+        body.theme-liquid-glass .btn-more-formats:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(56, 189, 248, 0.6);
+            color: #ffffff;
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.35);
+            transform: translateY(-2px);
+        }
+
+        body.theme-liquid-glass .btn-more-formats.expanded {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.85), rgba(168, 85, 247, 0.85));
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 18px rgba(168, 85, 247, 0.5);
+        }
+
         body.theme-liquid-glass .btn-submit {
             background: linear-gradient(135deg, rgba(99, 102, 241, 0.95), rgba(168, 85, 247, 0.95)) !important;
             border: 1px solid rgba(255, 255, 255, 0.35) !important;
@@ -3090,7 +3246,21 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .format-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .format-header-actions {
+            display: flex;
+            align-items: center;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         .format-switcher-title {
@@ -3114,6 +3284,107 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             align-items: center;
             gap: 5px;
             transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .quick-formats-pills {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .quick-format-pill {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #94a3b8;
+            border-radius: 9999px;
+            padding: 4px 11px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            user-select: none;
+        }
+
+        .quick-format-pill:hover:not(.active) {
+            color: #ffffff;
+            border-color: #38bdf8;
+            background: #273549;
+            transform: translateY(-1px);
+        }
+
+        .quick-format-pill:active {
+            transform: scale(0.96);
+        }
+
+        .quick-format-pill.active {
+            background: var(--accent-primary);
+            color: #ffffff;
+            border-color: var(--accent-primary);
+            box-shadow: 0 2px 8px var(--accent-glow);
+        }
+
+        .btn-more-formats {
+            background: rgba(59, 130, 246, 0.12);
+            border: 1px solid rgba(59, 130, 246, 0.35);
+            color: #60a5fa;
+            border-radius: 9999px;
+            padding: 4px 12px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+            user-select: none;
+        }
+
+        .btn-more-formats:hover {
+            background: rgba(59, 130, 246, 0.22);
+            border-color: #38bdf8;
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
+        }
+
+        .btn-more-formats:active {
+            transform: scale(0.96);
+        }
+
+        .btn-more-formats .more-chevron {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .btn-more-formats.expanded {
+            background: #1e293b;
+            border-color: #475569;
+            color: #f1f5f9;
+        }
+
+        .btn-more-formats.expanded .more-chevron {
+            transform: rotate(180deg);
+        }
+
+        .format-expanded-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            pointer-events: none;
+            transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                        opacity 0.28s ease,
+                        margin 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-top: 0;
+        }
+
+        .format-expanded-panel.expanded {
+            max-height: 540px;
+            opacity: 1;
+            pointer-events: auto;
+            margin-top: 6px;
         }
 
         .format-cat-bar {
@@ -4107,33 +4378,56 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                     <div class="progress-status" id="progressStatus">Uploading 0%</div>
                 </div>
 
-                <!-- Target Format Selection (Clean Segmented Switcher) -->
+                <!-- Target Format Selection (Clean Segmented Switcher with Expandable "More" Panel) -->
                 <div class="form-row">
                     <div class="format-switcher-wrap" id="formatSwitcherWrap">
                         <div class="format-switcher-header">
-                            <label class="format-switcher-title" for="targetFormat">Target Format</label>
-                            <span class="format-active-tag" id="formatActiveTag">Selected: WebP (.webp)</span>
+                            <div class="format-header-left">
+                                <label class="format-switcher-title" for="targetFormat">Target Format</label>
+                                <span class="format-active-tag" id="formatActiveTag">Selected: WebP (.webp)</span>
+                            </div>
+
+                            <div class="format-header-actions">
+                                <!-- Top Quick Formats Pills -->
+                                <div class="quick-formats-pills" id="quickFormatsPills">
+                                    <button type="button" class="quick-format-pill active" data-format="webp">WebP</button>
+                                    <button type="button" class="quick-format-pill" data-format="png">PNG</button>
+                                    <button type="button" class="quick-format-pill" data-format="jpg">JPG</button>
+                                    <button type="button" class="quick-format-pill" data-format="pdf">PDF</button>
+                                </div>
+
+                                <!-- Navigation "More" Button -->
+                                <button type="button" class="btn-more-formats" id="toggleMoreFormatsBtn" aria-expanded="false" title="Browse all categories and formats">
+                                    <span id="moreFormatsBtnText">More</span>
+                                    <svg class="more-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
-                        <!-- Category Segmented Switcher -->
-                        <div class="format-cat-bar" id="formatCatBar" role="tablist" aria-label="Format Categories">
-                            <button type="button" class="format-cat-btn active" data-cat="images" role="tab" aria-selected="true" id="catBtnImages">
-                                <span>🖼️ Images</span>
-                            </button>
-                            <button type="button" class="format-cat-btn" data-cat="docs" role="tab" aria-selected="false" id="catBtnDocs">
-                                <span>📄 Documents</span>
-                            </button>
-                            <button type="button" class="format-cat-btn" data-cat="data" role="tab" aria-selected="false" id="catBtnData">
-                                <span>📊 Data</span>
-                            </button>
-                            <button type="button" class="format-cat-btn" data-cat="host" role="tab" aria-selected="false" id="catBtnHost">
-                                <span>📦 Direct Host</span>
-                            </button>
-                        </div>
+                        <!-- Expandable More Formats Panel (Initially collapsed to keep web page clean) -->
+                        <div class="format-expanded-panel" id="formatExpandedPanel">
+                            <!-- Category Segmented Switcher -->
+                            <div class="format-cat-bar" id="formatCatBar" role="tablist" aria-label="Format Categories">
+                                <button type="button" class="format-cat-btn active" data-cat="images" role="tab" aria-selected="true" id="catBtnImages">
+                                    <span>🖼️ Images</span>
+                                </button>
+                                <button type="button" class="format-cat-btn" data-cat="docs" role="tab" aria-selected="false" id="catBtnDocs">
+                                    <span>📄 Documents</span>
+                                </button>
+                                <button type="button" class="format-cat-btn" data-cat="data" role="tab" aria-selected="false" id="catBtnData">
+                                    <span>📊 Data</span>
+                                </button>
+                                <button type="button" class="format-cat-btn" data-cat="host" role="tab" aria-selected="false" id="catBtnHost">
+                                    <span>📦 Direct Host</span>
+                                </button>
+                            </div>
 
-                        <!-- Format Pills Switcher -->
-                        <div class="format-pills-container" id="formatPillsContainer" role="radiogroup" aria-label="Format Options">
-                            <!-- Injected dynamically by JS -->
+                            <!-- Format Pills Switcher -->
+                            <div class="format-pills-container" id="formatPillsContainer" role="radiogroup" aria-label="Format Options">
+                                <!-- Injected dynamically by JS -->
+                            </div>
                         </div>
 
                         <!-- Preserved <select> for 100% Backward, Form & Test Compatibility -->
@@ -4981,8 +5275,30 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         const formatPillsContainer = document.getElementById('formatPillsContainer');
         const formatActiveTag = document.getElementById('formatActiveTag');
         const formatCatBtns = document.querySelectorAll('.format-cat-btn');
+        const toggleMoreFormatsBtn = document.getElementById('toggleMoreFormatsBtn');
+        const formatExpandedPanel = document.getElementById('formatExpandedPanel');
+        const moreFormatsBtnText = document.getElementById('moreFormatsBtnText');
+        const quickFormatPills = document.querySelectorAll('.quick-format-pill');
 
         let currentFormatCat = 'images';
+
+        function toggleMoreFormats(expand) {
+            if (!formatExpandedPanel || !toggleMoreFormatsBtn) return;
+            const willExpand = typeof expand === 'boolean' ? expand : !formatExpandedPanel.classList.contains('expanded');
+            if (willExpand) {
+                formatExpandedPanel.classList.add('expanded');
+                toggleMoreFormatsBtn.classList.add('expanded');
+                toggleMoreFormatsBtn.setAttribute('aria-expanded', 'true');
+                if (moreFormatsBtnText) moreFormatsBtnText.textContent = 'Less';
+                toggleMoreFormatsBtn.title = 'Collapse format switcher';
+            } else {
+                formatExpandedPanel.classList.remove('expanded');
+                toggleMoreFormatsBtn.classList.remove('expanded');
+                toggleMoreFormatsBtn.setAttribute('aria-expanded', 'false');
+                if (moreFormatsBtnText) moreFormatsBtnText.textContent = 'More';
+                toggleMoreFormatsBtn.title = 'Browse all categories and formats';
+            }
+        }
 
         function renderFormatPills() {
             if (!formatPillsContainer) return;
@@ -5016,6 +5332,11 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                 targetFormat.value = formatId;
             }
 
+            // Sync quick format pills in compact header
+            quickFormatPills.forEach(pill => {
+                pill.classList.toggle('active', pill.dataset.format === formatId);
+            });
+
             // Find format details across categories to ensure right category tab is active
             let matchedCat = currentFormatCat;
             let matchedFormat = null;
@@ -5045,6 +5366,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         }
 
         function initFormatSwitcher() {
+            // Category navigation tab buttons
             formatCatBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     currentFormatCat = btn.dataset.cat;
@@ -5056,6 +5378,20 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                     renderFormatPills();
                 });
             });
+
+            // Quick format pills in compact view
+            quickFormatPills.forEach(pill => {
+                pill.addEventListener('click', () => {
+                    selectTargetFormat(pill.dataset.format);
+                });
+            });
+
+            // "More" navigation button to expand/collapse full format categories
+            if (toggleMoreFormatsBtn) {
+                toggleMoreFormatsBtn.addEventListener('click', () => {
+                    toggleMoreFormats();
+                });
+            }
 
             // Listen for changes on targetFormat
             if (targetFormat) {
