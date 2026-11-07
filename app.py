@@ -6090,12 +6090,18 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
             </div>
 
             <div class="flex items-center gap-2">
-              <button id="btnRunBrowserMaster" type="button" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-semibold text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition flex items-center gap-2">
+              <button id="btnRunBrowserMaster" type="button" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-semibold text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition flex items-center gap-1.5" title="Master video stream right inside your browser">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>Master & Export Video</span>
+                <span>Browser Master</span>
+              </button>
+              <button id="btnRunCloudMaster" type="button" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-semibold text-xs sm:text-sm shadow-lg shadow-cyan-500/20 transition flex items-center gap-1.5" title="Master on server via FFmpeg Lanczos + 5x5 unsharp API">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z" />
+                </svg>
+                <span>⚡ Cloud Master</span>
               </button>
               <button id="downloadMasterLink" type="button" class="hidden px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-semibold text-xs sm:text-sm transition">
                 Save Master File
@@ -7284,6 +7290,7 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
         vid.src = url;
         vid.onloadedmetadata = () => {
           state.usingUploadedVideo = true;
+          state.uploadedFile = file;
           state.uploadedMeta = {
             name: file.name,
             width: vid.videoWidth || 1080,
@@ -7416,6 +7423,70 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
         a.remove();
         showToast('Saved ' + (state.lastMasterFilename || 'master file'));
       });
+
+      // Cloud Server Master Render & Export
+      const btnCloud = document.getElementById('btnRunCloudMaster');
+      if (btnCloud) {
+        btnCloud.addEventListener('click', async () => {
+          if (!state.uploadedFile) {
+            showToast('Please load a local video file first (or click Browser Master)');
+            return;
+          }
+          btnCloud.disabled = true;
+          btnCloud.classList.add('opacity-60');
+          const statusEl = document.getElementById('renderStatusText');
+          const barEl = document.getElementById('renderProgressBar');
+          const dlLink = document.getElementById('downloadMasterLink');
+          dlLink.classList.add('hidden');
+
+          statusEl.textContent = 'Uploading to Cloud ZeroBlur Engine...';
+          barEl.style.width = '25%';
+
+          const fd = new FormData();
+          fd.append('file', state.uploadedFile);
+          fd.append('platform', state.platform);
+          fd.append('target_fps', state.fps);
+          fd.append('whatsapp_res', state.platform === 'whatsapp_720' ? '720p' : '1080p');
+          fd.append('sharpen_strength', state.sharpen);
+
+          try {
+            statusEl.textContent = 'Server mastering via FFmpeg Lanczos + 5x5 unsharp...';
+            barEl.style.width = '65%';
+            const res = await fetch('/api/v1/optimize', {
+              method: 'POST',
+              body: fd
+            });
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}));
+              throw new Error(err.detail || 'Mastering failed on server');
+            }
+            barEl.style.width = '90%';
+            statusEl.textContent = 'Receiving mastered MP4 stream...';
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            state.lastMasterBlobUrl = url;
+            state.lastMasterFilename = `zeroblur_${state.platform}_${state.fps}fps_master.mp4`;
+            dlLink.classList.remove('hidden');
+            barEl.style.width = '100%';
+            statusEl.textContent = 'Cloud Master Complete — Ready to save MP4';
+            showToast('Cloud ZeroBlur Master complete!');
+
+            // Trigger direct download
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = state.lastMasterFilename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          } catch (err) {
+            statusEl.textContent = 'Cloud Master Error: ' + err.message;
+            showToast('Cloud Master Error: ' + err.message);
+          } finally {
+            btnCloud.disabled = false;
+            btnCloud.classList.remove('opacity-60');
+          }
+        });
+      }
 
       // In-Browser Master Render & Export
       const btnMaster = document.getElementById('btnRunBrowserMaster');

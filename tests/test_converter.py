@@ -77,6 +77,7 @@ def test_zeroblur_page_endpoint():
     assert "comparisonCanvas" in response.text
     assert "splitRangeSlider" in response.text
     assert "btnRunBrowserMaster" in response.text
+    assert "btnRunCloudMaster" in response.text
     assert "zeroblurThemeBtn" in response.text
     assert "view-converter" in response.text
     assert "footerBackToConverterBtn" in response.text
