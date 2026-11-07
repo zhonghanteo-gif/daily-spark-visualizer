@@ -1,4 +1,5 @@
 import sys
+import subprocess
 from pathlib import Path
 import io
 import time
@@ -98,9 +99,39 @@ def test_diagnostics_endpoint():
     data = response.json()
     assert data["status"] == "healthy"
     assert data["version"] == "1.4.0"
+    assert data.get("zeroblur_engine") is True
+    assert "has_ffmpeg" in data
     assert "has_pdfium" in data
     assert "has_docx" in data
     assert "logs" in data
+
+
+def test_zeroblur_optimize_endpoint(tmp_path):
+    from app import HAS_FFMPEG
+    if not HAS_FFMPEG:
+        # If no ffmpeg on host, it should return 501
+        dummy_file = tmp_path / "test.mp4"
+        dummy_file.write_bytes(b"dummy")
+        with open(dummy_file, "rb") as f:
+            resp = client.post("/api/v1/optimize", files={"file": ("test.mp4", f, "video/mp4")})
+        assert resp.status_code == 501
+    else:
+        # Generate tiny valid MP4 via ffmpeg
+        src_mp4 = tmp_path / "sample.mp4"
+        subprocess.run(
+            ["ffmpeg", "-y", "-f", "lavfi", "-i", "testsrc=duration=0.5:size=160x120:rate=15",
+             "-c:v", "libx264", "-pix_fmt", "yuv420p", str(src_mp4)],
+            capture_output=True, check=True
+        )
+        with open(src_mp4, "rb") as f:
+            resp = client.post(
+                "/api/v1/optimize",
+                files={"file": ("sample.mp4", f, "video/mp4")},
+                data={"platform": "tiktok", "target_fps": "30", "sharpen_strength": "0.5"}
+            )
+        assert resp.status_code == 200
+        assert resp.headers["content-type"] == "video/mp4"
+        assert len(resp.content) > 500
 
 
 def test_client_log_endpoint():

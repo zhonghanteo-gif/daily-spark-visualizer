@@ -1,4 +1,6 @@
 import os
+import uuid
+import subprocess
 import io
 import time
 import shutil
@@ -134,6 +136,8 @@ try:
     HAS_DOCX = True
 except ImportError:
     HAS_DOCX = False
+
+HAS_FFMPEG = bool(shutil.which("ffmpeg"))
 
 
 def cleanup_old_temp_dirs(max_age_seconds: int = 1800):
@@ -1134,12 +1138,78 @@ async def get_diagnostics():
         "mobile_shield": True,
         "photo_gallery": True,
         "bw_page_option": True,
+        "zeroblur_engine": True,
         "has_pdfium": HAS_PDFIUM,
         "has_heif": HAS_HEIF,
         "has_docx": HAS_DOCX,
+        "has_ffmpeg": HAS_FFMPEG,
         "hosted_count": len([f for f in HOSTED_DIR.iterdir() if f.is_file() and not f.name.startswith(".")]) if HOSTED_DIR.exists() else 0,
         "logs": CONVERSION_LOGS[-40:],
     }
+
+
+@app.post("/api/v1/optimize")
+async def optimize_video_endpoint(
+    file: UploadFile = File(...),
+    platform: str = Form("tiktok"),
+    target_fps: int = Form(60),
+    whatsapp_res: str = Form("720p"),
+    sharpen_strength: float = Form(0.65),
+):
+    """ZeroBlur Video Engine Server Endpoint for TikTok and WhatsApp status mastering."""
+    if not HAS_FFMPEG:
+        raise HTTPException(status_code=501, detail="FFmpeg is not installed on this host environment.")
+
+    job_id = str(uuid.uuid4())
+    in_ext = Path(file.filename or "video.mp4").suffix or ".mp4"
+    in_file = UPLOAD_DIR / f"{job_id}_in{in_ext}"
+    out_file = HOSTED_DIR / f"{job_id}_{platform}_master.mp4"
+
+    with open(in_file, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    tw = 720 if (platform == "whatsapp" and whatsapp_res == "720p") else 1080
+    th = 1280 if (platform == "whatsapp" and whatsapp_res == "720p") else 1920
+    fps = max(15, min(60, target_fps))
+    luma = round(sharpen_strength, 2)
+    chroma = round(sharpen_strength * 0.3, 2)
+
+    vf = (
+        f"fps=fps={fps}:round=near,"
+        f"scale={tw}:{th}:force_original_aspect_ratio=decrease:flags=lanczos+accurate_rnd+full_chroma_int+full_chroma_inp,"
+        f"pad={tw}:{th}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,"
+        f"unsharp=5:5:{luma}:3:3:{chroma},format=yuv420p"
+    )
+
+    cmd = [
+        "ffmpeg", "-y", "-i", str(in_file),
+        "-vf", vf,
+        "-c:v", "libx264", "-preset", "fast",
+        "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
+        str(out_file)
+    ]
+
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        if proc.returncode != 0:
+            log_event("error", f"ZeroBlur FFmpeg encode failed: {proc.stderr[:160]}")
+            raise HTTPException(status_code=500, detail="Video mastering processing failed.")
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=504, detail="Video encoding exceeded timeout limit.")
+    finally:
+        if in_file.exists():
+            try:
+                in_file.unlink(missing_ok=True)
+            except Exception:
+                pass
+
+    log_event("info", f"ZeroBlur Master generated: {out_file.name}")
+    return FileResponse(
+        str(out_file),
+        media_type="video/mp4",
+        filename=out_file.name,
+        headers={"Content-Disposition": f'attachment; filename="{out_file.name}"'}
+    )
 
 
 @app.get("/api/files")
