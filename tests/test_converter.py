@@ -858,6 +858,12 @@ def test_bw_diagnostics_and_dashboard():
     assert "themeBar" in html_text
     assert "initSwitcherVisibility" in html_text
     assert "themeBarCloseBtn" in html_text
+    assert "formatSwitcherWrap" in html_text
+    assert "formatCatBar" in html_text
+    assert "formatPillsContainer" in html_text
+    assert "formatActiveTag" in html_text
+    assert "initFormatSwitcher" in html_text
+
 
 
 

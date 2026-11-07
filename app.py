@@ -1589,6 +1589,41 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             color: #09090b;
         }
 
+        body.bw-page-light .format-switcher-wrap {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        body.bw-page-light .format-cat-bar {
+            background: #f4f4f5;
+            border-color: #cbd5e1;
+        }
+
+        body.bw-page-light .format-cat-btn.active {
+            background: #09090b;
+            color: #ffffff;
+        }
+
+        body.bw-page-light .format-pill-btn {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            color: #09090b;
+        }
+
+        body.bw-page-light .format-pill-btn.active {
+            background: #09090b;
+            color: #ffffff;
+            border-color: #09090b;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        body.bw-page-light .format-pill-btn.active .format-pill-name,
+        body.bw-page-light .format-pill-btn.active .format-pill-ext,
+        body.bw-page-light .format-pill-btn.active .format-pill-hint {
+            color: #ffffff;
+        }
+
         body.bw-page-light .btn-submit {
             background: #09090b !important;
             color: #ffffff !important;
@@ -1760,6 +1795,40 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             background: #262626 !important;
             border-color: #404040 !important;
             box-shadow: 0 2px 8px rgba(0,0,0,0.5) !important;
+        }
+
+        body.bw-page-dark .format-switcher-wrap {
+            background: #0d0d0d;
+            border-color: #262626;
+        }
+
+        body.bw-page-dark .format-cat-bar {
+            background: #171717;
+            border-color: #262626;
+        }
+
+        body.bw-page-dark .format-cat-btn.active {
+            background: #ffffff;
+            color: #000000;
+        }
+
+        body.bw-page-dark .format-pill-btn {
+            background: #171717;
+            border-color: #262626;
+            color: #ffffff;
+        }
+
+        body.bw-page-dark .format-pill-btn.active {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+            box-shadow: 0 0 12px rgba(255,255,255,0.25);
+        }
+
+        body.bw-page-dark .format-pill-btn.active .format-pill-name,
+        body.bw-page-dark .format-pill-btn.active .format-pill-ext,
+        body.bw-page-dark .format-pill-btn.active .format-pill-hint {
+            color: #000000;
         }
 
         body.bw-page-dark .btn-submit {
@@ -2044,6 +2113,78 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             color: #1c1917;
             font-family: 'Newsreader', serif;
             font-size: 1rem;
+        }
+
+        body.theme-editorial .format-switcher-wrap {
+            background: #fffefb;
+            border: 2px solid #1c1917;
+            border-radius: 4px;
+            box-shadow: 4px 4px 0px #1c1917;
+        }
+
+        body.theme-editorial .format-switcher-title {
+            font-family: 'Newsreader', serif;
+            font-size: 0.95rem;
+            color: #1c1917;
+        }
+
+        body.theme-editorial .format-active-tag {
+            background: #ede8dc;
+            border: 1.5px solid #1c1917;
+            color: #853b1b;
+            font-family: 'JetBrains Mono', monospace;
+            border-radius: 2px;
+            box-shadow: 1px 1px 0px #1c1917;
+        }
+
+        body.theme-editorial .format-cat-bar {
+            background: #faf7f0;
+            border: 1.5px solid #1c1917;
+            border-radius: 3px;
+        }
+
+        body.theme-editorial .format-cat-btn {
+            font-family: 'Newsreader', serif;
+            font-size: 0.88rem;
+            color: #57534e;
+            border-radius: 2px;
+        }
+
+        body.theme-editorial .format-cat-btn.active {
+            background: #1c1917;
+            color: #fffefb;
+            box-shadow: 2px 2px 0px #853b1b;
+        }
+
+        body.theme-editorial .format-pill-btn {
+            background: #faf7f0;
+            border: 1.5px solid #1c1917;
+            border-radius: 3px;
+            box-shadow: 2px 2px 0px #1c1917;
+            color: #1c1917;
+            font-family: 'Newsreader', serif;
+        }
+
+        body.theme-editorial .format-pill-btn:hover:not(.active) {
+            background: #ede8dc;
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0px #1c1917;
+        }
+
+        body.theme-editorial .format-pill-btn.active {
+            background: #1c1917;
+            border-color: #1c1917;
+            color: #fffefb;
+            box-shadow: 3px 3px 0px #853b1b;
+        }
+
+        body.theme-editorial .format-pill-btn.active .format-pill-name,
+        body.theme-editorial .format-pill-btn.active .format-pill-ext {
+            color: #fffefb;
+        }
+
+        body.theme-editorial .format-pill-btn.active .format-pill-hint {
+            color: #d6cfbf;
         }
 
         body.theme-editorial .btn-submit {
@@ -2455,6 +2596,60 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         body.theme-liquid-glass .select-styled option {
             background: #0f172a;
             color: #ffffff;
+        }
+
+        body.theme-liquid-glass .format-switcher-wrap {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        body.theme-liquid-glass .format-active-tag {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #38bdf8;
+            backdrop-filter: blur(14px);
+        }
+
+        body.theme-liquid-glass .format-cat-bar {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+
+        body.theme-liquid-glass .format-cat-btn.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.8), rgba(168, 85, 247, 0.8));
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+        }
+
+        body.theme-liquid-glass .format-pill-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            color: #cbd5e1;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        body.theme-liquid-glass .format-pill-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(56, 189, 248, 0.5);
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.25);
+        }
+
+        body.theme-liquid-glass .format-pill-btn.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.35), rgba(168, 85, 247, 0.35));
+            border-color: rgba(168, 85, 247, 0.6);
+            color: #ffffff;
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.4), inset 0 1px 1.5px rgba(255, 255, 255, 0.5);
         }
 
         body.theme-liquid-glass .btn-submit {
@@ -2873,8 +3068,184 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         .form-row {
             margin-top: 18px;
             display: flex;
-            gap: 12px;
+            gap: 14px;
             flex-direction: column;
+        }
+
+        /* Target Format Segmented Switcher */
+        .format-switcher-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: rgba(15, 23, 42, 0.55);
+            border: 1px solid #1f293d;
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.2);
+            transition: all 0.25s ease;
+        }
+
+        .format-switcher-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .format-switcher-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin: 0;
+        }
+
+        .format-active-tag {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #60a5fa;
+            background: rgba(59, 130, 246, 0.12);
+            padding: 4px 12px;
+            border-radius: 9999px;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .format-cat-bar {
+            display: flex;
+            background: #0b0f19;
+            border: 1px solid #1f293d;
+            border-radius: 9999px;
+            padding: 3px;
+            gap: 4px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .format-cat-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .format-cat-btn {
+            flex: 1;
+            min-width: fit-content;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .format-cat-btn:hover:not(.active) {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateY(-1px);
+        }
+
+        .format-cat-btn:active {
+            transform: scale(0.96);
+        }
+
+        .format-cat-btn.active {
+            background: #1e293b;
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .format-pills-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 8px;
+            padding-top: 4px;
+        }
+
+        .format-pill-btn {
+            background: #111827;
+            border: 1px solid #1f293d;
+            border-radius: var(--radius-md);
+            padding: 9px 12px;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            flex-direction: column;
+            gap: 3px;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            user-select: none;
+            text-align: left;
+        }
+
+        .format-pill-btn:hover:not(.active) {
+            border-color: #38bdf8;
+            color: #ffffff;
+            background: #1a2234;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15);
+        }
+
+        .format-pill-btn:active {
+            transform: scale(0.96);
+        }
+
+        .format-pill-btn.active {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(37, 99, 235, 0.16));
+            border-color: var(--accent-primary);
+            color: #ffffff;
+            box-shadow: 0 0 14px var(--accent-glow);
+        }
+
+        .format-pill-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+        }
+
+        .format-pill-name {
+            font-weight: 700;
+            font-size: 0.88rem;
+            color: var(--text-main);
+        }
+
+        .format-pill-ext {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .format-pill-btn.active .format-pill-ext {
+            color: #93c5fd;
+            font-weight: 600;
+        }
+
+        .format-pill-hint {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            font-weight: 400;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .format-pill-btn.active .format-pill-hint {
+            color: #cbd5e1;
         }
 
         label {
@@ -3736,11 +4107,37 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                     <div class="progress-status" id="progressStatus">Uploading 0%</div>
                 </div>
 
-                <!-- Target Format Selection -->
+                <!-- Target Format Selection (Clean Segmented Switcher) -->
                 <div class="form-row">
-                    <div>
-                        <label for="targetFormat">Select Target Format</label>
-                        <select id="targetFormat" name="target_format" required>
+                    <div class="format-switcher-wrap" id="formatSwitcherWrap">
+                        <div class="format-switcher-header">
+                            <label class="format-switcher-title" for="targetFormat">Target Format</label>
+                            <span class="format-active-tag" id="formatActiveTag">Selected: WebP (.webp)</span>
+                        </div>
+
+                        <!-- Category Segmented Switcher -->
+                        <div class="format-cat-bar" id="formatCatBar" role="tablist" aria-label="Format Categories">
+                            <button type="button" class="format-cat-btn active" data-cat="images" role="tab" aria-selected="true" id="catBtnImages">
+                                <span>🖼️ Images</span>
+                            </button>
+                            <button type="button" class="format-cat-btn" data-cat="docs" role="tab" aria-selected="false" id="catBtnDocs">
+                                <span>📄 Documents</span>
+                            </button>
+                            <button type="button" class="format-cat-btn" data-cat="data" role="tab" aria-selected="false" id="catBtnData">
+                                <span>📊 Data</span>
+                            </button>
+                            <button type="button" class="format-cat-btn" data-cat="host" role="tab" aria-selected="false" id="catBtnHost">
+                                <span>📦 Direct Host</span>
+                            </button>
+                        </div>
+
+                        <!-- Format Pills Switcher -->
+                        <div class="format-pills-container" id="formatPillsContainer" role="radiogroup" aria-label="Format Options">
+                            <!-- Injected dynamically by JS -->
+                        </div>
+
+                        <!-- Preserved <select> for 100% Backward, Form & Test Compatibility -->
+                        <select id="targetFormat" name="target_format" required style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; clip:rect(0,0,0,0);">
                             <optgroup label="Direct Hosting">
                                 <option value="keep">Keep Original Format (Direct Host)</option>
                             </optgroup>
@@ -4539,7 +4936,139 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             }
         }
 
+        // =========================================================================
+        // Target Format Segmented Switcher Logic
+        // =========================================================================
+        const FORMAT_CATEGORIES = {
+            images: {
+                label: '🖼️ Images',
+                formats: [
+                    { id: 'webp', name: 'WebP', ext: '.webp', hint: 'Fast & Small (Best)' },
+                    { id: 'png', name: 'PNG', ext: '.png', hint: 'Lossless Transparent' },
+                    { id: 'jpg', name: 'JPG', ext: '.jpg', hint: 'Universal Photos' },
+                    { id: 'ico', name: 'ICO', ext: '.ico', hint: 'Favicon / Icon' },
+                    { id: 'bmp', name: 'BMP', ext: '.bmp', hint: 'Raw Bitmap' },
+                    { id: 'gif', name: 'GIF', ext: '.gif', hint: 'Graphics / Animation' }
+                ]
+            },
+            docs: {
+                label: '📄 Documents',
+                formats: [
+                    { id: 'pdf', name: 'PDF', ext: '.pdf', hint: 'Standard PDF Document' },
+                    { id: 'docx', name: 'DOCX', ext: '.docx', hint: 'Microsoft Word Document' },
+                    { id: 'md', name: 'Markdown', ext: '.md', hint: 'Clean Formatted Notes' },
+                    { id: 'txt', name: 'TXT', ext: '.txt', hint: 'Plain Text' },
+                    { id: 'html', name: 'HTML', ext: '.html', hint: 'Web Document' },
+                    { id: 'rtf', name: 'RTF', ext: '.rtf', hint: 'Rich Text Format' }
+                ]
+            },
+            data: {
+                label: '📊 Data',
+                formats: [
+                    { id: 'csv', name: 'CSV', ext: '.csv', hint: 'Spreadsheet Table' },
+                    { id: 'xlsx', name: 'Excel', ext: '.xlsx', hint: 'Excel Workbook' },
+                    { id: 'json', name: 'JSON', ext: '.json', hint: 'Structured Data' }
+                ]
+            },
+            host: {
+                label: '📦 Direct Host',
+                formats: [
+                    { id: 'keep', name: 'Keep Original', ext: 'direct', hint: 'Host original format directly' }
+                ]
+            }
+        };
+
+        const formatPillsContainer = document.getElementById('formatPillsContainer');
+        const formatActiveTag = document.getElementById('formatActiveTag');
+        const formatCatBtns = document.querySelectorAll('.format-cat-btn');
+
+        let currentFormatCat = 'images';
+
+        function renderFormatPills() {
+            if (!formatPillsContainer) return;
+            const category = FORMAT_CATEGORIES[currentFormatCat] || FORMAT_CATEGORIES.images;
+            const currentSelected = targetFormat ? targetFormat.value : 'webp';
+
+            formatPillsContainer.innerHTML = '';
+            category.formats.forEach(f => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'format-pill-btn' + (f.id === currentSelected ? ' active' : '');
+                btn.dataset.format = f.id;
+                btn.setAttribute('role', 'radio');
+                btn.setAttribute('aria-checked', f.id === currentSelected ? 'true' : 'false');
+                btn.innerHTML = `
+                    <div class="format-pill-top">
+                        <span class="format-pill-name">${f.name}</span>
+                        <span class="format-pill-ext">${f.ext}</span>
+                    </div>
+                    <span class="format-pill-hint">${f.hint}</span>
+                `;
+                btn.addEventListener('click', () => {
+                    selectTargetFormat(f.id);
+                });
+                formatPillsContainer.appendChild(btn);
+            });
+        }
+
+        function selectTargetFormat(formatId) {
+            if (targetFormat) {
+                targetFormat.value = formatId;
+            }
+
+            // Find format details across categories to ensure right category tab is active
+            let matchedCat = currentFormatCat;
+            let matchedFormat = null;
+            for (const [catKey, catData] of Object.entries(FORMAT_CATEGORIES)) {
+                const found = catData.formats.find(f => f.id === formatId);
+                if (found) {
+                    matchedCat = catKey;
+                    matchedFormat = found;
+                    break;
+                }
+            }
+
+            if (matchedCat !== currentFormatCat) {
+                currentFormatCat = matchedCat;
+                formatCatBtns.forEach(btn => {
+                    const isActive = btn.dataset.cat === currentFormatCat;
+                    btn.classList.toggle('active', isActive);
+                    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                });
+            }
+
+            renderFormatPills();
+
+            if (formatActiveTag && matchedFormat) {
+                formatActiveTag.textContent = `Selected: ${matchedFormat.name} (${matchedFormat.ext || 'Original'})`;
+            }
+        }
+
+        function initFormatSwitcher() {
+            formatCatBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentFormatCat = btn.dataset.cat;
+                    formatCatBtns.forEach(b => {
+                        const isA = b.dataset.cat === currentFormatCat;
+                        b.classList.toggle('active', isA);
+                        b.setAttribute('aria-selected', isA ? 'true' : 'false');
+                    });
+                    renderFormatPills();
+                });
+            });
+
+            // Listen for changes on targetFormat
+            if (targetFormat) {
+                targetFormat.addEventListener('change', () => {
+                    selectTargetFormat(targetFormat.value);
+                });
+            }
+
+            selectTargetFormat(targetFormat ? targetFormat.value : 'webp');
+        }
+
         initWebpageTheme();
+        initFormatSwitcher();
         loadHostedFiles();
     </script>
 </body>
