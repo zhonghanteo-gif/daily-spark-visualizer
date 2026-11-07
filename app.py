@@ -311,7 +311,7 @@ def write_data_file(df: pd.DataFrame, target_ext: str, output_path: str):
         raise ValueError(f"Writing to .{target_ext} is not supported.")
 
 
-def convert_image(input_path: str, source_ext: str, target_ext: str, output_path: str):
+def convert_image(input_path: str, source_ext: str, target_ext: str, output_path: str, black_and_white: bool = False):
     """Converts images between PNG, JPG, JPEG, WEBP, BMP, ICO, GIF, and PDF with strict memory bounds."""
     source_ext = source_ext.lower().lstrip(".")
     target_ext = target_ext.lower().lstrip(".")
@@ -362,6 +362,13 @@ def convert_image(input_path: str, source_ext: str, target_ext: str, output_path
         if img.mode == "CMYK":
             img = img.convert("RGB")
 
+        # Black and White / Grayscale transformation option
+        if black_and_white:
+            img = composite_on_white(img)
+            img = ImageOps.grayscale(img)
+            if target_ext in ("jpg", "jpeg", "bmp", "pdf", "gif", "webp", "heic", "heif"):
+                img = img.convert("RGB")
+
         if target_ext in ("jpg", "jpeg"):
             img = composite_on_white(img)
             img.save(output_path, "JPEG", quality=92, optimize=True)
@@ -370,6 +377,8 @@ def convert_image(input_path: str, source_ext: str, target_ext: str, output_path
                 img = img.convert("RGBA" if "A" in img.mode else "RGB")
             img.save(output_path, "PNG", optimize=True)
         elif target_ext == "webp":
+            if img.mode not in ("RGB", "RGBA"):
+                img = img.convert("RGB")
             img.save(output_path, "WEBP", quality=90)
         elif target_ext == "bmp":
             img = composite_on_white(img)
@@ -709,7 +718,7 @@ def write_docx_document(title: str, sections: list[tuple[int, str]], output_path
         )
 
 
-def write_text_as_pdf(title: str, sections: list[tuple[int, str]], output_path: str):
+def write_text_as_pdf(title: str, sections: list[tuple[int, str]], output_path: str, black_and_white: bool = False):
     """Renders text sections to a clean, multi-page PDF document."""
     lines = []
     lines.append(title.upper())
@@ -739,12 +748,16 @@ def write_text_as_pdf(title: str, sections: list[tuple[int, str]], output_path: 
         draw = ImageDraw.Draw(img)
 
         # Header bar & page counter
-        draw.text((700, 30), f"Page {page_idx + 1} of {total_pages}", fill=(110, 120, 135))
-        draw.line([(50, 48), (800, 48)], fill=(226, 232, 240), width=1)
+        counter_color = (0, 0, 0) if black_and_white else (110, 120, 135)
+        line_color = (0, 0, 0) if black_and_white else (226, 232, 240)
+        text_color = (0, 0, 0) if black_and_white else (20, 25, 35)
+
+        draw.text((700, 30), f"Page {page_idx + 1} of {total_pages}", fill=counter_color)
+        draw.line([(50, 48), (800, 48)], fill=line_color, width=1)
 
         y = 60
         for ln in page_lines:
-            draw.text((50, y), ln, fill=(20, 25, 35))
+            draw.text((50, y), ln, fill=text_color)
             y += 22
 
         pages.append(img)
@@ -755,7 +768,7 @@ def write_text_as_pdf(title: str, sections: list[tuple[int, str]], output_path: 
             p.close()
 
 
-def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
+def process_conversion(input_path: str, orig_name: str, target_ext: str, black_and_white: bool = False) -> str:
     """Dispatches file conversion based on format categories with memory safety."""
     base_name = Path(orig_name).stem
     source_ext = Path(orig_name).suffix.lower().lstrip(".")
@@ -768,18 +781,45 @@ def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
     output_path = str(HOSTED_DIR / output_filename)
 
     if Path(input_path).stat().st_size == 0:
-        if source_ext == target_ext:
+        if source_ext == target_ext and not black_and_white:
             if Path(input_path).resolve() != Path(output_path).resolve():
                 shutil.copyfile(input_path, output_path)
             log_event("info", f"Direct pass-through hosted (.{source_ext}): {output_filename}")
             return output_filename
         raise ValueError("The uploaded file is empty (0 bytes).")
 
-    # 1. Direct pass-through when source and target formats match
-    if source_ext == target_ext:
+    # 1. Direct pass-through when source and target formats match AND not black_and_white
+    if source_ext == target_ext and not black_and_white:
         if Path(input_path).resolve() != Path(output_path).resolve():
             shutil.copyfile(input_path, output_path)
         log_event("info", f"Direct pass-through hosted (.{source_ext}): {output_filename}")
+        return output_filename
+
+    # 1b. PDF to PDF in Black & White mode
+    if source_ext == "pdf" and target_ext == "pdf" and black_and_white:
+        if not HAS_PDFIUM:
+            raise ValueError("PDF Black & White processing requires pypdfium2.")
+        pdf_doc = pdfium.PdfDocument(input_path)
+        if len(pdf_doc) == 0:
+            raise ValueError("PDF file is empty.")
+        bw_pages = []
+        try:
+            for page_idx in range(len(pdf_doc)):
+                page = pdf_doc[page_idx]
+                bm = page.render(scale=1.5)
+                pil_im = bm.to_pil()
+                bw_im = ImageOps.grayscale(pil_im).convert("RGB")
+                bw_pages.append(bw_im)
+                bm.close()
+                page.close()
+        finally:
+            pdf_doc.close()
+
+        if bw_pages:
+            bw_pages[0].save(output_path, "PDF", resolution=150.0, save_all=True, append_images=bw_pages[1:])
+            for p in bw_pages:
+                p.close()
+        log_event("info", f"PDF converted to Black & White pages: {output_filename} ({len(bw_pages)} pages)")
         return output_filename
 
     # 2. PDF to Notes/Text (Markdown, Plain Text, HTML, CSV, JSON extraction)
@@ -833,8 +873,8 @@ def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
 
     # 3. Image Conversions
     if source_ext in IMAGE_FORMATS and target_ext in IMAGE_FORMATS:
-        convert_image(input_path, source_ext, target_ext, output_path)
-        log_event("info", f"Image converted: {orig_name} -> {output_filename}")
+        convert_image(input_path, source_ext, target_ext, output_path, black_and_white=black_and_white)
+        log_event("info", f"Image converted: {orig_name} -> {output_filename}" + (" (B&W)" if black_and_white else ""))
         return output_filename
 
     # 4. Data / Spreadsheet Conversions
@@ -896,7 +936,7 @@ def process_conversion(input_path: str, orig_name: str, target_ext: str) -> str:
             write_docx_document(base_name, sections, output_path)
             return output_filename
         elif target_ext == "pdf":
-            write_text_as_pdf(base_name, sections, output_path)
+            write_text_as_pdf(base_name, sections, output_path, black_and_white=black_and_white)
             return output_filename
         elif target_ext in ("csv", "json", "xlsx"):
             records = [{"section": p_num, "content": text} for p_num, text in sections]
@@ -937,8 +977,10 @@ def normalize_upload_filename(filename: str, content_type: str = "") -> str:
 @app.post("/api/convert")
 async def convert_files(
     target_format: str = Form(...),
+    black_and_white: str = Form("false"),
     files: list[UploadFile] = File(...),
 ):
+    is_bw = str(black_and_white).lower() in ("true", "1", "yes", "on")
     results = []
     for file in files:
         if not file.filename and not file.content_type:
@@ -949,7 +991,7 @@ async def convert_files(
             shutil.copyfileobj(file.file, buffer)
 
         try:
-            out_name = process_conversion(raw_path, normalized_name, target_format)
+            out_name = process_conversion(raw_path, normalized_name, target_format, black_and_white=is_bw)
             out_file = HOSTED_DIR / out_name
             size_bytes = out_file.stat().st_size if out_file.exists() else 0
             out_ext = out_file.suffix.lower().lstrip(".")
@@ -982,9 +1024,11 @@ async def upload_chunk(
     total_chunks: int = Form(...),
     filename: str = Form(...),
     target_format: str = Form(...),
+    black_and_white: str = Form("false"),
     chunk: UploadFile = File(...),
 ):
     """Handles chunked file uploads (768KB chunks) to prevent mobile network timeouts."""
+    is_bw = str(black_and_white).lower() in ("true", "1", "yes", "on")
     safe_file_id = "".join(c for c in file_id if c.isalnum() or c in ("-", "_"))
     if not safe_file_id:
         safe_file_id = f"upload_{int(time.time() * 1000)}"
@@ -1014,8 +1058,8 @@ async def upload_chunk(
         shutil.rmtree(temp_dir, ignore_errors=True)
 
         try:
-            log_event("info", f"Assembled file ready for conversion: {normalized_name} -> {target_format}")
-            out_name = process_conversion(str(final_path), normalized_name, target_format)
+            log_event("info", f"Assembled file ready for conversion: {normalized_name} -> {target_format}" + (" (B&W)" if is_bw else ""))
+            out_name = process_conversion(str(final_path), normalized_name, target_format, black_and_white=is_bw)
             out_file = HOSTED_DIR / out_name
             size_bytes = out_file.stat().st_size if out_file.exists() else 0
             out_ext = out_file.suffix.lower().lstrip(".")
@@ -1089,6 +1133,7 @@ async def get_diagnostics():
         "version": "1.4.0",
         "mobile_shield": True,
         "photo_gallery": True,
+        "bw_page_option": True,
         "has_pdfium": HAS_PDFIUM,
         "has_heif": HAS_HEIF,
         "has_docx": HAS_DOCX,
@@ -1245,6 +1290,82 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         .btn-diag:active {
             transform: translateY(1px) scale(0.96);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-bw-toggle {
+            background: #18181b;
+            border-color: #3f3f46;
+            color: #d4d4d8;
+        }
+
+        .btn-bw-toggle:hover {
+            color: #ffffff;
+            border-color: #ffffff;
+            background: #27272a;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-bw-toggle svg {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .btn-bw-toggle:hover svg {
+            transform: rotate(180deg);
+        }
+
+        /* Black & White Page Option (Monochrome High Contrast Theme) */
+        body.bw-mode {
+            --bg-color: #09090b;
+            --card-bg: #121214;
+            --card-border: #27272a;
+            --accent-primary: #f4f4f5;
+            --accent-hover: #e4e4e7;
+            --accent-glow: rgba(255, 255, 255, 0.2);
+            --text-main: #fafafa;
+            --text-muted: #a1a1aa;
+            --text-dim: #71717a;
+            --success: #ffffff;
+            --danger: #d4d4d8;
+            filter: grayscale(100%);
+        }
+
+        body.bw-mode .header h1 {
+            background: linear-gradient(135deg, #ffffff 40%, #71717a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        body.bw-mode .btn-picker.btn-gallery {
+            background: #27272a !important;
+            border-color: #52525b !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5) !important;
+        }
+
+        body.bw-mode .btn-submit {
+            background: #ffffff !important;
+            color: #000000 !important;
+            box-shadow: 0 4px 16px rgba(255, 255, 255, 0.25) !important;
+        }
+
+        body.bw-mode .btn-submit:hover:not(:disabled) {
+            background: #e4e4e7 !important;
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4) !important;
+        }
+
+        body.bw-mode .btn-filter.active {
+            background: #ffffff !important;
+            color: #000000 !important;
+        }
+
+        body.bw-mode .btn-action.download {
+            background: #27272a !important;
+            border-color: #52525b !important;
+            color: #ffffff !important;
+        }
+
+        body.bw-mode .btn-action.download:hover {
+            background: #ffffff !important;
+            color: #000000 !important;
         }
 
         .header h1 {
@@ -2280,6 +2401,13 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             <div class="header-top">
                 <div class="header-badge">⚡ Instant Conversion & Permanent Hosting</div>
                 <div class="header-badge" style="margin-bottom:0; background:rgba(16, 185, 129, 0.15); color:#34d399; border-color:rgba(16, 185, 129, 0.35);">v1.4.0 • Mobile Shield & Photo Gallery</div>
+                <button type="button" class="btn-diag btn-bw-toggle" id="bwPageToggle" title="Toggle Black & White page theme">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor"></path>
+                    </svg>
+                    <span id="bwToggleText">B&W Page: Off</span>
+                </button>
                 <button class="btn-diag" id="openDiagBtn" title="View Server Diagnostics and Logs">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
@@ -2356,6 +2484,18 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                         </div>
                     </div>
                     <span id="stagedCountText" style="font-size:0.8rem; color:#38bdf8;">0 staged</span>
+                </div>
+
+                <!-- Black & White Page & Document Conversion Option -->
+                <div class="mobile-opt-row" style="margin-top:8px;">
+                    <div class="mobile-opt-left">
+                        <input type="checkbox" id="bwConvertOption">
+                        <div>
+                            <span style="font-weight:600; color:#e2e8f0;">Black & White Pages (Grayscale / Ink Saver)</span>
+                            <div style="font-size:0.75rem; color:#64748b;">Converts document pages and photos to monochrome black & white for printing & reduced size</div>
+                        </div>
+                    </div>
+                    <span style="font-size:0.78rem; color:#94a3b8; font-family:'JetBrains Mono', monospace;">Monochrome</span>
                 </div>
 
                 <!-- Progress Bar -->
@@ -2478,6 +2618,10 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                         <div class="diag-label">Hosted Files</div>
                         <div class="diag-val" id="diagHosted">--</div>
                     </div>
+                    <div class="diag-box">
+                        <div class="diag-label">B&W Page Option</div>
+                        <div class="diag-val" id="diagBw" style="color:#10b981;">Active</div>
+                    </div>
                 </div>
 
                 <div style="font-weight:600; font-size:0.9rem; color:#e2e8f0; display:flex; justify-content:space-between; align-items:center;">
@@ -2506,6 +2650,10 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         const stagedContainer = document.getElementById('stagedFiles');
         const stagedCountText = document.getElementById('stagedCountText');
         const mobileShield = document.getElementById('mobileShield');
+        const bwConvertOption = document.getElementById('bwConvertOption');
+
+        const bwPageToggle = document.getElementById('bwPageToggle');
+        const bwToggleText = document.getElementById('bwToggleText');
 
         const uploadForm = document.getElementById('uploadForm');
         const targetFormat = document.getElementById('targetFormat');
@@ -2625,7 +2773,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         }
 
         // Chunked file upload
-        async function uploadChunked(file, format) {
+        async function uploadChunked(file, format, isBw) {
             const CHUNK_SIZE = 768 * 1024;
             const totalChunks = Math.ceil(file.size / CHUNK_SIZE) || 1;
             const fileId = Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
@@ -2641,6 +2789,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                 formData.append('total_chunks', totalChunks);
                 formData.append('filename', file.name);
                 formData.append('target_format', format);
+                formData.append('black_and_white', isBw ? 'true' : 'false');
                 formData.append('chunk', chunkBlob, file.name);
 
                 const res = await fetch('/api/upload-chunk', {
@@ -2678,6 +2827,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             resetProgress();
 
             const format = targetFormat.value;
+            const isBw = bwConvertOption ? bwConvertOption.checked : false;
             const useChunks = mobileShield.checked || stagedFilesList.some(f => f.size > 1.5 * 1024 * 1024);
             const allResults = [];
             let hasErrors = false;
@@ -2688,7 +2838,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                     for (let fIdx = 0; fIdx < stagedFilesList.length; fIdx++) {
                         const file = stagedFilesList[fIdx];
                         updateProgress(0, `Uploading ${file.name}...`);
-                        const results = await uploadChunked(file, format);
+                        const results = await uploadChunked(file, format, isBw);
                         if (results) {
                             allResults.push(...results);
                         }
@@ -2698,6 +2848,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                     updateProgress(40, 'Uploading files...');
                     const formData = new FormData();
                     formData.append('target_format', format);
+                    formData.append('black_and_white', isBw ? 'true' : 'false');
                     stagedFilesList.forEach(file => formData.append('files', file));
 
                     const response = await fetch('/api/convert', {
@@ -2957,6 +3108,11 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                 document.getElementById('diagHeif').style.color = data.has_heif ? '#10b981' : '#f87171';
                 document.getElementById('diagDocx').textContent = data.has_docx ? 'Available' : 'XML Fallback';
                 document.getElementById('diagHosted').textContent = data.hosted_count;
+                const diagBw = document.getElementById('diagBw');
+                if (diagBw) {
+                    diagBw.textContent = data.bw_page_option ? 'Active' : 'Disabled';
+                    diagBw.style.color = data.bw_page_option ? '#10b981' : '#f87171';
+                }
 
                 const logsContainer = document.getElementById('diagLogs');
                 if (!data.logs || data.logs.length === 0) {
@@ -2993,6 +3149,40 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             if (e.target === diagModal) diagModal.style.display = 'none';
         });
 
+        // Black & White Page Mode Toggle
+        function initBwPageMode() {
+            const isBw = localStorage.getItem('bw_page_mode') === 'true';
+            applyBwPageMode(isBw);
+        }
+
+        function applyBwPageMode(enabled) {
+            if (enabled) {
+                document.body.classList.add('bw-mode');
+                if (bwToggleText) bwToggleText.textContent = 'B&W Page: On';
+                if (bwPageToggle) {
+                    bwPageToggle.style.borderColor = '#ffffff';
+                    bwPageToggle.style.color = '#ffffff';
+                }
+            } else {
+                document.body.classList.remove('bw-mode');
+                if (bwToggleText) bwToggleText.textContent = 'B&W Page: Off';
+                if (bwPageToggle) {
+                    bwPageToggle.style.borderColor = '';
+                    bwPageToggle.style.color = '';
+                }
+            }
+        }
+
+        if (bwPageToggle) {
+            bwPageToggle.addEventListener('click', () => {
+                const currentlyBw = document.body.classList.contains('bw-mode');
+                const nextState = !currentlyBw;
+                localStorage.setItem('bw_page_mode', nextState.toString());
+                applyBwPageMode(nextState);
+            });
+        }
+
+        initBwPageMode();
         loadHostedFiles();
     </script>
 </body>

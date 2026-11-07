@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 import io
+import time
 import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
@@ -714,5 +715,133 @@ def test_encrypted_ole_docx_detection(tmp_path):
 
     with pytest.raises(ValueError, match="encrypted or legacy binary Office document"):
         extract_text_from_document(str(encrypted_docx), "docx")
+
+
+def test_bw_image_conversion(tmp_path):
+    """Verifies that black and white option converts color images to true monochrome/grayscale."""
+    # Create bright color test image (vibrant red, green, blue)
+    color_img = Image.new("RGB", (60, 60), (255, 60, 20))
+    in_file = tmp_path / "vibrant_color.png"
+    color_img.save(in_file, "PNG")
+
+    # 1. Convert to WebP in B&W
+    out_webp = HOSTED_DIR / "vibrant_color.webp"
+    process_conversion(str(in_file), "vibrant_color.png", "webp", black_and_white=True)
+    assert out_webp.exists()
+    with Image.open(out_webp) as im_w:
+        reloaded_webp = im_w.convert("RGB")
+        px = reloaded_webp.getpixel((10, 10))
+        assert abs(px[0] - px[1]) <= 2 and abs(px[1] - px[2]) <= 2
+    out_webp.unlink()
+
+    # 2. Convert to PNG in B&W
+    out_png = HOSTED_DIR / "vibrant_color.png"
+    process_conversion(str(in_file), "vibrant_color.png", "png", black_and_white=True)
+    assert out_png.exists()
+    with Image.open(out_png) as reloaded_png:
+        assert reloaded_png.mode in ("L", "RGB", "RGBA")
+        if reloaded_png.mode != "L":
+            rgb = reloaded_png.convert("RGB")
+            p = rgb.getpixel((10, 10))
+            assert p[0] == p[1] == p[2]
+    out_png.unlink()
+
+
+def test_bw_pdf_conversion(tmp_path):
+    """Verifies that PDF-to-PDF conversion in B&W mode renders monochrome pages."""
+    # Generate a sample 2-page color PDF
+    pdf_in = tmp_path / "color_doc.pdf"
+    p1 = Image.new("RGB", (200, 200), (255, 0, 0))
+    p2 = Image.new("RGB", (200, 200), (0, 0, 255))
+    p1.save(pdf_in, "PDF", save_all=True, append_images=[p2])
+
+    out_name = process_conversion(str(pdf_in), "color_doc.pdf", "pdf", black_and_white=True)
+    out_pdf = HOSTED_DIR / out_name
+    assert out_pdf.exists()
+    content = out_pdf.read_bytes()
+    assert content.startswith(b"%PDF-")
+    out_pdf.unlink()
+
+
+def test_bw_api_convert_endpoint():
+    """Verifies that /api/convert honors black_and_white form parameter."""
+    buf = io.BytesIO()
+    im = Image.new("RGB", (50, 50), (200, 50, 50))
+    im.save(buf, format="PNG")
+    buf.seek(0)
+
+    res = client.post(
+        "/api/convert",
+        data={"target_format": "jpg", "black_and_white": "true"},
+        files={"files": ("test_api_bw.png", buf, "image/png")},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert len(data["results"]) == 1
+    assert data["results"][0]["status"] == "ok"
+    assert data["results"][0]["hosted_name"] == "test_api_bw.jpg"
+
+    out_file = HOSTED_DIR / "test_api_bw.jpg"
+    assert out_file.exists()
+    with Image.open(out_file) as im_j:
+        reloaded = im_j.convert("RGB")
+        px = reloaded.getpixel((10, 10))
+        assert abs(px[0] - px[1]) <= 2 and abs(px[1] - px[2]) <= 2
+    out_file.unlink()
+
+
+def test_bw_api_upload_chunk():
+    """Verifies that /api/upload-chunk honors black_and_white form parameter."""
+    buf = io.BytesIO()
+    im = Image.new("RGB", (40, 40), (10, 220, 30))
+    im.save(buf, format="PNG")
+    buf.seek(0)
+    content = buf.getvalue()
+
+    file_id = f"bw_chunk_{int(time.time() * 1000)}"
+    res = client.post(
+        "/api/upload-chunk",
+        data={
+            "file_id": file_id,
+            "chunk_index": 0,
+            "total_chunks": 1,
+            "filename": "test_chunk_bw.png",
+            "target_format": "png",
+            "black_and_white": "true",
+        },
+        files={"chunk": ("blob", io.BytesIO(content), "application/octet-stream")},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "complete"
+    assert data["results"][0]["status"] == "ok"
+
+    out_file = HOSTED_DIR / "test_chunk_bw.png"
+    assert out_file.exists()
+    with Image.open(out_file) as reloaded:
+        if reloaded.mode != "L":
+            rgb = reloaded.convert("RGB")
+            p = rgb.getpixel((5, 5))
+            assert p[0] == p[1] == p[2]
+    out_file.unlink()
+
+
+def test_bw_diagnostics_and_dashboard():
+    """Verifies that diagnostics and dashboard expose the Black & White page options."""
+    # Diagnostics check
+    diag_res = client.get("/api/diagnostics")
+    assert diag_res.status_code == 200
+    diag_data = diag_res.json()
+    assert diag_data.get("bw_page_option") is True
+
+    # Dashboard HTML check
+    dash_res = client.get("/")
+    assert dash_res.status_code == 200
+    html_text = dash_res.text
+    assert "bwPageToggle" in html_text
+    assert "bwToggleText" in html_text
+    assert "bwConvertOption" in html_text
+    assert "bw-mode" in html_text
+
 
 
