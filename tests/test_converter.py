@@ -853,6 +853,12 @@ def test_bw_diagnostics_and_dashboard():
     assert "theme-editorial" in html_text
     assert "theme-liquid-glass" in html_text
     assert "setWebpageTheme" in html_text
+    assert "toggleSwitcherNavBtn" in html_text
+    assert "toggleSwitcherText" in html_text
+    assert "themeBar" in html_text
+    assert "initSwitcherVisibility" in html_text
+    assert "themeBarCloseBtn" in html_text
+
 
 
 

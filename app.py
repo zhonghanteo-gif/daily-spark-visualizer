@@ -1321,6 +1321,64 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             gap: 10px;
             margin: 6px 0 16px 0;
             flex-wrap: wrap;
+            transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                        opacity 0.25s ease,
+                        margin 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 140px;
+            opacity: 1;
+            transform: translateY(0);
+            overflow: hidden;
+        }
+
+        .theme-bar.hidden {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+            margin-bottom: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            transform: translateY(-8px);
+            pointer-events: none;
+        }
+
+        .btn-toggle-switcher {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #94a3b8;
+        }
+
+        .btn-toggle-switcher:hover {
+            color: #f1f5f9;
+            border-color: #38bdf8;
+            background: #223249;
+        }
+
+        .btn-toggle-switcher.active-hidden {
+            border-color: #64748b;
+            color: #94a3b8;
+            background: #0f172a;
+        }
+
+        .theme-bar-close {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            font-size: 1.15rem;
+            line-height: 1;
+            padding: 4px 7px;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-bar-close:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.1);
         }
 
         .theme-bar-label {
@@ -3545,6 +3603,13 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                     </svg>
                     <span id="bwToggleText">Display: Modern Dark</span>
                 </button>
+                <button type="button" class="btn-diag btn-toggle-switcher" id="toggleSwitcherNavBtn" title="Hide or show the display style switcher bar" aria-expanded="true">
+                    <svg id="toggleSwitcherIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                    <span id="toggleSwitcherText">Hide Switcher</span>
+                </button>
                 <button class="btn-diag" id="openDiagBtn" title="View Server Diagnostics and Logs">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
@@ -3556,7 +3621,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             <p>Convert images, documents, and spreadsheets. Hosted permanently at <code>/files</code>.</p>
 
             <!-- Webpage Display Style Switcher (Editorial, Soft Liquid Glass, Modern Dark, B&W Light, B&W Dark) -->
-            <div class="theme-bar">
+            <div class="theme-bar" id="themeBar">
                 <span class="theme-bar-label">Display Style:</span>
                 <div class="theme-switcher" id="themeSwitcher" role="group" aria-label="Webpage Display Styles">
                     <button type="button" class="theme-btn" data-theme="editorial" id="themeBtnEditorial" title="Editorial Magazine Layout">
@@ -3580,6 +3645,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                         <span>B&W Dark</span>
                     </button>
                 </div>
+                <button type="button" class="theme-bar-close" id="themeBarCloseBtn" title="Hide switcher bar" aria-label="Hide theme switcher">&times;</button>
             </div>
         </div>
 
@@ -4415,6 +4481,62 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                     card.style.setProperty('--mouse-y', `${y}px`);
                 });
             });
+
+            // Initialize Switcher Bar Navigation Hide / Show Controls
+            initSwitcherVisibility();
+        }
+
+        // Switcher Bar Hide / Show Navigation Controls
+        const themeBar = document.getElementById('themeBar');
+        const toggleSwitcherNavBtn = document.getElementById('toggleSwitcherNavBtn');
+        const toggleSwitcherText = document.getElementById('toggleSwitcherText');
+        const toggleSwitcherIcon = document.getElementById('toggleSwitcherIcon');
+        const themeBarCloseBtn = document.getElementById('themeBarCloseBtn');
+
+        const SVG_EYE_OFF = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>`;
+        const SVG_EYE_ON = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
+
+        function setSwitcherVisibility(visible) {
+            if (!themeBar) return;
+            if (visible) {
+                themeBar.classList.remove('hidden');
+                if (toggleSwitcherText) toggleSwitcherText.textContent = 'Hide Switcher';
+                if (toggleSwitcherIcon) toggleSwitcherIcon.innerHTML = SVG_EYE_OFF;
+                if (toggleSwitcherNavBtn) {
+                    toggleSwitcherNavBtn.setAttribute('aria-expanded', 'true');
+                    toggleSwitcherNavBtn.classList.remove('active-hidden');
+                    toggleSwitcherNavBtn.title = 'Hide the display style switcher bar';
+                }
+                localStorage.setItem('switcher_hidden', 'false');
+            } else {
+                themeBar.classList.add('hidden');
+                if (toggleSwitcherText) toggleSwitcherText.textContent = 'Show Switcher';
+                if (toggleSwitcherIcon) toggleSwitcherIcon.innerHTML = SVG_EYE_ON;
+                if (toggleSwitcherNavBtn) {
+                    toggleSwitcherNavBtn.setAttribute('aria-expanded', 'false');
+                    toggleSwitcherNavBtn.classList.add('active-hidden');
+                    toggleSwitcherNavBtn.title = 'Show the display style switcher bar';
+                }
+                localStorage.setItem('switcher_hidden', 'true');
+            }
+        }
+
+        function initSwitcherVisibility() {
+            const isHidden = localStorage.getItem('switcher_hidden') === 'true';
+            setSwitcherVisibility(!isHidden);
+
+            if (toggleSwitcherNavBtn) {
+                toggleSwitcherNavBtn.addEventListener('click', () => {
+                    const currentlyHidden = themeBar ? themeBar.classList.contains('hidden') : false;
+                    setSwitcherVisibility(currentlyHidden);
+                });
+            }
+
+            if (themeBarCloseBtn) {
+                themeBarCloseBtn.addEventListener('click', () => {
+                    setSwitcherVisibility(false);
+                });
+            }
         }
 
         initWebpageTheme();
