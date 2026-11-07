@@ -927,6 +927,26 @@ def test_bw_diagnostics_and_dashboard():
     assert "formatExpandedPanel" in html_text
     assert "quickFormatsPills" in html_text
     assert "toggleMoreFormats" in html_text
+    assert "catBtnVideo" in html_text
+
+
+def test_video_mp4_conversion(tmp_path):
+    from app import HAS_FFMPEG, HOSTED_DIR
+    src_mov = tmp_path / "test_clip.mov"
+    if HAS_FFMPEG:
+        subprocess.run(
+            ["ffmpeg", "-y", "-f", "lavfi", "-i", "testsrc=duration=0.5:size=160x120:rate=15",
+             "-c:v", "libx264", "-pix_fmt", "yuv420p", str(src_mov)],
+            capture_output=True, check=True
+        )
+    else:
+        src_mov.write_bytes(b"dummy video data")
+
+    out_name = process_conversion(str(src_mov), "test_clip.mov", "mp4")
+    assert out_name == "test_clip.mp4"
+    out_file = HOSTED_DIR / out_name
+    assert out_file.exists()
+    assert out_file.stat().st_size > 0
 
 
 

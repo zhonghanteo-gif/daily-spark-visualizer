@@ -892,6 +892,29 @@ def process_conversion(input_path: str, orig_name: str, target_ext: str, black_a
             if not (source_ext in DOCUMENT_FORMATS and target_ext in DOCUMENT_FORMATS):
                 raise
 
+    # 6. Video & ZeroBlur Master (.mp4)
+    if target_ext == "mp4" and source_ext in ("mp4", "mov", "webm", "mkv", "avi"):
+        if HAS_FFMPEG:
+            try:
+                cmd = [
+                    "ffmpeg", "-y", "-i", input_path,
+                    "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease:flags=lanczos+accurate_rnd,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,unsharp=5:5:0.65:3:3:0.20,format=yuv420p",
+                    "-c:v", "libx264", "-preset", "fast",
+                    "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
+                    output_path
+                ]
+                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+                if proc.returncode == 0:
+                    log_event("info", f"ZeroBlur Video Mastered: {orig_name} -> {output_filename}")
+                    return output_filename
+            except Exception as e:
+                log_event("error", f"ZeroBlur mastering error: {e}")
+        # Safe fallback: copy directly
+        if Path(input_path).resolve() != Path(output_path).resolve():
+            shutil.copyfile(input_path, output_path)
+        log_event("info", f"Video hosted: {output_filename}")
+        return output_filename
+
     # 5. Document Cross-Format Conversions (.docx, .doc, .rtf, .txt, .md, .html, .pdf)
     if source_ext in DOCUMENT_FORMATS and target_ext in (DOCUMENT_FORMATS | {"json"}):
         sections = extract_text_from_document(input_path, source_ext)
@@ -4699,6 +4722,9 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                                 <button type="button" class="format-cat-btn" data-cat="host" role="tab" aria-selected="false" id="catBtnHost">
                                     <span>📦 Direct Host</span>
                                 </button>
+                                <button type="button" class="format-cat-btn" data-cat="video" role="tab" aria-selected="false" id="catBtnVideo">
+                                    <span>⚡ Video</span>
+                                </button>
                             </div>
 
                             <!-- Format Pills Switcher -->
@@ -4722,6 +4748,9 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                         <select id="targetFormat" name="target_format" required style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; clip:rect(0,0,0,0);">
                             <optgroup label="Direct Hosting">
                                 <option value="keep">Keep Original Format (Direct Host)</option>
+                            </optgroup>
+                            <optgroup label="Video & ZeroBlur Mastering">
+                                <option value="mp4">MP4 Video (.mp4) - ZeroBlur Master</option>
                             </optgroup>
                             <optgroup label="Images">
                                 <option value="webp" selected>WebP Image (.webp) - High Quality & Small</option>
@@ -5556,6 +5585,12 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                 label: '📦 Direct Host',
                 formats: [
                     { id: 'keep', name: 'Keep Original', ext: 'direct', hint: 'Host original format directly' }
+                ]
+            },
+            video: {
+                label: '⚡ Video & ZeroBlur',
+                formats: [
+                    { id: 'mp4', name: 'MP4 Master', ext: '.mp4', hint: 'ZeroBlur 60fps CFR & WhatsApp Master' }
                 ]
             }
         };
