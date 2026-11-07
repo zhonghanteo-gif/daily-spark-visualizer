@@ -6070,7 +6070,7 @@ HTML_ZEROBLUR = r"""<!DOCTYPE html>
           <video id="hiddenSourceVideo" class="hidden" playsinline muted loop crossorigin="anonymous"></video>
 
           <!-- Canvas Split-View Container -->
-          <div id="canvasViewport" class="relative w-full aspect-[16/10] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 select-none">
+          <div id="canvasViewport" style="touch-action: none;" class="relative w-full aspect-[16/10] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 select-none transition-all duration-200">
             <canvas id="comparisonCanvas" width="960" height="600" class="w-full h-full object-contain block"></canvas>
 
             <!-- Top Overlay Labels -->
@@ -7291,6 +7291,45 @@ ffmpeg -y -i "${state.uploadedMeta.name}" \\
       });
       window.addEventListener('pointerup', () => {
         isDraggingSplit = false;
+      });
+
+      // Direct drag-and-drop video loading onto comparison viewport
+      viewport.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        viewport.classList.add('ring-2', 'ring-emerald-400', 'ring-offset-2', 'ring-offset-slate-950');
+      });
+      viewport.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        viewport.classList.remove('ring-2', 'ring-emerald-400', 'ring-offset-2', 'ring-offset-slate-950');
+      });
+      viewport.addEventListener('drop', (e) => {
+        e.preventDefault();
+        viewport.classList.remove('ring-2', 'ring-emerald-400', 'ring-offset-2', 'ring-offset-slate-950');
+        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('video/') && !file.name.match(/\.(mp4|mov|webm|mkv|avi)$/i)) {
+          showToast('Please drop a video file (.mp4, .mov, .webm)');
+          return;
+        }
+        const url = URL.createObjectURL(file);
+        const vid = document.getElementById('hiddenSourceVideo');
+        vid.src = url;
+        vid.onloadedmetadata = () => {
+          state.usingUploadedVideo = true;
+          state.uploadedFile = file;
+          state.uploadedMeta = {
+            name: file.name,
+            width: vid.videoWidth || 1080,
+            height: vid.videoHeight || 1920,
+            duration: Math.round(vid.duration || 15),
+            sizeMb: Number((file.size / (1024 * 1024)).toFixed(1))
+          };
+          state.durationSec = Math.max(5, Math.min(120, Math.round(vid.duration || 15)));
+          document.getElementById('sliderDuration').value = state.durationSec;
+          vid.play();
+          updateAllUI();
+          showToast(`Loaded ${file.name} (${state.uploadedMeta.width}×${state.uploadedMeta.height})`);
+        };
       });
 
       // Play/Pause
