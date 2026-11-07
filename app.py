@@ -1176,7 +1176,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
     <title>Universal File Converter & Permanent Host</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,600&family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -1730,6 +1730,773 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             background: #ffffff !important;
             color: #000000 !important;
         }
+
+        /* ==========================================================================
+           DISPLAY STYLE 1: EDITORIAL (High-fashion Typography & Tactile Print)
+           ========================================================================== */
+        body.theme-editorial {
+            --bg-color: #f7f4ec;
+            --card-bg: #fffefb;
+            --card-border: #1c1917;
+            --accent-primary: #853b1b;
+            --accent-hover: #6c2f14;
+            --accent-glow: rgba(133, 59, 27, 0.22);
+            --text-main: #1c1917;
+            --text-muted: #57534e;
+            --text-dim: #78716c;
+            --success: #1c1917;
+            --danger: #991b1b;
+            --warning: #b45309;
+            --radius-md: 4px;
+            --radius-lg: 6px;
+            font-family: 'Newsreader', 'Playfair Display', Georgia, serif;
+            background-color: #f7f4ec;
+            background-image: 
+                radial-gradient(#e5dfd3 0.8px, transparent 0.8px),
+                linear-gradient(to bottom, rgba(247, 244, 236, 0.7), rgba(247, 244, 236, 1));
+            background-size: 18px 18px, 100% 100%;
+            color: #1c1917;
+            letter-spacing: -0.005em;
+        }
+
+        body.theme-editorial .header-top {
+            border-bottom: 1.5px solid #1c1917;
+            padding-bottom: 12px;
+            margin-bottom: 18px;
+        }
+
+        body.theme-editorial .header-badge {
+            background: #ede8dc !important;
+            border: 1px solid #1c1917 !important;
+            color: #1c1917 !important;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+            border-radius: 2px !important;
+            box-shadow: 2px 2px 0px #1c1917;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        body.theme-editorial .header-badge:hover {
+            transform: translateY(-2px) rotate(-1deg);
+        }
+
+        body.theme-editorial .btn-diag,
+        body.theme-editorial .btn-bw-toggle {
+            background: #fffefb !important;
+            border: 1.5px solid #1c1917 !important;
+            color: #1c1917 !important;
+            border-radius: 2px !important;
+            box-shadow: 2px 2px 0px #1c1917 !important;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+
+        body.theme-editorial .btn-diag:hover,
+        body.theme-editorial .btn-bw-toggle:hover {
+            background: #f1ecdf !important;
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0px #1c1917 !important;
+        }
+
+        body.theme-editorial .header h1 {
+            font-family: 'Newsreader', 'Playfair Display', Georgia, serif;
+            font-style: italic;
+            font-weight: 600;
+            font-size: 2.85rem;
+            letter-spacing: -0.02em;
+            color: #1c1917;
+            background: none;
+            -webkit-background-clip: initial;
+            -webkit-text-fill-color: initial;
+        }
+
+        body.theme-editorial .header p {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.05rem;
+            color: #57534e;
+            font-style: normal;
+        }
+
+        body.theme-editorial .header p code {
+            font-family: 'JetBrains Mono', monospace;
+            background: #ede8dc;
+            padding: 2px 6px;
+            border: 1px solid #d6cfbf;
+            border-radius: 2px;
+            color: #1c1917;
+        }
+
+        body.theme-editorial .theme-switcher {
+            background: #fffefb;
+            border: 1.5px solid #1c1917;
+            border-radius: 4px;
+            box-shadow: 3px 3px 0px #1c1917;
+            padding: 4px;
+        }
+
+        body.theme-editorial .theme-btn {
+            border-radius: 2px;
+            color: #57534e;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.76rem;
+            padding: 5px 11px;
+        }
+
+        body.theme-editorial .theme-btn.active {
+            background: #1c1917;
+            color: #fffefb;
+            box-shadow: 2px 2px 0px #853b1b;
+        }
+
+        body.theme-editorial .theme-btn:hover:not(.active) {
+            background: #ede8dc;
+            color: #1c1917;
+        }
+
+        body.theme-editorial .card {
+            background: #fffefb;
+            border: 2px solid #1c1917;
+            border-radius: 4px;
+            box-shadow: 5px 5px 0px #1c1917;
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+        }
+
+        body.theme-editorial .card:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 7px 7px 0px #1c1917;
+        }
+
+        body.theme-editorial .card-title {
+            font-family: 'Newsreader', 'Playfair Display', Georgia, serif;
+            font-weight: 700;
+            font-size: 1.35rem;
+            letter-spacing: -0.01em;
+            color: #1c1917;
+            border-bottom: 1.5px solid #ede8dc;
+            padding-bottom: 10px;
+        }
+
+        body.theme-editorial .picker-buttons-row .btn-picker {
+            border-radius: 3px;
+            border: 1.5px solid #1c1917;
+            box-shadow: 3px 3px 0px #1c1917;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            font-weight: 600;
+            font-size: 0.82rem;
+            background: #fffefb;
+            color: #1c1917;
+            transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease;
+        }
+
+        body.theme-editorial .picker-buttons-row .btn-picker:hover {
+            background: #ede8dc;
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0px #1c1917;
+        }
+
+        body.theme-editorial .picker-buttons-row .btn-picker:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px #1c1917;
+        }
+
+        body.theme-editorial .btn-picker.btn-gallery {
+            background: #fffefb !important;
+            border-color: #1c1917 !important;
+            color: #1c1917 !important;
+        }
+
+        body.theme-editorial .btn-picker.btn-gallery svg {
+            color: #853b1b;
+        }
+
+        body.theme-editorial .dropzone {
+            background: #faf7f0;
+            border: 2px dashed #1c1917;
+            border-radius: 4px;
+            transition: all 0.22s ease;
+        }
+
+        body.theme-editorial .dropzone:hover,
+        body.theme-editorial .dropzone.dragover {
+            background: #f2ebd9;
+            border-style: solid;
+            border-color: #853b1b;
+            box-shadow: inset 0 0 0 2px #853b1b;
+            transform: scale(1.005);
+        }
+
+        body.theme-editorial .dropzone-icon {
+            background: #ede8dc;
+            border: 1.5px solid #1c1917;
+            box-shadow: 3px 3px 0px #1c1917;
+            border-radius: 4px;
+        }
+
+        body.theme-editorial .dropzone-icon svg {
+            color: #853b1b;
+        }
+
+        body.theme-editorial .dropzone h3 {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1c1917;
+        }
+
+        body.theme-editorial .dropzone p {
+            color: #57534e;
+        }
+
+        body.theme-editorial .file-chip {
+            background: #faf7f0;
+            border: 1.5px solid #1c1917;
+            box-shadow: 3px 3px 0px #1c1917;
+            border-radius: 3px;
+            color: #1c1917;
+        }
+
+        body.theme-editorial .chip-name {
+            font-family: 'Newsreader', serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #1c1917;
+        }
+
+        body.theme-editorial .chip-meta {
+            font-family: 'JetBrains Mono', monospace;
+            color: #57534e;
+        }
+
+        body.theme-editorial .chip-remove {
+            color: #853b1b;
+        }
+
+        body.theme-editorial .chip-remove:hover {
+            background: #853b1b;
+            color: #fffefb;
+            border-radius: 2px;
+        }
+
+        body.theme-editorial .select-styled {
+            background: #fffefb;
+            border: 1.5px solid #1c1917;
+            border-radius: 3px;
+            box-shadow: 2px 2px 0px #1c1917;
+            color: #1c1917;
+            font-family: 'Newsreader', serif;
+            font-size: 1rem;
+        }
+
+        body.theme-editorial .btn-submit {
+            background: #1c1917 !important;
+            color: #fffefb !important;
+            border: 2px solid #1c1917 !important;
+            border-radius: 3px !important;
+            box-shadow: 4px 4px 0px #853b1b !important;
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        body.theme-editorial .btn-submit:hover:not(:disabled) {
+            background: #853b1b !important;
+            border-color: #853b1b !important;
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px #1c1917 !important;
+        }
+
+        body.theme-editorial .btn-submit:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px #1c1917 !important;
+        }
+
+        body.theme-editorial .search-box {
+            background: #fffefb;
+            border: 1.5px solid #1c1917;
+            border-radius: 3px;
+            box-shadow: 2px 2px 0px #1c1917;
+            color: #1c1917;
+            font-family: 'Newsreader', serif;
+        }
+
+        body.theme-editorial .btn-filter {
+            background: #fffefb;
+            border: 1px solid #1c1917;
+            border-radius: 2px;
+            color: #57534e;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.74rem;
+        }
+
+        body.theme-editorial .btn-filter.active {
+            background: #1c1917 !important;
+            color: #fffefb !important;
+            box-shadow: 2px 2px 0px #853b1b;
+        }
+
+        body.theme-editorial .btn-action.download {
+            background: #1c1917 !important;
+            color: #fffefb !important;
+            border: 1.5px solid #1c1917 !important;
+            border-radius: 2px !important;
+            box-shadow: 2px 2px 0px #853b1b !important;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        body.theme-editorial .btn-action.download:hover {
+            background: #853b1b !important;
+            border-color: #853b1b !important;
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0px #1c1917 !important;
+        }
+
+        body.theme-editorial .btn-action.delete {
+            background: #fffefb !important;
+            color: #991b1b !important;
+            border: 1.5px solid #991b1b !important;
+            border-radius: 2px !important;
+            box-shadow: 2px 2px 0px #991b1b !important;
+        }
+
+        body.theme-editorial .btn-action.delete:hover {
+            background: #991b1b !important;
+            color: #fffefb !important;
+        }
+
+        body.theme-editorial .file-row {
+            background: #faf7f0;
+            border: 1.5px solid #1c1917;
+            border-radius: 3px;
+            box-shadow: 3px 3px 0px #1c1917;
+            transition: all 0.18s ease;
+        }
+
+        body.theme-editorial .file-row:hover {
+            background: #fffefb;
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0px #1c1917;
+        }
+
+        body.theme-editorial .file-name {
+            font-family: 'Newsreader', serif;
+            font-weight: 600;
+            font-size: 0.98rem;
+            color: #1c1917;
+        }
+
+        body.theme-editorial .grid-card {
+            background: #fffefb;
+            border: 1.5px solid #1c1917;
+            border-radius: 3px;
+            box-shadow: 4px 4px 0px #1c1917;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        body.theme-editorial .grid-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px #1c1917;
+        }
+
+        body.theme-editorial .grid-name {
+            font-family: 'Newsreader', serif;
+            font-weight: 600;
+            color: #1c1917;
+        }
+
+        body.theme-editorial .modal-card {
+            background: #fffefb;
+            border: 2px solid #1c1917;
+            border-radius: 4px;
+            box-shadow: 8px 8px 0px #1c1917;
+            color: #1c1917;
+        }
+
+        body.theme-editorial .diag-box {
+            background: #faf7f0;
+            border: 1.5px solid #1c1917;
+            border-radius: 2px;
+            box-shadow: 2px 2px 0px #1c1917;
+        }
+
+        body.theme-editorial .diag-val {
+            color: #1c1917;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        body.theme-editorial .log-list {
+            background: #f7f4ec;
+            border: 1.5px solid #1c1917;
+            color: #1c1917;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ==========================================================================
+           DISPLAY STYLE 2: SOFT LIQUID GLASS (VisionOS Fluid Acrylic & Specular Sheen)
+           ========================================================================== */
+        body.theme-liquid-glass {
+            --bg-color: #070913;
+            --card-bg: rgba(255, 255, 255, 0.045);
+            --card-border: rgba(255, 255, 255, 0.16);
+            --accent-primary: #6366f1;
+            --accent-hover: #4f46e5;
+            --accent-glow: rgba(99, 102, 241, 0.45);
+            --text-main: #ffffff;
+            --text-muted: #cbd5e1;
+            --text-dim: #94a3b8;
+            --success: #34d399;
+            --danger: #f87171;
+            --warning: #fbbf24;
+            --radius-md: 14px;
+            --radius-lg: 24px;
+            background-color: #070913;
+            background-image: 
+                radial-gradient(circle 900px at 15% 15%, rgba(99, 102, 241, 0.22), transparent 70%),
+                radial-gradient(circle 800px at 85% 25%, rgba(236, 72, 153, 0.18), transparent 70%),
+                radial-gradient(circle 950px at 50% 85%, rgba(56, 189, 248, 0.22), transparent 70%),
+                radial-gradient(circle 700px at 10% 75%, rgba(168, 85, 247, 0.18), transparent 70%);
+            background-attachment: fixed;
+            color: #ffffff;
+        }
+
+        /* Ambient Floating Orbs */
+        .liquid-bg-orbs {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        body.theme-liquid-glass .liquid-bg-orbs {
+            display: block;
+        }
+
+        .liquid-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.42;
+            mix-blend-mode: screen;
+            animation: liquidOrbFloat 18s ease-in-out infinite alternate;
+        }
+
+        .liquid-orb.orb-1 {
+            width: 440px;
+            height: 440px;
+            background: radial-gradient(circle, #6366f1, #a855f7);
+            top: -100px;
+            left: -80px;
+            animation-duration: 20s;
+        }
+
+        .liquid-orb.orb-2 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, #ec4899, #38bdf8);
+            bottom: -120px;
+            right: -100px;
+            animation-duration: 24s;
+            animation-direction: alternate-reverse;
+        }
+
+        .liquid-orb.orb-3 {
+            width: 360px;
+            height: 360px;
+            background: radial-gradient(circle, #06b6d4, #8b5cf6);
+            top: 45%;
+            left: 55%;
+            animation-duration: 22s;
+        }
+
+        @keyframes liquidOrbFloat {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(70px, 45px) scale(1.1); }
+            100% { transform: translate(-50px, 80px) scale(0.94); }
+        }
+
+        body.theme-liquid-glass .header h1 {
+            background: linear-gradient(135deg, #ffffff 30%, #38bdf8 65%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 35px rgba(56, 189, 248, 0.3);
+        }
+
+        body.theme-liquid-glass .header-badge {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border: 1px solid rgba(255, 255, 255, 0.22) !important;
+            color: #e2e8f0 !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+        }
+
+        body.theme-liquid-glass .btn-diag,
+        body.theme-liquid-glass .btn-bw-toggle {
+            background: rgba(255, 255, 255, 0.07) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            color: #f1f5f9 !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.3) !important;
+        }
+
+        body.theme-liquid-glass .btn-diag:hover,
+        body.theme-liquid-glass .btn-bw-toggle:hover {
+            background: rgba(255, 255, 255, 0.15) !important;
+            border-color: rgba(56, 189, 248, 0.6) !important;
+            color: #ffffff !important;
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.35), inset 0 1px 1.5px rgba(255, 255, 255, 0.6) !important;
+            transform: translateY(-2px);
+        }
+
+        body.theme-liquid-glass .theme-switcher {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+        }
+
+        body.theme-liquid-glass .theme-btn {
+            color: #cbd5e1;
+            border-radius: 9999px;
+        }
+
+        body.theme-liquid-glass .theme-btn.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.9), rgba(168, 85, 247, 0.9));
+            color: #ffffff;
+            box-shadow: 0 4px 18px rgba(168, 85, 247, 0.55), inset 0 1px 1.5px rgba(255, 255, 255, 0.7);
+        }
+
+        body.theme-liquid-glass .card {
+            background: rgba(255, 255, 255, 0.045);
+            backdrop-filter: blur(26px) saturate(210%);
+            -webkit-backdrop-filter: blur(26px) saturate(210%);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 24px;
+            box-shadow: 
+                0 20px 50px rgba(0, 0, 0, 0.5),
+                inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.35),
+                inset 0 -1px 1px 0 rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        body.theme-liquid-glass .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(550px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255, 255, 255, 0.08), transparent 45%);
+            pointer-events: none;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+
+        body.theme-liquid-glass .card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(168, 85, 247, 0.35);
+            box-shadow: 
+                0 25px 60px rgba(99, 102, 241, 0.25),
+                inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        body.theme-liquid-glass .btn-picker.btn-gallery {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(168, 85, 247, 0.18)) !important;
+            border: 1px solid rgba(255, 255, 255, 0.25) !important;
+            backdrop-filter: blur(14px) !important;
+            -webkit-backdrop-filter: blur(14px) !important;
+            border-radius: 9999px !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.4) !important;
+            color: #ffffff !important;
+        }
+
+        body.theme-liquid-glass .btn-picker.btn-gallery:hover {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(168, 85, 247, 0.3)) !important;
+            border-color: rgba(255, 255, 255, 0.55) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.4), inset 0 1px 1.5px rgba(255,255,255,0.7) !important;
+        }
+
+        body.theme-liquid-glass .btn-picker.btn-camera,
+        body.theme-liquid-glass .btn-picker.btn-files {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(14px);
+            border-radius: 9999px;
+            color: #e2e8f0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.3);
+        }
+
+        body.theme-liquid-glass .btn-picker.btn-camera:hover,
+        body.theme-liquid-glass .btn-picker.btn-files:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.35), inset 0 1px 1px rgba(255,255,255,0.5);
+        }
+
+        body.theme-liquid-glass .dropzone {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1.5px dashed rgba(255, 255, 255, 0.22);
+            border-radius: 18px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: inset 0 2px 12px rgba(0,0,0,0.25);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        body.theme-liquid-glass .dropzone:hover,
+        body.theme-liquid-glass .dropzone.dragover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: #a855f7;
+            box-shadow: 0 0 35px rgba(168, 85, 247, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.45);
+            transform: scale(1.01);
+        }
+
+        body.theme-liquid-glass .dropzone-icon {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(168, 85, 247, 0.25));
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+        }
+
+        body.theme-liquid-glass .dropzone-icon svg {
+            color: #38bdf8;
+        }
+
+        body.theme-liquid-glass .file-chip {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 9999px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+            color: #ffffff;
+        }
+
+        body.theme-liquid-glass .select-styled {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(16px);
+            border-radius: 12px;
+            color: #ffffff;
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
+        }
+
+        body.theme-liquid-glass .select-styled option {
+            background: #0f172a;
+            color: #ffffff;
+        }
+
+        body.theme-liquid-glass .btn-submit {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.95), rgba(168, 85, 247, 0.95)) !important;
+            border: 1px solid rgba(255, 255, 255, 0.35) !important;
+            border-radius: 9999px !important;
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.6), inset 0 1.5px 2px rgba(255, 255, 255, 0.7) !important;
+            color: #ffffff !important;
+            letter-spacing: 0.02em;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        body.theme-liquid-glass .btn-submit:hover:not(:disabled) {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(168, 85, 247, 0.75), inset 0 1.5px 2px rgba(255, 255, 255, 0.9) !important;
+        }
+
+        body.theme-liquid-glass .btn-submit:active {
+            transform: scale(0.97);
+        }
+
+        body.theme-liquid-glass .search-box {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(16px);
+            border-radius: 12px;
+            color: #ffffff;
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
+        }
+
+        body.theme-liquid-glass .btn-filter {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            backdrop-filter: blur(12px);
+            border-radius: 9999px;
+            color: #cbd5e1;
+        }
+
+        body.theme-liquid-glass .btn-filter.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.85), rgba(168, 85, 247, 0.85)) !important;
+            border-color: rgba(255, 255, 255, 0.35) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.45), inset 0 1px 1px rgba(255,255,255,0.5);
+        }
+
+        body.theme-liquid-glass .file-row {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 14px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        body.theme-liquid-glass .file-row:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(56, 189, 248, 0.45);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.25), inset 0 1px 1.5px rgba(255, 255, 255, 0.4);
+        }
+
+        body.theme-liquid-glass .grid-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 16px;
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        body.theme-liquid-glass .grid-card:hover {
+            transform: translateY(-3px) scale(1.01);
+            border-color: rgba(168, 85, 247, 0.4);
+            box-shadow: 0 12px 35px rgba(99, 102, 241, 0.35), inset 0 1px 1.5px rgba(255, 255, 255, 0.5);
+        }
+
+        body.theme-liquid-glass .btn-action.download {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.8), rgba(168, 85, 247, 0.8)) !important;
+            border: 1px solid rgba(255, 255, 255, 0.25) !important;
+            color: #ffffff !important;
+            border-radius: 9999px !important;
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4), inset 0 1px 1px rgba(255,255,255,0.4) !important;
+        }
+
+        body.theme-liquid-glass .btn-action.download:hover {
+            transform: translateY(-1px) scale(1.05);
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.6), inset 0 1px 1.5px rgba(255,255,255,0.6) !important;
+        }
+
+        body.theme-liquid-glass .modal-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(30px) saturate(220%);
+            -webkit-backdrop-filter: blur(30px) saturate(220%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), inset 0 1.5px 1px rgba(255, 255, 255, 0.35);
+        }
+
 
         .header h1 {
             font-size: 2.2rem;
@@ -2758,18 +3525,25 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
     </style>
 </head>
 <body>
+    <!-- Ambient Floating Orbs for Soft Liquid Glass Display -->
+    <div class="liquid-bg-orbs" aria-hidden="true">
+        <div class="liquid-orb orb-1"></div>
+        <div class="liquid-orb orb-2"></div>
+        <div class="liquid-orb orb-3"></div>
+    </div>
+
     <div class="container">
         <!-- Header -->
         <div class="header">
             <div class="header-top">
                 <div class="header-badge">⚡ Instant Conversion & Permanent Hosting</div>
                 <div class="header-badge" style="margin-bottom:0; background:rgba(16, 185, 129, 0.15); color:#34d399; border-color:rgba(16, 185, 129, 0.35);">v1.4.0 • Mobile Shield & Photo Gallery</div>
-                <button type="button" class="btn-diag btn-bw-toggle" id="bwPageToggle" title="Toggle Black & White page theme">
+                <button type="button" class="btn-diag btn-bw-toggle" id="bwPageToggle" title="Toggle webpage display style (Editorial, Liquid Glass, Modern Dark, B&W)">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor"></path>
                     </svg>
-                    <span id="bwToggleText">B&W Page: Off</span>
+                    <span id="bwToggleText">Display: Modern Dark</span>
                 </button>
                 <button class="btn-diag" id="openDiagBtn" title="View Server Diagnostics and Logs">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2781,21 +3555,29 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             <h1>Universal File Converter</h1>
             <p>Convert images, documents, and spreadsheets. Hosted permanently at <code>/files</code>.</p>
 
-            <!-- Webpage Theme Switcher (Color, B&W Light Paper, B&W Dark Monochrome) -->
+            <!-- Webpage Display Style Switcher (Editorial, Soft Liquid Glass, Modern Dark, B&W Light, B&W Dark) -->
             <div class="theme-bar">
-                <span class="theme-bar-label">Page Theme:</span>
-                <div class="theme-switcher" id="themeSwitcher" role="group" aria-label="Webpage Black & White display options">
-                    <button type="button" class="theme-btn active" data-theme="color" id="themeBtnColor" title="Default Color Theme">
+                <span class="theme-bar-label">Display Style:</span>
+                <div class="theme-switcher" id="themeSwitcher" role="group" aria-label="Webpage Display Styles">
+                    <button type="button" class="theme-btn" data-theme="editorial" id="themeBtnEditorial" title="Editorial Magazine Layout">
+                        <span class="theme-dot" style="background:#853b1b; border:1px solid #1c1917;"></span>
+                        <span>📰 Editorial</span>
+                    </button>
+                    <button type="button" class="theme-btn" data-theme="liquid-glass" id="themeBtnLiquidGlass" title="Soft Liquid Glassmorphism">
+                        <span class="theme-dot" style="background:linear-gradient(135deg, #38bdf8, #c084fc); box-shadow:0 0 6px rgba(192,132,252,0.8);"></span>
+                        <span>🫧 Soft Liquid Glass</span>
+                    </button>
+                    <button type="button" class="theme-btn active" data-theme="color" id="themeBtnColor" title="Modern Dark Slate">
                         <span class="theme-dot" style="background:#3b82f6;"></span>
-                        <span>Color</span>
+                        <span>Modern Dark</span>
                     </button>
-                    <button type="button" class="theme-btn" data-theme="bw-light" id="themeBtnBwLight" title="Black & White Paper Page (Light Mode)">
+                    <button type="button" class="theme-btn" data-theme="bw-light" id="themeBtnBwLight" title="Black & White Paper Page">
                         <span class="theme-dot" style="background:#ffffff; border:1px solid #71717a;"></span>
-                        <span>B&W Light (Paper)</span>
+                        <span>B&W Light</span>
                     </button>
-                    <button type="button" class="theme-btn" data-theme="bw-dark" id="themeBtnBwDark" title="Black & White Dark Page (Monochrome)">
+                    <button type="button" class="theme-btn" data-theme="bw-dark" id="themeBtnBwDark" title="Black & White Dark Monochrome">
                         <span class="theme-dot" style="background:#000000; border:1px solid #a1a1aa;"></span>
-                        <span>B&W Dark (Monochrome)</span>
+                        <span>B&W Dark</span>
                     </button>
                 </div>
             </div>
@@ -3531,19 +4313,38 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             if (e.target === diagModal) diagModal.style.display = 'none';
         });
 
-        // Webpage Black & White Theme Manager (Color, B&W Light Paper, B&W Dark Monochrome)
+        // Webpage Display Style Manager (Editorial, Soft Liquid Glass, Modern Dark, B&W Light, B&W Dark)
+        const AVAILABLE_THEMES = ['editorial', 'liquid-glass', 'color', 'bw-light', 'bw-dark'];
+
         function setWebpageTheme(theme) {
-            const validTheme = ['color', 'bw-light', 'bw-dark'].includes(theme) ? theme : 'color';
+            const validTheme = AVAILABLE_THEMES.includes(theme) ? theme : 'color';
             
             // Remove existing theme classes
-            document.body.classList.remove('bw-mode', 'bw-page-light', 'bw-page-dark');
+            document.body.classList.remove('bw-mode', 'bw-page-light', 'bw-page-dark', 'theme-editorial', 'theme-liquid-glass');
             
-            if (validTheme === 'bw-light') {
+            if (validTheme === 'editorial') {
+                document.body.classList.add('theme-editorial');
+                if (bwToggleText) bwToggleText.textContent = 'Display: Editorial';
+                if (bwPageToggle) {
+                    bwPageToggle.style.borderColor = '#1c1917';
+                    bwPageToggle.style.color = '#1c1917';
+                    bwPageToggle.style.background = '#f1ecdf';
+                }
+            } else if (validTheme === 'liquid-glass') {
+                document.body.classList.add('theme-liquid-glass');
+                if (bwToggleText) bwToggleText.textContent = 'Display: Liquid Glass';
+                if (bwPageToggle) {
+                    bwPageToggle.style.borderColor = 'rgba(255, 255, 255, 0.35)';
+                    bwPageToggle.style.color = '#38bdf8';
+                    bwPageToggle.style.background = 'rgba(255, 255, 255, 0.08)';
+                }
+            } else if (validTheme === 'bw-light') {
                 document.body.classList.add('bw-mode', 'bw-page-light');
                 if (bwToggleText) bwToggleText.textContent = 'B&W Page: Light';
                 if (bwPageToggle) {
                     bwPageToggle.style.borderColor = '#09090b';
                     bwPageToggle.style.color = '#09090b';
+                    bwPageToggle.style.background = '#ffffff';
                 }
             } else if (validTheme === 'bw-dark') {
                 document.body.classList.add('bw-mode', 'bw-page-dark');
@@ -3551,12 +4352,14 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
                 if (bwPageToggle) {
                     bwPageToggle.style.borderColor = '#ffffff';
                     bwPageToggle.style.color = '#ffffff';
+                    bwPageToggle.style.background = '#18181b';
                 }
             } else {
-                if (bwToggleText) bwToggleText.textContent = 'B&W Page: Off';
+                if (bwToggleText) bwToggleText.textContent = 'Display: Modern Dark';
                 if (bwPageToggle) {
                     bwPageToggle.style.borderColor = '';
                     bwPageToggle.style.color = '';
+                    bwPageToggle.style.background = '';
                 }
             }
             
@@ -3567,7 +4370,7 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             
             // Persist theme selection in localStorage
             localStorage.setItem('webpage_theme', validTheme);
-            localStorage.setItem('bw_page_mode', validTheme !== 'color' ? 'true' : 'false');
+            localStorage.setItem('bw_page_mode', (validTheme === 'bw-light' || validTheme === 'bw-dark') ? 'true' : 'false');
         }
 
         function applyBwPageMode(enabled) {
@@ -3594,13 +4397,24 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             if (bwPageToggle) {
                 bwPageToggle.addEventListener('click', () => {
                     const current = localStorage.getItem('webpage_theme') || 'color';
-                    let next = 'color';
-                    if (current === 'color') next = 'bw-light';
-                    else if (current === 'bw-light') next = 'bw-dark';
-                    else next = 'color';
+                    const idx = AVAILABLE_THEMES.indexOf(current);
+                    const next = AVAILABLE_THEMES[(idx + 1) % AVAILABLE_THEMES.length];
                     setWebpageTheme(next);
                 });
             }
+
+            // Interactive mouse tracking for Liquid Glass specular highlights
+            document.addEventListener('pointermove', (e) => {
+                if (!document.body.classList.contains('theme-liquid-glass')) return;
+                const glassCards = document.querySelectorAll('.theme-liquid-glass .card, .theme-liquid-glass .dropzone, .theme-liquid-glass .modal-card');
+                glassCards.forEach(card => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    card.style.setProperty('--mouse-x', `${x}px`);
+                    card.style.setProperty('--mouse-y', `${y}px`);
+                });
+            });
         }
 
         initWebpageTheme();

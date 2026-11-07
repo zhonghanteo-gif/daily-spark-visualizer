@@ -846,9 +846,14 @@ def test_bw_diagnostics_and_dashboard():
     assert "themeBtnColor" in html_text
     assert "themeBtnBwLight" in html_text
     assert "themeBtnBwDark" in html_text
+    assert "themeBtnEditorial" in html_text
+    assert "themeBtnLiquidGlass" in html_text
     assert "bw-page-light" in html_text
     assert "bw-page-dark" in html_text
+    assert "theme-editorial" in html_text
+    assert "theme-liquid-glass" in html_text
     assert "setWebpageTheme" in html_text
+
 
 
 
