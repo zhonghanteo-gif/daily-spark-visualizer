@@ -5180,6 +5180,105 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             transition: opacity 0.3s ease;
         }
 
+    
+        /* ==================== DIRECT MOBILE GALLERY ACCESS STYLES ==================== */
+        .picker-buttons-row {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .btn-gallery-primary {
+            width: 100%;
+            padding: 13px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            border-radius: var(--radius-md);
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #0284c7 100%);
+            box-shadow: 0 4px 18px rgba(37, 99, 235, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+            border: 1px solid rgba(96, 165, 250, 0.5);
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .btn-gallery-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(37, 99, 235, 0.55);
+            border-color: #93c5fd;
+        }
+        .btn-gallery-primary:active {
+            transform: translateY(0);
+        }
+        .picker-btn-text {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+        .picker-btn-title {
+            font-size: 0.96rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .picker-btn-sub {
+            font-size: 0.72rem;
+            color: #bfdbfe;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+        .picker-secondary-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        /* Direct gallery card dropzone glow */
+        .dropzone.gallery-direct-active {
+            border-color: #3b82f6;
+            background: rgba(37, 99, 235, 0.05);
+            cursor: pointer;
+        }
+
+        /* Theme overrides for primary gallery access */
+        body.theme-editorial .btn-gallery-primary {
+            background: #853b1b !important;
+            border: 1.5px solid #1c1917 !important;
+            box-shadow: 3px 3px 0px #1c1917 !important;
+            color: #ffffff !important;
+        }
+        body.theme-editorial .picker-btn-sub {
+            color: #f5f5f4 !important;
+        }
+
+        body.theme-liquid-glass .btn-gallery-primary {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.28), rgba(168, 85, 247, 0.28)) !important;
+            border: 1px solid rgba(255, 255, 255, 0.4) !important;
+            backdrop-filter: blur(16px) !important;
+            box-shadow: 0 8px 30px rgba(56, 189, 248, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.5) !important;
+        }
+
+        body.bw-page-light .btn-gallery-primary, body.bw-mode.bw-page-light .btn-gallery-primary {
+            background: #000000 !important;
+            color: #ffffff !important;
+            border: 2px solid #000000 !important;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.2) !important;
+        }
+        body.bw-page-light .picker-btn-sub, body.bw-mode.bw-page-light .picker-btn-sub {
+            color: #a1a1aa !important;
+        }
+
+        body.bw-page-dark .btn-gallery-primary, body.bw-mode.bw-page-dark .btn-gallery-primary {
+            background: #ffffff !important;
+            color: #000000 !important;
+            border: 2px solid #ffffff !important;
+            box-shadow: 0 4px 14px rgba(255,255,255,0.2) !important;
+        }
+        body.bw-page-dark .picker-btn-sub, body.bw-mode.bw-page-dark .picker-btn-sub {
+            color: #52525b !important;
+        }
+
     </style>
 </head>
 <body>
@@ -5223,6 +5322,13 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
             <!-- Section 1: Pages & Workspaces -->
             <div class="drawer-section" id="drawerSecWorkspaces">
                 <div class="drawer-section-title">Pages & Workspaces</div>
+                <button type="button" class="drawer-link" id="drawerOpenGalleryBtn" style="color: #38bdf8; font-weight: 600;">
+                    <span class="drawer-link-icon">🖼️</span>
+                    <div class="drawer-link-body">
+                        <span class="drawer-link-name">Open Phone Gallery</span>
+                        <span class="drawer-link-desc">Direct access to photos & videos</span>
+                    </div>
+                </button>
                 <a href="/" class="drawer-link active" id="drawerLinkConverter">
                     <span class="drawer-link-icon">⚡</span>
                     <div class="drawer-link-body">
@@ -5418,47 +5524,53 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
 
             <!-- Direct Action Pickers for mobile & quick select -->
             <div class="picker-buttons-row">
-                <button type="button" class="btn-picker btn-gallery" id="btnPickGallery">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <!-- Primary Direct Phone Gallery Access Button -->
+                <button type="button" class="btn-picker btn-gallery btn-gallery-primary" id="btnPickGallery" title="Directly open phone photo & video gallery">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                         <circle cx="8.5" cy="8.5" r="1.5"></circle>
                         <polyline points="21 15 16 10 5 21"></polyline>
                     </svg>
-                    <span>Photo Gallery</span>
+                    <div class="picker-btn-text">
+                        <span class="picker-btn-title">Photo Gallery</span>
+                        <span class="picker-btn-sub">Tap to access your phone gallery directly (Photos & Videos)</span>
+                    </div>
                 </button>
-                <button type="button" class="btn-picker btn-camera" id="btnPickCamera">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                        <circle cx="12" cy="13" r="4"></circle>
-                    </svg>
-                    <span>Camera</span>
-                </button>
-                <button type="button" class="btn-picker btn-docs" id="btnPickDocs">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                    </svg>
-                    <span>Documents</span>
-                </button>
+                <div class="picker-secondary-group">
+                    <button type="button" class="btn-picker btn-camera" id="btnPickCamera" title="Take a photo with camera">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                        <span>Camera</span>
+                    </button>
+                    <button type="button" class="btn-picker btn-docs" id="btnPickDocs" title="Browse documents and non-media files">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        <span>Documents</span>
+                    </button>
+                </div>
             </div>
 
             <form id="uploadForm">
-                <!-- Drag and Drop Box -->
-                <div class="dropzone" id="dropZone">
+                <!-- Drag and Drop Box with Direct Gallery Access on Tap -->
+                <div class="dropzone gallery-direct-active" id="dropZone" title="Tap to open Phone Gallery directly">
                     <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
                     </svg>
-                    <div class="dropzone-text">Drag & drop files here, or click to browse</div>
+                    <div class="dropzone-text">Tap here to open your Gallery, or drag & drop files</div>
                     <div class="dropzone-sub">
-                        Images: PNG, JPG, WEBP, BMP, ICO, HEIC, GIF &bull; Docs: PDF, DOCX, DOC, RTF, TXT, MD, HTML &bull; Data: CSV, JSON, XLSX, XLS
+                        Direct Phone Gallery Access &bull; Photos & Videos: PNG, JPG, WEBP, MP4, MOV, HEIC, GIF &bull; Docs & Data: PDF, DOCX, XLSX, TXT
                     </div>
                     <input type="file" id="fileInput" multiple accept="*/*">
-                    <input type="file" id="galleryInput" multiple accept="image/*,.heic,.heif">
-                    <input type="file" id="cameraInput" accept="image/*" capture="environment">
+                    <input type="file" id="galleryInput" multiple accept="image/*,video/*,.heic,.heif">
+                    <input type="file" id="cameraInput" accept="image/*,video/*" capture="environment">
                     <input type="file" id="docsInput" multiple accept=".pdf,.docx,.doc,.txt,.md,.rtf,.xlsx,.xls,.csv,.json,.html">
                 </div>
 
@@ -5757,7 +5869,14 @@ HTML_DASHBOARD = r"""<!DOCTYPE html>
         btnPickGallery.addEventListener('click', () => galleryInput.click());
         btnPickCamera.addEventListener('click', () => cameraInput.click());
         btnPickDocs.addEventListener('click', () => docsInput.click());
-        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('click', () => galleryInput.click());
+        const drawerGalleryBtn = document.getElementById('drawerOpenGalleryBtn');
+        if (drawerGalleryBtn) {
+            drawerGalleryBtn.addEventListener('click', () => {
+                if (typeof closeDrawer === 'function') closeDrawer();
+                setTimeout(() => galleryInput.click(), 120);
+            });
+        }
 
         [fileInput, galleryInput, cameraInput, docsInput].forEach(inp => {
             inp.addEventListener('change', () => {

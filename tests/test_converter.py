@@ -1062,6 +1062,17 @@ def test_slide_navigation_drawer_and_gestures():
     assert "touchend" in res_zb.text
 
 
+def test_direct_gallery_access():
+    """Verify direct mobile phone gallery access and primary gallery picker button."""
+    res = client.get("/")
+    assert res.status_code == 200
+    assert "btn-gallery-primary" in res.text
+    assert "drawerOpenGalleryBtn" in res.text
+    assert 'accept="image/*,video/*,.heic,.heif"' in res.text
+    assert "gallery-direct-active" in res.text
+    assert "Tap here to open your Gallery" in res.text
+
+
 
 
 
